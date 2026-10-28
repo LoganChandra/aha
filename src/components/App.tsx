@@ -447,7 +447,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
       </div>
 
       {/* the scene: the lesson happens here */}
-      <section className="relative mx-3 min-h-[300px] flex-1 overflow-hidden rounded-[var(--radius)] border border-line bg-surface lg:mx-4">
+      <section className="stage relative mx-3 min-h-[300px] flex-1 overflow-hidden rounded-[var(--radius)] border border-line lg:mx-4">
         {lesson && step ? (
           <>
             <div className="absolute inset-x-0" style={{ top: topSize.h ? topSize.h + 16 : 0, bottom: botSize.h ? botSize.h + 16 : 0, transition: reduced ? undefined : 'top 220ms ease, bottom 220ms ease' }}>
@@ -471,13 +471,13 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   key={answer ? `a-${answer.q}` : `${key}-${done ? 'd' : 'o'}`}
                   initial={reduced ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.12 } }}
                   transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
-                  className={`no-scrollbar pointer-events-auto max-h-[34dvh] max-w-[520px] overflow-y-auto rounded-2xl border bg-surface/95 px-4 py-3 shadow-[var(--shadow)] backdrop-blur ${task && done && !answer ? 'border-[var(--t-green)]/50' : 'border-line'}`}
+                  className={`no-scrollbar pointer-events-auto max-h-[36dvh] max-w-[600px] overflow-y-auto rounded-[20px] border bg-surface/95 px-5 py-4 shadow-[var(--shadow)] backdrop-blur ${task && done && !answer ? 'border-[var(--t-green)]/50' : 'border-line'}`}
                   aria-live="polite"
                 >
                   {answer ? (
                     <>
-                      <p className="text-[12.5px] font-medium text-ink-3">You asked: {answer.q}</p>
-                      <div className="mt-1 font-serif text-[16.5px] leading-[1.45] text-ink">
+                      <p className="text-[14px] font-medium text-ink-3">You asked: {answer.q}</p>
+                      <div className="mt-1 font-serif text-[19px] leading-[1.4] text-ink lg:text-[21px]">
                         {answer.pending ? <div className="space-y-2 py-1"><div className="shimmer h-3.5 w-[260px] max-w-full rounded" /><div className="shimmer h-3.5 w-[180px] rounded" /></div>
                           : answer.error ? <span className="text-ink-2">{answer.error}</span>
                           : <RichText text={answer.a!} env={env} />}
@@ -486,23 +486,23 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                     </>
                   ) : (
                     <>
-                      {si === 0 && !done && <p className="mb-0.5 text-[12.5px] font-semibold text-ink-3">{lesson.title}</p>}
+                      {si === 0 && !done && <p className="mb-1 text-[14px] font-semibold uppercase tracking-[0.04em] text-ink-3">{lesson.title}</p>}
                       {task && done ? (
                         <div className="flex gap-2.5">
                           <motion.span
                             initial={reduced ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 520, damping: 22 }}
-                            className={`mt-[2px] flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-white ${task.kind === 'predict' && sp.pick !== task.answer ? 'bg-[var(--t-accent)]' : 'bg-[var(--t-green)]'}`}
+                            className={`mt-[3px] flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full text-white ${task.kind === 'predict' && sp.pick !== task.answer ? 'bg-[var(--t-accent)]' : 'bg-[var(--t-green)]'}`}
                           >
                             <Icon name={task.kind === 'predict' && sp.pick !== task.answer ? 'reset' : 'check'} size={14} />
                           </motion.span>
-                          <p className="font-serif text-[16.5px] leading-[1.45] text-ink">
+                          <p className="font-serif text-[19px] leading-[1.4] text-ink lg:text-[22px]">
                             {task.kind === 'predict' && sp.pick !== task.answer && <span className="font-semibold">Not quite. Watch: </span>}
                             {!(task.kind === 'predict' && sp.pick !== task.answer) && !sp.shown && <span className="font-semibold">{praise(key)} </span>}
                             <RichText text={step.after || step.say} env={env} />
                           </p>
                         </div>
                       ) : (
-                        <p className="font-serif text-[16.5px] leading-[1.45] text-ink lg:text-[17.5px]"><RichText text={step.say} env={env} /></p>
+                        <p className="font-serif text-[20px] leading-[1.38] text-ink lg:text-[23px]"><RichText text={step.say} env={env} /></p>
                       )}
                     </>
                   )}
@@ -513,15 +513,15 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
             {/* the task and the knobs, also inside the picture */}
             <div ref={botRef} className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-start gap-2 lg:inset-x-4 lg:bottom-4">
               {task?.kind === 'predict' && !answer && (
-                <div className="pointer-events-auto w-full max-w-[520px] rounded-2xl border border-line bg-surface/95 p-3 shadow-[var(--shadow)] backdrop-blur">
-                  <p className="mb-2 text-[14.5px] font-semibold text-ink"><RichText text={task.question} /></p>
+                <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 p-4 shadow-[var(--shadow)] backdrop-blur">
+                  <p className="mb-2.5 text-[17px] font-semibold leading-snug text-ink"><RichText text={task.question} /></p>
                   <div className="grid gap-1.5 sm:grid-cols-2">
                     {task.choices.map((c, i) => {
                       const picked = sp.pick === i, right = i === task.answer, settled = sp.pick !== undefined;
                       return (
                         <button
                           key={i} onClick={() => pick(i)} disabled={settled}
-                          className={`flex min-h-[44px] items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-[14.5px] transition-colors duration-150 ${settled && right ? 'border-[var(--t-green)] bg-[var(--t-green)]/10' : settled && picked ? 'border-[var(--t-accent)] bg-[var(--t-accent)]/10' : 'border-line hover:border-ink-3'} ${settled && !right && !picked ? 'opacity-50' : ''}`}
+                          className={`flex min-h-[54px] items-center justify-between gap-2 rounded-2xl border-2 px-4 py-2.5 text-left text-[17px] font-medium transition-colors duration-150 ${settled && right ? 'border-[var(--t-green)] bg-[var(--t-green)]/10' : settled && picked ? 'border-[var(--t-accent)] bg-[var(--t-accent)]/10' : 'border-line hover:border-ink-3'} ${settled && !right && !picked ? 'opacity-50' : ''}`}
                         >
                           <span><RichText text={c} /></span>
                           {settled && right && <span className="text-[var(--t-green)]"><Icon name="check" size={16} /></span>}
@@ -532,25 +532,25 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                 </div>
               )}
               {task?.kind === 'slide' && !taskKnob && !done && !answer && (
-                <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-line bg-surface/95 px-3.5 py-2 text-[14px] font-medium text-ink shadow-[var(--shadow)] backdrop-blur">
-                  <span className="h-2 w-2 rounded-full bg-[var(--t-primary)]" />{task.hint}
+                <div className="pointer-events-auto flex items-center gap-2.5 rounded-full border-2 border-[var(--t-primary)]/40 bg-surface/95 px-4 py-2.5 text-[16.5px] font-semibold text-ink shadow-[var(--shadow)] backdrop-blur">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--t-primary)]" />{task.hint}
                 </div>
               )}
               {task?.kind === 'tap' && !done && !answer && (
                 <motion.div
                   key={`miss-${sp.miss ?? 0}`}
                   initial={reduced || !sp.miss ? false : { x: [0, -6, 6, -4, 4, 0] }} animate={{ x: 0 }} transition={{ duration: 0.32 }}
-                  className="pointer-events-auto flex items-center gap-2 rounded-full border border-line bg-surface/95 px-3.5 py-2 text-[14px] font-medium text-ink shadow-[var(--shadow)] backdrop-blur"
+                  className="pointer-events-auto flex items-center gap-2.5 rounded-full border-2 border-[var(--t-primary)]/40 bg-surface/95 px-4 py-2.5 text-[16.5px] font-semibold text-ink shadow-[var(--shadow)] backdrop-blur"
                 >
-                  <span className="h-2 w-2 rounded-full bg-[var(--t-primary)]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--t-primary)]" />
                   {sp.miss ? `Not that one. ${task.hint}` : task.hint}
                 </motion.div>
               )}
               {(taskKnob || freeKnobs.length > 0) && !answer && task?.kind !== 'predict' && (
-                <div className="pointer-events-auto w-full max-w-[520px] rounded-2xl border border-line bg-surface/95 px-3.5 py-1.5 shadow-[var(--shadow)] backdrop-blur">
+                <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 px-4 py-2.5 shadow-[var(--shadow)] backdrop-blur">
                   {taskKnob && task?.kind === 'slide' && (
                     <>
-                      {!done && <p className="pt-1.5 text-[13px] font-medium text-ink-2">{task.hint}</p>}
+                      {!done && <p className="pt-2 text-[15.5px] font-semibold text-ink">{task.hint}</p>}
                       <Knob p={taskKnob} value={env[taskKnob.id] ?? taskKnob.value} onChange={(v) => setKnob(taskKnob.id, v)} toward={guide?.target} />
                     </>
                   )}
@@ -579,17 +579,17 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
         <div className="mx-auto w-full max-w-[760px]">
           {lesson && (
             <div className="mb-3 flex items-center gap-2">
-              <button onClick={() => goStep(si - 1)} disabled={si === 0} aria-label="Previous step" className="flex h-11 w-11 items-center justify-center rounded-full text-ink-2 disabled:opacity-25"><Icon name="back" size={20} /></button>
+              <button onClick={() => goStep(si - 1)} disabled={si === 0} aria-label="Previous step" className="flex h-12 w-12 items-center justify-center rounded-full text-ink-2 disabled:opacity-25"><Icon name="back" size={20} /></button>
               <div className="flex-1" />
               {!done && task && (
-                <button onClick={showMe} className="h-11 rounded-full px-3 text-[14px] font-medium text-ink-2 hover:text-ink">Show me</button>
+                <button onClick={showMe} className="h-12 rounded-full px-4 text-[16px] font-medium text-ink-2 hover:text-ink">Show me</button>
               )}
               <motion.button
                 key={`${key}-${done}`}
                 initial={reduced || !done || !task ? false : { scale: 1 }} animate={reduced || !done || !task ? undefined : { scale: [1, 1.05, 1] }} transition={{ duration: 0.28 }}
                 onClick={() => (!lastStep ? goStep(si + 1) : li < total - 1 ? goLesson(li + 1) : setSheet(true))}
                 disabled={!done}
-                className="h-11 min-w-[132px] rounded-full bg-ink px-6 text-[15px] font-semibold text-paper transition-colors disabled:bg-sunk disabled:text-ink-3"
+                className="h-12 min-w-[150px] rounded-full bg-ink px-7 text-[17px] font-semibold text-paper transition-colors disabled:bg-sunk disabled:text-ink-3"
               >
                 {!lastStep ? 'Continue' : li < total - 1 ? 'Next lesson' : 'Finish'}
               </motion.button>

@@ -75,7 +75,7 @@ export function Knob({ p, value, onChange, toward }: { p: Param; value: number; 
     );
   }
   const step = p.step ?? (p.max - p.min) / 200;
-  const value_ = <span className="min-w-[44px] shrink-0 whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>;
+  const value_ = <span className="min-w-[44px] shrink-0 whitespace-nowrap text-right text-[16px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>;
   const input = (
     <input
       id={`k-${p.id}`} type="range" className={`knob ${toward !== undefined ? 'guide' : ''}`} min={p.min} max={p.max} step={step} value={value}
@@ -94,7 +94,7 @@ export function Knob({ p, value, onChange, toward }: { p: Param; value: number; 
     return (
       <div className="pt-1">
         <div className="flex items-baseline justify-between gap-3">
-          <label htmlFor={`k-${p.id}`} className="text-[13px] font-medium leading-tight text-ink-2">{p.label}</label>
+          <label htmlFor={`k-${p.id}`} className="text-[15.5px] font-semibold leading-tight text-ink">{p.label}</label>
           {value_}
         </div>
         <div className="flex items-center gap-1.5">{arrow && toward! < value && arrow}<div className="flex-1">{input}</div>{arrow && toward! > value && arrow}</div>
@@ -102,8 +102,8 @@ export function Knob({ p, value, onChange, toward }: { p: Param; value: number; 
     );
   }
   return (
-    <div className="grid min-h-[38px] grid-cols-[minmax(0,34%)_1fr_auto] items-center gap-3">
-      <label htmlFor={`k-${p.id}`} className="text-[13px] font-medium leading-tight text-ink-2">{p.label}</label>
+    <div className="grid min-h-[48px] grid-cols-[minmax(0,34%)_1fr_auto] items-center gap-3">
+      <label htmlFor={`k-${p.id}`} className="text-[15.5px] font-semibold leading-tight text-ink">{p.label}</label>
       <div className="flex items-center gap-1.5">{arrow && toward! < value && arrow}<div className="flex-1">{input}</div>{arrow && toward! > value && arrow}</div>
       {value_}
     </div>

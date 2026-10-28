@@ -18,10 +18,10 @@ function Bars({ scene, env, focus, callouts = {}, onTap }: { scene: C; env: Env;
   const [box, size] = useSize<HTMLDivElement>();
   const bars = (scene.bars ?? []).map((b) => ({ ...b, v: evaluate(b.value, env, 0) }));
   const max = Math.max(1e-9, ...bars.map((b) => Math.abs(b.v)));
-  const rowH = Math.min(46, Math.max(30, (size.h - 40) / Math.max(1, bars.length)));
+  const rowH = Math.min(64, Math.max(40, (size.h - 40) / Math.max(1, bars.length)));
   return (
     <div ref={box} className="absolute inset-0 flex flex-col justify-center px-5 py-4 sm:px-10">
-      {scene.yLabel && <div className="mb-3 text-[13px] font-medium text-ink-2">{scene.yLabel}</div>}
+      {scene.yLabel && <div className="mb-4 text-[17px] font-semibold text-ink">{scene.yLabel}</div>}
       <div className="flex flex-col" style={{ gap: Math.max(6, rowH * 0.22) }}>
         {bars.map((b) => {
           const op = focus.length && !focus.includes(b.id) ? 0.3 : 1;
@@ -31,13 +31,13 @@ function Bars({ scene, env, focus, callouts = {}, onTap }: { scene: C; env: Env;
               style={{ gridTemplateColumns: 'minmax(72px, 30%) 1fr', opacity: op, transition: 'opacity 300ms' }}
               onClick={onTap ? () => onTap(b.id) : undefined} role={onTap ? 'button' : undefined}
             >
-              <div className="truncate text-right text-[13px] font-medium text-ink-2" title={b.label}>{b.label}</div>
+              <div className="truncate text-right text-[16px] font-semibold text-ink" title={b.label}>{b.label}</div>
               <div className="flex items-center gap-2" style={{ height: rowH * 0.66 }}>
                 <div
-                  className="h-full rounded-[6px]"
+                  className="h-full rounded-[10px] shadow-sm"
                   style={{ width: `${(Math.abs(b.v) / max) * 82}%`, minWidth: 3, background: tone(b.tone), transition: 'width 500ms cubic-bezier(.2,.8,.2,1)' }}
                 />
-                <span className="shrink-0 text-[13px] font-semibold tabular-nums text-ink">{formatNumber(b.v)}{scene.unit ? ` ${scene.unit}` : ''}</span>
+                <span className="shrink-0 text-[16px] font-bold tabular-nums text-ink">{formatNumber(b.v)}{scene.unit ? ` ${scene.unit}` : ''}</span>
                 {callouts[b.id] && <span className="shrink-0 rounded-full bg-ink px-2.5 py-0.5 text-[12px] font-semibold text-paper">{callouts[b.id]}</span>}
               </div>
             </div>

@@ -90,7 +90,7 @@ function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel, callout,
       {(p.label || callout) && (
         <Html center position={[0, 0, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
           <div
-            className={`whitespace-nowrap rounded-full border bg-surface/95 px-2.5 py-1 text-[12px] font-semibold text-ink shadow-sm ${callout ? 'border-ink-2' : 'border-line'}`}
+            className={`whitespace-nowrap rounded-full border-2 bg-surface/95 px-3 py-1.5 text-[15px] font-semibold text-ink shadow-sm ${callout ? 'border-ink-2' : 'border-line'}`}
             style={{ transform: 'translateY(-26px)', opacity: showLabel || callout ? 1 : 0, transition: 'opacity 200ms' }}
             aria-hidden={!(showLabel || callout)}
           >

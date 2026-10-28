@@ -26,9 +26,9 @@ export default function Timeline({ scene, focus, callouts = {}, onTap }: { scene
                 className="absolute left-0 top-[5px] h-4 w-4 rounded-full border-2 bg-surface"
                 style={{ borderColor: tone(e.tone), background: on ? tone(e.tone) : undefined }}
               />
-              <div className="text-[12px] font-semibold tracking-wide text-ink-3 tabular-nums">{e.when}</div>
-              <div className="text-[15px] font-semibold text-ink">{e.label}</div>
-              {e.detail && <div className="mt-0.5 text-[13.5px] leading-snug text-ink-2">{e.detail}</div>}
+              <div className="text-[14px] font-semibold tracking-wide text-ink-3 tabular-nums">{e.when}</div>
+              <div className="text-[18px] font-semibold text-ink">{e.label}</div>
+              {e.detail && <div className="mt-1 text-[15.5px] leading-snug text-ink-2">{e.detail}</div>}
               {callouts[e.id] && <div className="mt-1.5 inline-block rounded-full bg-ink px-2.5 py-0.5 text-[12px] font-semibold text-paper">{callouts[e.id]}</div>}
             </li>
           );

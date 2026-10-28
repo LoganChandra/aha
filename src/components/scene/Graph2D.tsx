@@ -1,10 +1,10 @@
 'use client';
 // 2D graph renderer: curves, points you can drag, shapes, shaded areas, angles and live labels, in SVG.
-import { useId, useMemo, useRef } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { evaluate, fillTemplate, type Env } from '@/lib/expr';
 import { ICONS } from '@/lib/icons';
 import type { G2Item, Scene } from '@/lib/recipe';
-import { tone, useSize } from './runtime';
+import { tone, useGlide, useSize } from './runtime';
 
 type G2 = Extract<Scene, { type: 'graph2d' }>;
 type Num = number | string;
@@ -70,7 +70,22 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
 
   // Illustrations (no axes) are framed around what is actually drawn, wherever the knobs go, so a model's loose
   // range never leaves the subject small and off-centre. Plots keep their ranges: the numbers mean something.
-  const framed = useMemo(() => (showAxes ? null : contentBounds(scene.items, params, scene.x, scene.y)), [showAxes, scene.items, params, scene.x, scene.y]);
+  // The frame follows the drawing like a camera: it holds still under a dragging finger, then eases (spring) to
+  // fit the new state, so a stretched shape never runs off screen and nothing jumps.
+  const [dragActive, setDragActive] = useState(false);
+  const stateKey = params.map((p) => Math.round(((env[p.id] ?? p.value ?? 0) - p.min) / ((p.max - p.min) || 1) * 40)).join(',');
+  const targetRef = useRef<[number, number, number, number] | null>(null);
+  const target = useMemo(() => {
+    if (showAxes) return null;
+    if (dragActive && targetRef.current) return targetRef.current;
+    const b = contentBounds(scene.items, params.map((p) => ({ ...p, value: env[p.id] ?? p.value })), scene.x, scene.y);
+    targetRef.current = b;
+    return b;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAxes, scene.items, scene.x, scene.y, stateKey, dragActive]);
+  const frameTarget = useMemo(() => (target ? { a: target[0], b: target[1], c: target[2], d: target[3] } : { a: 0, b: 0, c: 0, d: 0 }), [target]);
+  const frame = useGlide(frameTarget, false);
+  const framed: [number, number, number, number] | null = target ? [frame.a, frame.b, frame.c, frame.d] : null;
 
   const view = useMemo(() => {
     const w = Math.max(10, size.w), h = Math.max(10, size.h);
@@ -132,7 +147,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   function render(it: Item) {
     if ('show' in it && it.show !== undefined && !(ev(it.show, 1) > 0)) return null;
     const color = tone(it.tone);
-    const width = hot(it.id) ? 3.6 : 2.6;
+    const width = hot(it.id) ? 4.6 : 3.4;
     // The hero curve (primary tone or in focus) gets a soft glow underneath, like light on paper.
     const glow = (d: string) => (it.tone === undefined || it.tone === 'primary' || hot(it.id)) && !('dashed' in it && it.dashed)
       ? <path d={d} fill="none" stroke={color} strokeWidth={width + 7} strokeLinecap="round" strokeLinejoin="round" opacity={0.13} />
@@ -235,13 +250,13 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         if (it.label) labels.push({ x: px + 10, y: py - 10, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'start' });
         return (
           <g key={it.id} opacity={op}>
-            {draggable && <circle cx={px} cy={py} r={15} fill={color} fillOpacity={0.14} />}
-            <circle cx={px} cy={py} r={draggable ? 9 : 6} fill={draggable ? color : fx(`ball-${it.tone ?? 'primary'}`)} stroke="var(--surface)" strokeWidth={draggable ? 3 : 2} filter={fx('shadow')} />
+            {draggable && <circle cx={px} cy={py} r={22} fill={color} fillOpacity={0.16} />}
+            <circle cx={px} cy={py} r={draggable ? 13 : 8} fill={draggable ? color : fx(`ball-${it.tone ?? 'primary'}`)} stroke="var(--surface)" strokeWidth={draggable ? 4 : 2.5} filter={fx('shadow')} />
             {draggable && (
               <circle
-                cx={px} cy={py} r={24} fill="transparent" style={{ cursor: 'grab', touchAction: 'none' }}
+                cx={px} cy={py} r={30} fill="transparent" style={{ cursor: 'grab', touchAction: 'none' }}
                 role="slider" aria-label={`Drag ${it.label ?? 'point'}`} tabIndex={0}
-                onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = { x: it.dragX, y: it.dragY, at: [it.x, it.y] }; }}
+                onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = { x: it.dragX, y: it.dragY, at: [it.x, it.y] }; setDragActive(true); }}
               />
             )}
           </g>
@@ -251,11 +266,11 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         const node = ICONS[it.name];
         if (!node) return null;
         const cx = X(ev(it.at[0])), cy = Y(ev(it.at[1]));
-        const unit = it.size !== undefined ? Math.abs(X(ev(it.size, 1)) - X(0)) : Math.min(view.iw, view.ih) * 0.14;
-        const px = Math.max(22, Math.min(150, unit));
+        const unit = it.size !== undefined ? Math.abs(X(ev(it.size, 1)) - X(0)) : Math.min(view.iw, view.ih) * 0.18;
+        const px = Math.max(40, Math.min(170, unit));
         const draggable = !!(it.dragX || it.dragY);
         anchors[it.id] = [cx, cy - px * 0.62];
-        if (it.label) labels.push({ x: cx, y: cy + px * 0.62 + 14, text: fillTemplate(it.label, env), color: 'var(--ink-2)', id: it.id, anchor: 'middle' });
+        if (it.label) labels.push({ x: cx, y: cy + px * 0.62 + 18, text: fillTemplate(it.label, env), color: 'var(--ink)', id: it.id, anchor: 'middle' });
         const k = (px * 0.62) / 24;
         return (
           <g key={it.id} opacity={op}>
@@ -271,7 +286,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
               <circle
                 cx={cx} cy={cy} r={Math.max(24, px * 0.6)} fill="transparent" style={{ cursor: 'grab', touchAction: 'none' }}
                 role="slider" aria-label={`Drag ${it.label ?? it.name}`} tabIndex={0}
-                onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = { x: it.dragX, y: it.dragY, at: it.at }; }}
+                onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = { x: it.dragX, y: it.dragY, at: it.at }; setDragActive(true); }}
               />
             )}
           </g>
@@ -323,7 +338,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   });
   // A generous invisible target at each item, so thin lines are easy to tap with a thumb.
   const tapTargets = onTap ? Object.entries(anchors).map(([id, [x, y]]) => (
-    <circle key={`hit-${id}`} cx={x} cy={y} r={22} fill="transparent" style={{ cursor: 'pointer' }} onClick={() => onTap(id)} role="button" aria-label={`Tap ${scene.items.find((i) => i.id === id)?.label ?? id}`} />
+    <circle key={`hit-${id}`} cx={x} cy={y} r={28} fill="transparent" style={{ cursor: 'pointer' }} onClick={() => onTap(id)} role="button" aria-label={`Tap ${scene.items.find((i) => i.id === id)?.label ?? id}`} />
   )) : null;
   // Slide task on a draggable handle: a breathing ring, an arrow toward the goal, and a "drag" tag.
   const handles = guide ? scene.items.filter((it) => (it.type === 'point' || it.type === 'icon') && (it.dragX === guide.param || it.dragY === guide.param)) as Extract<G2Item, { type: 'point' | 'icon' }>[] : [];
@@ -353,7 +368,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
       {size.w > 0 && (
         <svg
           ref={svg} width={view.w} height={view.h} className="block"
-          onPointerMove={onMove} onPointerUp={() => (dragging.current = null)} onPointerCancel={() => (dragging.current = null)}
+          onPointerMove={onMove} onPointerUp={() => { dragging.current = null; setDragActive(false); }} onPointerCancel={() => { dragging.current = null; setDragActive(false); }}
           role="img" aria-label="Interactive graph"
         >
           <defs>
@@ -384,7 +399,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
             </g>
           )}
           {showAxes && (
-            <g fontSize={11.5} fill="var(--ink-2)" fontFamily="var(--font-sans)" fontWeight={500}>
+            <g fontSize={13} fill="var(--ink-2)" fontFamily="var(--font-sans)" fontWeight={500}>
               {xTicks.filter((v) => (Math.abs(v) > xs / 1000 || ax !== 0) && X(v) > PAD.l + 8 && X(v) < PAD.l + view.iw - 8).map((v) => <text key={`tx${v}`} x={X(v)} y={Math.min(view.h - 6, Y(ay) + 16)} textAnchor="middle">{tickLabel(v, xs, usePi)}</text>)}
               {yTicks.filter((v) => Math.abs(v) > ys / 1000 && Y(v) > PAD.t + 8 && Y(v) < PAD.t + view.ih - 8).map((v) => <text key={`ty${v}`} x={Math.max(PAD.l - 6, X(ax) - 6)} y={Y(v) + 4} textAnchor="end">{tickLabel(v, ys, false)}</text>)}
               {scene.xLabel && <text x={PAD.l + view.iw} y={view.h - 8} textAnchor="end" fill="var(--ink-2)" fontWeight={600}>{scene.xLabel} →</text>}
@@ -394,31 +409,31 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           <g clipPath={`url(#plot-${uid})`}>{drawn}</g>
           {guides.map((g) => (
             <g key={`guide-${g.id}`} style={{ pointerEvents: 'none' }}>
-              <circle className="pulse-ring" cx={g.x} cy={g.y} r={16} fill="none" stroke="var(--t-primary)" strokeWidth={3} />
+              <circle className="pulse-ring" cx={g.x} cy={g.y} r={22} fill="none" stroke="var(--t-primary)" strokeWidth={3.5} />
               <g className="nudge" style={{ ['--nx' as string]: `${g.dx * 7}px`, ['--ny' as string]: `${g.dy * 7}px` }}>
                 <path
-                  d={`M${g.x + g.dx * 24},${g.y + g.dy * 24} L${g.x + g.dx * 46},${g.y + g.dy * 46}`}
-                  stroke="var(--t-primary)" strokeWidth={3} strokeLinecap="round"
+                  d={`M${g.x + g.dx * 30},${g.y + g.dy * 30} L${g.x + g.dx * 60},${g.y + g.dy * 60}`}
+                  stroke="var(--t-primary)" strokeWidth={4} strokeLinecap="round"
                 />
-                <Arrow x={g.x + g.dx * 50} y={g.y + g.dy * 50} angle={Math.atan2(g.dy, g.dx)} color="var(--t-primary)" />
+                <Arrow x={g.x + g.dx * 66} y={g.y + g.dy * 66} angle={Math.atan2(g.dy, g.dx)} color="var(--t-primary)" size={14} />
               </g>
             </g>
           ))}
           {onTap && Object.entries(anchors).filter(([id]) => scene.items.find((i) => i.id === id)?.type !== 'text').map(([id, [x, y]]) => (
-            <circle key={`tp-${id}`} className="pulse-ring" cx={x} cy={y} r={14} fill="none" stroke="var(--t-primary)" strokeWidth={2.5} style={{ pointerEvents: 'none' }} />
+            <circle key={`tp-${id}`} className="pulse-ring" cx={x} cy={y} r={20} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />
           ))}
           {tapTargets}
-          <g fontFamily="var(--font-sans)" fontSize={13} fontWeight={600}>
+          <g fontFamily="var(--font-sans)" fontSize={LABEL_PX} fontWeight={650}>
             {placed.map((l, i) => (
               <text
                 key={`${l.id}${i}`} x={l.x} y={l.y} textAnchor={l.anchor ?? 'start'} fill={l.color} opacity={textIds.has(l.id) ? 1 : Math.max(0.55, dim(l.id))}
-                stroke="var(--surface)" strokeWidth={4} paintOrder="stroke" strokeLinejoin="round"
+                stroke="var(--surface)" strokeWidth={5} paintOrder="stroke" strokeLinejoin="round"
               >
                 {l.text}
               </text>
             ))}
           </g>
-          {pins.length > 0 && <Pins pins={pins} w={view.w} h={view.h} avoid={placed.map((l) => ({ x0: l.x, x1: l.x + textWidth(l.text), y0: l.y - 13, y1: l.y + 4 }))} />}
+          {pins.length > 0 && <Pins pins={pins} w={view.w} h={view.h} avoid={placed.map((l) => ({ x0: l.x, x1: l.x + textWidth(l.text), y0: l.y - 16, y1: l.y + 5 }))} />}
         </svg>
       )}
     </div>
@@ -433,11 +448,11 @@ export function Pins({ pins, w, h, avoid = [] }: { pins: { id: string; text: str
   return (
     <g fontFamily="var(--font-sans)" style={{ pointerEvents: 'none' }}>
       {pins.map((p) => {
-        const tw = textWidth(p.text) * 0.98 + 18, th = 26;
+        const tw = textWidth(p.text, 15) + 24, th = 32;
         // Try above, below, right, left of the anchor; take the first spot that is inside the frame and free.
         const tries: [number, number][] = [
-          [p.at[0] - tw / 2, p.at[1] - 46], [p.at[0] - tw / 2, p.at[1] + 22], [p.at[0] + 18, p.at[1] - th / 2], [p.at[0] - tw - 18, p.at[1] - th / 2],
-          [p.at[0] + 14, p.at[1] - 48], [p.at[0] - tw - 14, p.at[1] - 48], [p.at[0] + 14, p.at[1] + 24], [p.at[0] - tw - 14, p.at[1] + 24],
+          [p.at[0] - tw / 2, p.at[1] - 56], [p.at[0] - tw / 2, p.at[1] + 26], [p.at[0] + 22, p.at[1] - th / 2], [p.at[0] - tw - 22, p.at[1] - th / 2],
+          [p.at[0] + 16, p.at[1] - 58], [p.at[0] - tw - 16, p.at[1] - 58], [p.at[0] + 16, p.at[1] + 28], [p.at[0] - tw - 16, p.at[1] + 28],
         ];
         let spot: [number, number] = tries[0];
         for (const [x, y] of tries) {
@@ -449,10 +464,10 @@ export function Pins({ pins, w, h, avoid = [] }: { pins: { id: string; text: str
         const lx = Math.max(spot[0] + 10, Math.min(spot[0] + tw - 10, p.at[0])), ly = spot[1] > p.at[1] ? spot[1] : spot[1] + th;
         return (
           <g key={p.id} className="pin">
-            <line x1={p.at[0]} y1={p.at[1]} x2={lx} y2={ly} stroke="var(--ink-2)" strokeWidth={1} />
-            <circle cx={p.at[0]} cy={p.at[1]} r={2.5} fill="var(--ink-2)" />
-            <rect x={spot[0]} y={spot[1]} width={tw} height={th} rx={13} fill="var(--surface)" stroke="var(--ink-2)" strokeWidth={1} />
-            <text x={spot[0] + tw / 2} y={spot[1] + 17.5} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--ink)">{p.text}</text>
+            <line x1={p.at[0]} y1={p.at[1]} x2={lx} y2={ly} stroke="var(--ink)" strokeWidth={1.5} />
+            <circle cx={p.at[0]} cy={p.at[1]} r={4} fill="var(--ink)" />
+            <rect x={spot[0]} y={spot[1]} width={tw} height={th} rx={16} fill="var(--surface)" stroke="var(--ink)" strokeWidth={1.5} />
+            <text x={spot[0] + tw / 2} y={spot[1] + 21} textAnchor="middle" fontSize={15} fontWeight={650} fill="var(--ink)">{p.text}</text>
           </g>
         );
       })}
@@ -464,7 +479,10 @@ export function Pins({ pins, w, h, avoid = [] }: { pins: { id: string; text: str
 function contentBounds(items: Item[], params: { id: string; min: number; max: number; value?: number }[], xr: [number, number], yr: [number, number]): [number, number, number, number] | null {
   const base: Env = { t: 0 };
   for (const p of params) base[p.id] = p.value ?? (p.min + p.max) / 2;
-  const envs: Env[] = [base, ...params.flatMap((p) => [{ ...base, [p.id]: p.min }, { ...base, [p.id]: p.max }])];
+  // Frame the starting picture plus a moderate reach around it (a quarter of each knob's range either way), not every
+  // extreme: framing for the largest possible shape left the starting one tiny with its labels piled on it.
+  const reach = (p: { min: number; max: number }, v: number, d: number) => Math.min(p.max, Math.max(p.min, v + d * (p.max - p.min) * 0.25));
+  const envs: Env[] = [base, ...params.flatMap((p) => [{ ...base, [p.id]: reach(p, base[p.id], -1) }, { ...base, [p.id]: reach(p, base[p.id], 1) }])];
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   // Only what sits inside (or near) the scene's own range counts: things parked far away are meant to be hidden.
   const sx = (xr[1] - xr[0]) * 0.15, sy = (yr[1] - yr[0]) * 0.15;
@@ -502,10 +520,11 @@ function contentBounds(items: Item[], params: { id: string; min: number; max: nu
 type Label = { x: number; y: number; text: string; color: string; id: string; anchor?: 'start' | 'end' | 'middle' };
 
 /** Rough text width at 13px: wide for CJK, narrow for Latin. Good enough to keep labels apart. */
-function textWidth(t: string): number {
+const LABEL_PX = 15.5;
+function textWidth(t: string, px = LABEL_PX): number {
   let w = 0;
   for (const ch of t) w += /[\u2E80-\uFFEF]/.test(ch) ? 13 : /[A-Z0-9]/.test(ch) ? 8.2 : 7;
-  return w;
+  return (w * px) / 13;
 }
 
 /** Keep every label inside the frame and off the others: clamp to the edges, then nudge down (or up) past collisions. */
@@ -519,13 +538,13 @@ function placeLabels(labels: Label[], w: number, h: number, reserved: Box[] = []
     let x0 = l.anchor === 'end' ? l.x - tw : l.anchor === 'middle' ? l.x - tw / 2 : l.x;
     x0 = Math.max(4, Math.min(w - tw - 4, x0));
     let y = Math.max(14, Math.min(h - 6, l.y));
-    const hit = (yy: number) => boxes.some((b) => x0 < b.x1 && x0 + tw > b.x0 && yy - 12 < b.y1 && yy + 3 > b.y0);
+    const hit = (yy: number) => boxes.some((b) => x0 < b.x1 && x0 + tw > b.x0 && yy - 15 < b.y1 && yy + 4 > b.y0);
     for (let k = 0; k < 8 && hit(y); k++) {
-      const down = y + 16 * (k + 1), up = y - 16 * (k + 1);
+      const down = y + 20 * (k + 1), up = y - 20 * (k + 1);
       if (!hit(down) && down < h - 6) { y = down; break; }
-      if (!hit(up) && up > 14) { y = up; break; }
+      if (!hit(up) && up > 17) { y = up; break; }
     }
-    boxes.push({ x0, x1: x0 + tw, y0: y - 12, y1: y + 3 });
+    boxes.push({ x0, x1: x0 + tw, y0: y - 15, y1: y + 4 });
     out.push({ ...l, x: x0, y, anchor: 'start' });
   }
   return out;
