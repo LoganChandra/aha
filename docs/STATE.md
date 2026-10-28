@@ -77,7 +77,24 @@ last_updated: 2026-10-29
   - Curated "How AI works" checked on phone and desktop.
   - Tests 26/26 + 15/15; spend $0.53 of $7 (Logan raised the cap).
 
+- ~03:10 template pass, deployed: pipeline, iconArray and balance templates (designed layouts the model only fills in); gradient polygons; icon pop-in; lesson recap card; cap on text items.
+- ~03:40 WCAG 2.5.7 (a slider always comes with a draggable handle) and press feedback on HTML buttons, deployed after the panel. UI suite 15/15 on prod.
+- 2026-10-29 blind persona panel: 5 phone reviewers scored it 4-6/10. Reports and a ranked summary are in `docs/qa/2026-10-29-panel/` (README.md has the ranked list). Method: the `blind-persona-qa` skill in the Blimp repo.
+
 ## Next (Frank's plan)
+
+**TODO FIRST (Logan, 2026-10-29: "tmrw lets work on the stuff from the reports").** Work down the ranked list in `docs/qa/2026-10-29-panel/README.md`, fixing the class each time:
+1. Make the ask answer visible on the lesson-done card.
+2. Run a text-versus-render consistency check in the validator, and write feedback from the learner's actual value.
+3. Make taps forgiving: 44px or more, accept equivalent objects, feedback on every miss.
+4. Stop labels colliding.
+5. Do a factual accuracy pass and hedge health claims (C8).
+6. Use topical sources only.
+7. Translate the UI chrome into the learner's language.
+8. Stop controls moving on their own and the layout jumping.
+9. Show content while lessons draw.
+10. Add a course ending with a recap and practice.
+Then re-run the panel with new topics.
 
 0. TOP PRIORITY (Logan, 2026-10-29, verbatim): "Every lesson is still so one dimensional and ugly. the font and everything is still so hard unintuitive. make everything bigger and way more obvious as to how it can be more visually friendly". This means:
    - Bigger type everywhere, in the scene and the controls.
