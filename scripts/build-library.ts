@@ -25,7 +25,7 @@ await Promise.all(process.argv.slice(2).map(async (arg) => {
     } catch (e) { console.log(prompt, i, 'failed', (e as Error).message); }
   }
   const slug = `${level}-${prompt.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
-  writeFileSync(`${dir}/${slug}.json`, JSON.stringify({ slug, level, aliases: aliases.split(',').filter(Boolean), plan: plan.plan, sources: plan.sources, lessons }, null, 1));
+  writeFileSync(`${dir}/${slug}.json`, JSON.stringify({ slug, levels: [level], aliases: aliases.split(',').filter(Boolean), plan: plan.plan, sources: plan.sources, lessons }, null, 1));
   console.log(`${slug}: ${lessons.length}/${plan.plan.lessons.length} lessons`);
 }));
 console.log(`model ${model} total $${total.toFixed(3)}`);

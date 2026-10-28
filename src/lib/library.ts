@@ -6,7 +6,7 @@ import path from 'node:path';
 import type { Lesson, Level, Plan, Source } from './recipe';
 import { normalisePrompt } from './server';
 
-export type LibraryCourse = { slug: string; level: Level; aliases: string[]; plan: Plan; sources: Source[]; lessons: Lesson[] };
+export type LibraryCourse = { slug: string; levels: Level[]; aliases: string[]; plan: Plan; sources: Source[]; lessons: Lesson[] };
 
 let index: Map<string, LibraryCourse> | null = null;
 
@@ -19,7 +19,7 @@ function load(): Map<string, LibraryCourse> {
   for (const f of files) {
     try {
       const c = JSON.parse(readFileSync(path.join(dir, f), 'utf8')) as LibraryCourse;
-      for (const name of [c.plan.topic, ...c.aliases]) index.set(`${c.level}:${normalisePrompt(name)}`, c);
+      for (const level of c.levels) for (const name of [c.plan.topic, ...c.aliases]) index.set(`${level}:${normalisePrompt(name)}`, c);
     } catch { /* a broken file never takes the app down */ }
   }
   return index;
