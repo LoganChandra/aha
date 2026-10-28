@@ -122,7 +122,7 @@ Course outline:
 ${outline}
 
 Write lesson ${index + 1}: ${l.title}
-Teaching pattern: ${l.pattern}${(() => { const p = PLAYBOOK.find((x) => x.id === l.pattern); return p ? ` (${p.name}). Steps: ${p.moves}` : ' (choose the best-fitting pattern from the playbook)'; })()}
+Teaching pattern: ${l.pattern}${(() => { const p = PLAYBOOK.find((x) => x.id === l.pattern); return p ? ` (${p.name}). Steps: ${p.moves}` : ' (choose the best-fitting pattern from the playbook)'; })()}${l.pattern === 'follow-the-flow' ? '' : '\nDo NOT use a diagram scene (boxes and arrows) for this lesson, whatever the planned visual says: draw the real thing (graph2d drawing with icons and shapes, or model3d).'}
 Goal: ${l.goal}
 The aha: ${l.aha}
 Planned visual: ${l.visual}

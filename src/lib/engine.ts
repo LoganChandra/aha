@@ -2,6 +2,7 @@
 // Each stage walks a chain of models: the cheap strong one first, a different family as the fallback.
 import { AiError, chatJson, type Msg, type Route } from './ai';
 import { ASK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, lessonUser, planUser, repairUser } from './prompts';
+import { PATTERN_IDS } from './playbook';
 import { Plan, type Lesson, type Level, type Source } from './recipe';
 import { checkLesson, repair } from './validate';
 
@@ -80,6 +81,14 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
       const plan = parsed.data;
       if (plan.status === 'ok' && plan.lessons.length < 2) throw new AiError('plan has fewer than 2 lessons');
       if (plan.status === 'clarify' && !plan.question) plan.question = 'What would you like to understand?';
+      // Decided in code, not left to the prompt: the first lesson is never a boxes-and-arrows diagram (it is the
+      // learner's first impression), at most one per course, and unknown patterns fall back to a drawn scene.
+      let flows = 0;
+      plan.lessons = plan.lessons.map((l, i) => {
+        let pattern = PATTERN_IDS.includes(l.pattern) ? l.pattern : 'act-it-out';
+        if (pattern === 'follow-the-flow' && (i === 0 || flows++ > 0)) pattern = 'act-it-out';
+        return { ...l, pattern };
+      });
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });
       return { plan, sources: r.sources.slice(0, 6) };
     } catch (e) {
