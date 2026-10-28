@@ -72,6 +72,11 @@ last_updated: 2026-10-29
   - No 3D for processes (photosynthesis came out as floating balls); stronger 3D tap glow.
   - Tests 26/26 + 15/15; spend $0.48.
 
+- ~02:35 round 5, deployed:
+  - Graphs gain depth: the hero curve stands on a gradient wash.
+  - Curated "How AI works" checked on phone and desktop.
+  - Tests 26/26 + 15/15; spend $0.53 of $7 (Logan raised the cap).
+
 ## Next (Frank's plan)
 
 0. TOP PRIORITY (Logan, 2026-10-29, verbatim): "Every lesson is still so one dimensional and ugly. the font and everything is still so hard unintuitive. make everything bigger and way more obvious as to how it can be more visually friendly". This means:
