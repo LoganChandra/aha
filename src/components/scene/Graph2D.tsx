@@ -140,6 +140,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   }
 
   const n = Math.min(600, Math.max(120, Math.round(view.iw / 1.5)));
+  const fns = scene.items.filter((i) => i.type === 'function' && !i.dashed);
+  const heroFn = fns.length >= 1 && fns.length <= 2 && !scene.items.some((i) => i.type === 'area') ? (fns.find((f) => f.tone === undefined || f.tone === 'primary') ?? fns[0]).id : '';
 
   // Icons never overlap: if any two would touch (with room for a label), every icon shrinks together until they clear.
   const iconItems = scene.items.filter((i): i is Extract<G2Item, { type: 'icon' }> => i.type === 'icon' && !(i.show !== undefined && !(ev(i.show, 1) > 0)));
@@ -178,8 +180,18 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           const lx = Math.min(x1, db) - (x1 - x0) * 0.02, ly = ev(it.expr, NaN, { x: lx });
           if (Number.isFinite(ly) && ly > y0 && ly < y1) labels.push({ x: X(lx) - 4, y: Y(ly) - 8, text: it.label, color, id: it.id, anchor: 'end' });
         }
+        // The hero curve stands on a soft wash of its own colour down to the axis: depth instead of a lone line.
+        const hero = showAxes && !it.dashed && it.id === heroFn;
+        let fillD = '';
+        if (hero) {
+          const a0 = Math.max(x0, da), b0 = Math.min(x1, db), base = Y(Math.min(Math.max(0, y0), y1));
+          const pts: string[] = [];
+          for (let i = 0; i <= 120; i++) { const x = a0 + ((b0 - a0) * i) / 120; const y = ev(it.expr, NaN, { x }); if (Number.isFinite(y)) pts.push(`${X(x).toFixed(1)},${Y(Math.max(y0, Math.min(y1, y))).toFixed(1)}`); }
+          if (pts.length > 2) fillD = `M${pts[0].split(',')[0]},${base}L${pts.join('L')}L${pts[pts.length - 1].split(',')[0]},${base}Z`;
+        }
         return (
           <g key={it.id} opacity={op}>
+            {fillD && <path d={fillD} fill={fx(`grad-${it.tone ?? 'primary'}`)} opacity={0.55} />}
             {glow(d)}
             <path d={d} fill="none" stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" strokeLinejoin="round" className={it.dashed ? undefined : 'draw-in'} pathLength={it.dashed ? undefined : 1} />
           </g>
