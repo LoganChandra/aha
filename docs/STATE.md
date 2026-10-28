@@ -45,6 +45,14 @@ last_updated: 2026-10-29
 - Length clipping can cut `{...}` templates in half, so templates are clipped safely and broken holes never render.
 - Next dev runs one server per directory; for A/B runs, restart with `LESSON_THINK=off`/`on`.
 
+## Overnight log (2026-10-29)
+
+- 01:24 round 1, deployed (#46 first pass):
+  - Bigger type and controls everywhere; bolder shapes and handles; lit stage with depth.
+  - Camera framing for drawings: fits the current state, freezes while dragging, eases on release.
+  - Tests 26/26 + 15/15; overnight spend $0.07.
+  - Remaining #46 work: 3D labels and diagram nodes; richer illustration fills; callouts crowding small shapes.
+
 ## Next (Frank's plan)
 
 0. TOP PRIORITY (Logan, 2026-10-29, verbatim): "Every lesson is still so one dimensional and ugly. the font and everything is still so hard unintuitive. make everything bigger and way more obvious as to how it can be more visually friendly". This means:
