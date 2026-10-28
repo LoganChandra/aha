@@ -101,11 +101,17 @@ export const Diagram = z.object({
   }), 0, 24),
 });
 
-// ---- 3D model: a machine or structure built from simple solids, with an exploded view.
+// ---- 3D model: a machine or structure built from solids and ready-made parts, with an exploded view.
+/** How many size numbers each shape needs (extra ones are optional, e.g. a gear's tooth count). */
+export const SIZE_ARITY = {
+  box: 3, cylinder: 2, sphere: 1, cone: 2, torus: 2, capsule: 2, tube: 3,
+  gear: 2, wheel: 2, spring: 2, coil: 2, arrow: 1, fan: 1, magnet: 2, cell: 2, lens: 2, chip: 2,
+} as const;
+export const SHAPES = Object.keys(SIZE_ARITY) as [keyof typeof SIZE_ARITY, ...(keyof typeof SIZE_ARITY)[]];
 export const Part = z.object({
   id: Id,
   label: Short(40).optional(),
-  shape: z.enum(['box', 'cylinder', 'sphere', 'cone', 'torus', 'capsule', 'tube']),
+  shape: z.enum(SHAPES),
   size: Many(Num, 1, 3),
   position: Vec3.optional(),
   rotation: Vec3.optional(),

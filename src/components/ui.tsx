@@ -21,6 +21,12 @@ export function Icon({ name, size = 20 }: { name: 'arrow-up' | 'back' | 'play' |
 
 export function PromptBar({ value, onChange, onSubmit, placeholder, busy, autoFocus }: { value: string; onChange: (v: string) => void; onSubmit: () => void; placeholder: string; busy?: boolean; autoFocus?: boolean }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  // On a slow phone connection people type before the page is interactive; keep what they typed.
+  useEffect(() => {
+    const typed = ref.current?.value;
+    if (typed && !value) onChange(typed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;

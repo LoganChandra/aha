@@ -241,7 +241,11 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
 
   const drawn = scene.items.map(render);
   const textIds = new Set(scene.items.filter((i) => i.type === 'text').map((i) => i.id));
-  const placed = placeLabels(labels, view.w, view.h);
+  // Axis titles are fixed; seed them as taken space so item labels move around them.
+  const reserved: Box[] = [];
+  if (showAxes && scene.xLabel) { const w = textWidth(scene.xLabel); reserved.push({ x0: PAD.l + view.iw - w, x1: PAD.l + view.iw, y0: Y(ay) - 20, y1: Y(ay) - 4 }); }
+  if (showAxes && scene.yLabel) { const w = textWidth(scene.yLabel); reserved.push({ x0: X(ax) + 8, x1: X(ax) + 8 + w, y0: PAD.t, y1: PAD.t + 16 }); }
+  const placed = placeLabels(labels, view.w, view.h, reserved);
 
   return (
     <div ref={box} className="absolute inset-0 select-none">
@@ -297,8 +301,10 @@ function textWidth(t: string): number {
 }
 
 /** Keep every label inside the frame and off the others: clamp to the edges, then nudge down (or up) past collisions. */
-function placeLabels(labels: Label[], w: number, h: number): Label[] {
-  const boxes: { x0: number; x1: number; y0: number; y1: number }[] = [];
+type Box = { x0: number; x1: number; y0: number; y1: number };
+
+function placeLabels(labels: Label[], w: number, h: number, reserved: Box[] = []): Label[] {
+  const boxes: Box[] = [...reserved];
   const out: Label[] = [];
   for (const l of labels) {
     const tw = textWidth(l.text);

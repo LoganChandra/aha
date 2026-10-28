@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { evaluate, type Env } from '@/lib/expr';
 import type { Scene } from '@/lib/recipe';
 import { TONES } from '@/lib/recipe';
+import { buildPart, halfExtent, type Material } from './parts';
 
 type M = Extract<Scene, { type: 'model3d' }>;
 type Part = M['parts'][number];
@@ -31,31 +32,23 @@ function useToneColors(): Record<string, string> {
   return c;
 }
 
-function geometryFor(p: Part, env: Env): THREE.BufferGeometry {
-  const s = p.size.map((v) => Math.max(0.001, Math.abs(evaluate(v, env, 0.5))));
-  switch (p.shape) {
-    case 'box': return new THREE.BoxGeometry(s[0], s[1] ?? s[0], s[2] ?? s[0]);
-    case 'cylinder': return new THREE.CylinderGeometry(s[0], s[0], s[1] ?? s[0] * 2, 48);
-    case 'sphere': return new THREE.SphereGeometry(s[0], 40, 24);
-    case 'cone': return new THREE.ConeGeometry(s[0], s[1] ?? s[0] * 2, 48);
-    case 'torus': return new THREE.TorusGeometry(s[0], s[1] ?? s[0] * 0.25, 20, 64);
-    case 'capsule': return new THREE.CapsuleGeometry(s[0], s[1] ?? s[0] * 2, 8, 24);
-    case 'tube': {
-      const outer = s[0], inner = Math.min(outer * 0.98, s[1] ?? outer * 0.7), h = s[2] ?? outer;
-      const prof = [new THREE.Vector2(inner, -h / 2), new THREE.Vector2(outer, -h / 2), new THREE.Vector2(outer, h / 2), new THREE.Vector2(inner, h / 2), new THREE.Vector2(inner, -h / 2)];
-      return new THREE.LatheGeometry(prof, 48);
-    }
-  }
-}
-
 const deg = (v: number) => (v * Math.PI) / 180;
+
+const MATERIALS: Record<Material, { color?: string; roughness: number; metalness: number }> = {
+  main: { roughness: 0.62, metalness: 0.08 },
+  dark: { color: '#2b2b30', roughness: 0.85, metalness: 0 },
+  metal: { color: '#b9bdc6', roughness: 0.32, metalness: 0.65 },
+  glass: { roughness: 0.08, metalness: 0 },
+  south: { color: '#2f6fdf', roughness: 0.6, metalness: 0.08 },
+  copper: { color: '#c7793a', roughness: 0.38, metalness: 0.55 },
+};
 
 function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel }: { p: Part; env: Env; t: number; explode: number; colors: Record<string, string>; dimmed: boolean; hot: boolean; showLabel: boolean }) {
   // Geometry only rebuilds when a size expression's value changes.
   const sizeKey = p.size.map((v) => evaluate(v, env, 0.5).toFixed(3)).join(',');
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const geo = useMemo(() => geometryFor(p, env), [p.shape, sizeKey]);
-  useEffect(() => () => geo.dispose(), [geo]);
+  const pieces = useMemo(() => buildPart(p.shape, p.size.map((v) => Math.max(0.001, Math.abs(evaluate(v, env, 0.5))))), [p.shape, sizeKey]);
+  useEffect(() => () => pieces.forEach((x) => x.geo.dispose()), [pieces]);
   const pos = (p.position ?? [0, 0, 0]).map((v) => evaluate(v, env, 0));
   const ex = (p.explode ?? [0, 0, 0]).map((v) => evaluate(v, env, 0) * explode);
   const rot = (p.rotation ?? [0, 0, 0]).map((v) => deg(evaluate(v, env, 0)));
@@ -69,10 +62,19 @@ function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel }: { p: P
   const opacity = dimmed ? Math.min(base, 0.14) : base;
   return (
     <group position={[pos[0] + ex[0], pos[1] + ex[1], pos[2] + ex[2]]}>
-      <mesh geometry={geo} rotation={new THREE.Euler(rot[0], rot[1], rot[2], 'XYZ')} castShadow>
-        <meshStandardMaterial color={color} roughness={0.62} metalness={0.08} transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} emissive={hot ? color : '#000'} emissiveIntensity={hot ? 0.18 : 0} />
-        <Edges threshold={24} color={hot ? colors.ink : colors.line} />
-      </mesh>
+      <group rotation={new THREE.Euler(rot[0], rot[1], rot[2], 'XYZ')}>
+        {pieces.map((piece, k) => {
+          const m = MATERIALS[piece.mat];
+          const c = piece.mat === 'main' ? color : piece.mat === 'glass' ? colors.cool : m.color!;
+          const o = piece.mat === 'glass' ? Math.min(opacity, 0.45) : opacity;
+          return (
+            <mesh key={k} geometry={piece.geo} castShadow>
+              <meshStandardMaterial color={c} roughness={m.roughness} metalness={m.metalness} transparent={o < 1} opacity={o} depthWrite={o >= 1} emissive={hot ? c : '#000'} emissiveIntensity={hot ? 0.18 : 0} />
+              {piece.edges && <Edges threshold={24} color={hot ? colors.ink : colors.line} />}
+            </mesh>
+          );
+        })}
+      </group>
       {/* Labels stay mounted and fade in and out: mounting and unmounting drei's Html portals mid-render breaks React 19. */}
       {p.label && (
         <Html center position={[0, 0, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
@@ -106,7 +108,7 @@ function Fit({ box, dir }: { box: THREE.Box3; dir: [number, number, number] }) {
       cam.lookAt(0, 0, 0);
       cam.updateMatrixWorld();
       cam.updateProjectionMatrix();
-      return corners.every((c) => { const p = c.clone().project(cam); return p.z < 1 && Math.abs(p.x) < 0.88 && Math.abs(p.y) < 0.88; });
+      return corners.every((c) => { const p = c.clone().project(cam); return p.z < 1 && Math.abs(p.x) < 0.94 && Math.abs(p.y) < 0.9; });
     };
     const r = box.getSize(new THREE.Vector3()).length();
     let lo = r * 0.2, hi = r * 8;
@@ -127,8 +129,7 @@ export default function Model3D({ scene, env, focus, t, playing }: { scene: M; e
   const { center, box, floor, radius } = useMemo(() => {
     const b = new THREE.Box3();
     for (const p of scene.parts) {
-      const sz = p.size.map((v) => Math.abs(evaluate(v, env, 0.5)));
-      const half = p.shape === 'box' ? Math.max(...sz) / 2 : p.shape === 'sphere' ? sz[0] : Math.max(sz[0], (sz[1] ?? sz[0]) / 2, (sz[2] ?? 0) / 2);
+      const half = halfExtent(p.shape, p.size.map((v) => Math.abs(evaluate(v, env, 0.5))));
       for (const k of [0, 1]) {
         const pos = (p.position ?? [0, 0, 0]).map((v, i) => evaluate(v, env, 0) + k * evaluate((p.explode ?? [0, 0, 0])[i], env, 0));
         b.expandByPoint(new THREE.Vector3(pos[0] - half, pos[1] - half, pos[2] - half));

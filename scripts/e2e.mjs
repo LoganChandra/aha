@@ -10,7 +10,7 @@ page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
 page.on('console', (m) => m.type() === 'error' && !/Download the React DevTools|unmount a root/.test(m.text()) && errs.push('console: ' + m.text().slice(0, 200)));
 const t0 = Date.now();
 const shot = async (n) => { await page.screenshot({ path: `scripts/shots/e2e-${tag}-${n}.png` }); };
-await page.goto(base);
+await page.goto(base, { waitUntil: 'networkidle' });
 await shot('0-home');
 await page.getByRole('radio', { name: new RegExp(level) }).click();
 await page.locator('#prompt').fill(prompt);
