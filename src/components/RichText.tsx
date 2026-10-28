@@ -24,7 +24,8 @@ function RichTextInner({ text, env, className }: { text: string; env?: Env; clas
           const src = display ? p.slice(2, -2) : p.slice(1, -1);
           return <span key={i} dangerouslySetInnerHTML={{ __html: renderMath(src) }} />;
         }
-        return <span key={i}>{p.replace(/\*\*(.+?)\*\*/g, '$1')}</span>;
+        // Markdown emphasis markers from a model show as plain words (house rule: no italics, and no stray asterisks).
+        return <span key={i}>{p.replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|[\s(])[*_]([^*_\n]+?)[*_](?=[\s.,;:!?)]|$)/g, '$1$2')}</span>;
       })}
     </span>
   );

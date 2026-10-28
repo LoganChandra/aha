@@ -167,6 +167,7 @@ await check('asking mid-lesson answers inside the scene and returns', {}, async 
   await page.keyboard.press('Enter');
   await page.getByText('Back to the lesson').waitFor({ timeout: 45000 });
   await page.getByText('Back to the lesson').click();
+  await page.waitForTimeout(700);
   return (await page.getByText('Back to the lesson').count()) === 0;
 });
 

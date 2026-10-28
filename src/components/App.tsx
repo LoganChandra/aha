@@ -469,7 +469,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   key={answer ? `a-${answer.q}` : `${key}-${done ? 'd' : 'o'}`}
                   initial={reduced ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.12 } }}
                   transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
-                  className={`pointer-events-auto max-w-[520px] rounded-2xl border bg-surface/95 px-4 py-3 shadow-[var(--shadow)] backdrop-blur ${task && done && !answer ? 'border-[var(--t-green)]/50' : 'border-line'}`}
+                  className={`no-scrollbar pointer-events-auto max-h-[34dvh] max-w-[520px] overflow-y-auto rounded-2xl border bg-surface/95 px-4 py-3 shadow-[var(--shadow)] backdrop-blur ${task && done && !answer ? 'border-[var(--t-green)]/50' : 'border-line'}`}
                   aria-live="polite"
                 >
                   {answer ? (
