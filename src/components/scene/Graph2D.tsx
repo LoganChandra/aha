@@ -21,7 +21,6 @@ type Props = {
   onTap?: (id: string) => void;
 };
 
-const PAD = { l: 34, r: 14, t: 14, b: 26 };
 
 function niceStep(range: number, px: number, target = 64): number {
   if (!Number.isFinite(range) || range <= 0) return 1;
@@ -53,6 +52,16 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   const svg = useRef<SVGSVGElement>(null);
   const dragging = useRef<{ x?: string; y?: string; item: Extract<G2Item, { type: 'point' }> } | null>(null);
 
+  const showAxes = scene.axes !== false;
+  // The left margin fits the widest y label ("10000" needs more room than "1"), so tick numbers are never cut off.
+  const PAD = useMemo(() => {
+    if (!showAxes) return { l: 12, r: 12, t: 12, b: 12 };
+    const [a, b] = scene.y;
+    const step = niceStep(b - a, Math.max(80, size.h - 40), 52);
+    const longest = Math.max(...[a, b, (a + b) / 2].map((v) => tickLabel(Math.round(v / step) * step, step, false).length));
+    return { l: Math.max(30, 12 + longest * 7), r: 14, t: 14, b: 26 };
+  }, [showAxes, scene.y, size.h]);
+
   const view = useMemo(() => {
     const w = Math.max(10, size.w), h = Math.max(10, size.h);
     const iw = w - PAD.l - PAD.r, ih = h - PAD.t - PAD.b;
@@ -68,7 +77,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
     const invX = (px: number) => x0 + ((px - PAD.l) / iw) * (x1 - x0);
     const invY = (py: number) => y0 + (1 - (py - PAD.t) / ih) * (y1 - y0);
     return { w, h, iw, ih, x0, x1, y0, y1, X, Y, invX, invY };
-  }, [size, scene.x, scene.y, scene.equal]);
+  }, [size, scene.x, scene.y, scene.equal, PAD]);
 
   const { X, Y, x0, x1, y0, y1 } = view;
   const ev = (v: Num | undefined, fb = 0, extra?: Env) => evaluate(v, extra ? { ...env, ...extra } : env, fb);
@@ -84,7 +93,6 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   const xTicks: number[] = [], yTicks: number[] = [];
   for (let i = 0, v0 = Math.ceil(x0 / xs) * xs; i < 60; i++) { const v = v0 + i * xs; if (v > x1 + 1e-9) break; xTicks.push(v); }
   for (let i = 0, v0 = Math.ceil(y0 / ys) * ys; i < 60; i++) { const v = v0 + i * ys; if (v > y1 + 1e-9) break; yTicks.push(v); }
-  const showAxes = scene.axes !== false;
   const ax = Math.min(Math.max(0, x0), x1), ay = Math.min(Math.max(0, y0), y1);
 
   function curve(fx: (s: number) => [number, number], a: number, b: number, n: number): string {

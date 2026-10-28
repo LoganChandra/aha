@@ -92,7 +92,8 @@ DESIGN (the learner should get it from the picture before reading)
 - One clear hero: the thing the aha is about is the biggest, boldest element. Supporting items use neutral tone.
 - At most 3 text items, each under 28 characters, placed inside the visible range away from the curves. Prefer item labels to text items.
 - Leave breathing room: frame the action in the middle 80% of the ranges.
-- Every knob must visibly move something the beats talk about.
+- Every knob must visibly move something the steps talk about. Anything that should respond to a value (a scale tipping, a level rising, a bar growing) must be drawn with expressions of that param, never fixed numbers: a balance with unequal weights must tilt.
+- Draw the real thing the words name: if a step says "tap the leaf", there must be a leaf-shaped item to tap.
 
 RULES
 - The scene must be correct: real formulas, real proportions, real facts from the plan. Do not invent specs.

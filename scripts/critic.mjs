@@ -19,7 +19,7 @@ for (const f of files) {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, temperature: 0, max_tokens: 6000, reasoning: { effort: 'low' }, usage: { include: true }, messages: [{ role: 'user', content: [{ type: 'text', text: RUBRIC }, { type: 'image_url', image_url: { url: `data:image/png;base64,${b64}` } }] }] }),
+    body: JSON.stringify({ model: MODEL, temperature: 0, max_tokens: 12000, reasoning: { effort: 'high' }, usage: { include: true }, messages: [{ role: 'user', content: [{ type: 'text', text: RUBRIC }, { type: 'image_url', image_url: { url: `data:image/png;base64,${b64}` } }] }] }),
   });
   const j = await res.json();
   const text = j.choices?.[0]?.message?.content ?? JSON.stringify(j).slice(0, 300);

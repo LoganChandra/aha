@@ -163,8 +163,8 @@ export const Task = z.discriminatedUnion('kind', [
   // Pick an answer before seeing it; then the scene plays the reveal.
   z.object({
     kind: z.literal('predict'),
-    question: Short(140),
-    choices: Many(Short(60), 2, 4),
+    question: Short(220),
+    choices: Many(Short(80), 2, 4),
     answer: z.number().int().min(0),
     reveal: z.object({ set: z.record(z.string(), z.number()).optional(), play: z.boolean().optional() }).optional(),
   }),

@@ -11,6 +11,7 @@ import { tone, useSize } from './runtime';
 type D = Extract<Scene, { type: 'diagram' }>;
 
 const NODE_W = 176;
+const NODE_W_NARROW = 150;
 
 function wrap(text: string, max: number): string[] {
   const words = text.split(/\s+/);
@@ -25,7 +26,7 @@ function wrap(text: string, max: number): string[] {
 
 type Layout = ReturnType<typeof layoutFor>;
 
-function layoutFor(scene: D, dir: 'LR' | 'TB') {
+function layoutFor(scene: D, dir: 'LR' | 'TB', nodeW = NODE_W) {
   const g = new dagre.graphlib.Graph({ multigraph: true });
   g.setGraph({ rankdir: dir, nodesep: dir === 'TB' ? 26 : 34, ranksep: dir === 'TB' ? 46 : 70, marginx: 12, marginy: 12 });
   g.setDefaultEdgeLabel(() => ({}));
@@ -33,11 +34,11 @@ function layoutFor(scene: D, dir: 'LR' | 'TB') {
   const key = new Map(scene.nodes.map((n, i) => [n.id, `n${i}`]));
   const meta = new Map<string, { title: string[]; lines: string[]; h: number }>();
   for (const n of scene.nodes) {
-    const title = wrap(n.label, 19).slice(0, 2);
-    const lines = n.detail ? wrap(n.detail, 23) : [];
+    const title = wrap(n.label, nodeW < NODE_W ? 16 : 19).slice(0, 2);
+    const lines = n.detail ? wrap(n.detail, nodeW < NODE_W ? 19 : 23) : [];
     const h = 26 + title.length * 18 + lines.length * 16 + (n.value !== undefined ? 20 : 0);
     meta.set(n.id, { title, lines, h });
-    g.setNode(key.get(n.id)!, { width: NODE_W, height: h });
+    g.setNode(key.get(n.id)!, { width: nodeW, height: h });
   }
   const edgesIn = scene.edges.filter((e) => key.has(e.from) && key.has(e.to));
   // Labelled links get room in the layout (dagre places the label), so text never sits on a card.
@@ -59,7 +60,9 @@ function layoutFor(scene: D, dir: 'LR' | 'TB') {
 
 export default function Diagram({ scene, env, focus, t, playing, callouts = {}, onTap }: { scene: D; env: Env; focus: string[]; t: number; playing: boolean; callouts?: Record<string, string>; onTap?: (id: string) => void }) {
   const [box, size] = useSize<HTMLDivElement>();
-  const both = useMemo(() => ({ LR: layoutFor(scene, 'LR'), TB: layoutFor(scene, 'TB') }), [scene]);
+  // Phones get narrower cards and always read top to bottom, scrolling down rather than sideways.
+  const narrow = size.w > 0 && size.w < 520;
+  const both = useMemo(() => ({ LR: layoutFor(scene, 'LR'), TB: layoutFor(scene, 'TB', narrow ? NODE_W_NARROW : NODE_W) }), [scene, narrow]);
   // Text never shrinks below ~72%: past that the diagram scrolls. Pick the direction that fits without scrolling,
   // else one that only scrolls vertically (natural on a phone), else the one with the least to scroll.
   const MIN = 0.72;
@@ -72,12 +75,12 @@ export default function Diagram({ scene, env, focus, t, playing, callouts = {}, 
     if (l.gw * MIN <= size.w) return 2 - (l.gh * MIN) / 1e5;
     return 1 - (l.gw * l.gh * MIN * MIN) / 1e8;
   };
-  const dir: 'LR' | 'TB' = score(both[other]) > score(both[pref]) + 0.05 ? other : pref;
+  const dir: 'LR' | 'TB' = narrow ? 'TB' : score(both[other]) > score(both[pref]) + 0.05 ? other : pref;
   const layout = both[dir];
-  const scale = Math.max(fit(layout), MIN);
+  const scale = narrow ? Math.max(0.6, Math.min(1, size.w / layout.gw)) : Math.max(fit(layout), MIN);
   const contentW = Math.max(size.w, layout.gw * scale), contentH = Math.max(size.h, layout.gh * scale);
   const ox = (contentW - layout.gw * scale) / 2, oy = (contentH - layout.gh * scale) / 2;
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.3 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
 
   return (
     <div ref={box} className="no-scrollbar absolute inset-0 select-none overflow-auto overscroll-contain">

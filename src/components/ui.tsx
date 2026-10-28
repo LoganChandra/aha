@@ -75,15 +75,31 @@ export function Knob({ p, value, onChange }: { p: Param; value: number; onChange
     );
   }
   const step = p.step ?? (p.max - p.min) / 200;
+  const value_ = <span className="min-w-[44px] shrink-0 text-right text-[13px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>;
+  const input = (
+    <input
+      id={`k-${p.id}`} type="range" className="knob" min={p.min} max={p.max} step={step} value={value}
+      style={{ ['--fill' as string]: `${fill}%` }}
+      onChange={(e) => onChange(Number(e.target.value))}
+    />
+  );
+  // A long name gets its own line rather than being cut off.
+  if (p.label.length > 16) {
+    return (
+      <div className="pt-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <label htmlFor={`k-${p.id}`} className="text-[13px] font-medium leading-tight text-ink-2">{p.label}</label>
+          {value_}
+        </div>
+        {input}
+      </div>
+    );
+  }
   return (
     <div className="grid min-h-[38px] grid-cols-[minmax(0,34%)_1fr_auto] items-center gap-3">
-      <label htmlFor={`k-${p.id}`} className="truncate text-[13px] font-medium text-ink-2" title={p.label}>{p.label}</label>
-      <input
-        id={`k-${p.id}`} type="range" className="knob" min={p.min} max={p.max} step={step} value={value}
-        style={{ ['--fill' as string]: `${fill}%` }}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
-      <span className="min-w-[44px] text-right text-[13px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>
+      <label htmlFor={`k-${p.id}`} className="text-[13px] font-medium leading-tight text-ink-2">{p.label}</label>
+      {input}
+      {value_}
     </div>
   );
 }

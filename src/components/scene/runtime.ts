@@ -63,11 +63,11 @@ export function useGlide(target: Env, instant: boolean): Env {
   return shown;
 }
 
-export function useSize<T extends HTMLElement>(): [React.RefObject<T | null>, { w: number; h: number }] {
-  const ref = useRef<T>(null);
+/** Size of an element that may mount later (a callback ref, so the observer attaches whenever the node appears). */
+export function useSize<T extends HTMLElement>(): [(el: T | null) => void, { w: number; h: number }] {
+  const [el, setEl] = useState<T | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   useEffect(() => {
-    const el = ref.current;
     if (!el) return;
     const ro = new ResizeObserver(([e]) => {
       const r = e.contentRect;
@@ -75,8 +75,8 @@ export function useSize<T extends HTMLElement>(): [React.RefObject<T | null>, { 
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
-  return [ref, size];
+  }, [el]);
+  return [setEl, size];
 }
 
 /** Does any expression in this scene use t? Then the scene has motion and gets a play button. */

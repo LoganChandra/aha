@@ -12,17 +12,21 @@ import { checkLesson, repair } from './validate';
 //   It cannot run with thinking off, so it gets the lightest thinking and a bigger token budget.
 // Last resort: Gemini 3.1 Flash Lite (18/18 plans, 24/24 lessons, 3.6s), only when both others fail.
 // Each tier is a different company, so one provider's outage never stops a lesson.
+// Thinking: Logan, 2026-10-28: "have thinking on when necessary all running on medium". Planner and lesson writer
+// think at medium (built once, then cached, so the extra seconds are paid once per topic). The tutor answers live
+// mid-lesson, so it stays fast with thinking off. Token budgets include the thinking.
 const PRIMARY = 'deepseek/deepseek-v4.1-flash';
-const BACKUP: Route = { model: 'z-ai/glm-5.3-flash', reasoning: { effort: 'low' } };
+const BACKUP = 'z-ai/glm-5.3-flash';
 const LAST = 'google/gemini-3.1-flash-lite';
-const tiers = (maxTokens: number): Route[] => [
-  { model: PRIMARY, reasoning: { enabled: false }, maxTokens },
-  { ...BACKUP, maxTokens: maxTokens + 4000 },
-  { model: LAST, reasoning: { enabled: false }, maxTokens },
+const MEDIUM = { effort: 'medium' } as const;
+const tiers = (maxTokens: number, think: boolean): Route[] => [
+  { model: PRIMARY, reasoning: think ? MEDIUM : { enabled: false }, maxTokens },
+  { model: BACKUP, reasoning: think ? MEDIUM : { effort: 'low' }, maxTokens: maxTokens + 4000 }, // GLM cannot turn thinking off
+  { model: LAST, reasoning: think ? MEDIUM : { enabled: false }, maxTokens },
 ];
-export const PLAN_ROUTES: Route[] = tiers(3000);
-export const LESSON_ROUTES: Route[] = tiers(7000);
-export const ASK_ROUTES: Route[] = tiers(800);
+export const PLAN_ROUTES: Route[] = tiers(10_000, true);
+export const LESSON_ROUTES: Route[] = tiers(20_000, true);
+export const ASK_ROUTES: Route[] = tiers(800, false);
 
 export type Meter = { costUsd: number; ms: number; calls: { model: string; ok: boolean; costUsd: number; ms: number; note?: string }[] };
 const meter = (): Meter => ({ costUsd: 0, ms: 0, calls: [] });
@@ -60,9 +64,9 @@ async function hedge<T>(routes: Route[], delayMs: number, run: (route: Route) =>
 export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTES, web = true): Promise<{ plan: Plan; sources: Source[]; meter: Meter }> {
   const m = meter();
   const t0 = Date.now();
-  const res = await hedge(routes, 9000, async (route) => {
+  const res = await hedge(routes, 20_000, async (route) => {
     try {
-      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 25_000, temperature: 0.3 });
+      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 40_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       const parsed = Plan.safeParse(r.data);
       if (!parsed.success) throw new AiError(`plan shape: ${parsed.error.issues[0]?.message}`);
@@ -92,7 +96,7 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number)
     if (left < 8000) break;
     let r;
     try {
-      r = await chatJson(route, messages, { timeoutMs: Math.min(45_000, left), temperature: 0.4 });
+      r = await chatJson(route, messages, { timeoutMs: Math.min(80_000, left), temperature: 0.4 });
     } catch (e) {
       m.calls.push({ model: route.model, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
       break; // a dead or garbled model gets no repair turn
@@ -108,14 +112,14 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number)
   throw new AiError(`${route.model} produced no lesson`);
 }
 
-export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = LESSON_ROUTES, deadline = Date.now() + 105_000): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[] }> {
+export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = LESSON_ROUTES, deadline = Date.now() + 170_000): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[] }> {
   const m = meter();
   const t0 = Date.now();
   const user = lessonUser(plan, index, level, sources);
   // Imperfect drafts from every route are kept; if no route writes a clean lesson, the least broken one is repaired.
   const drafts: Written[] = [];
   try {
-    const { lesson } = await hedge(routes, 12_000, (route) => writeWith(route, user, m, deadline).catch((e) => {
+    const { lesson } = await hedge(routes, 35_000, (route) => writeWith(route, user, m, deadline).catch((e) => {
       if ((e as { best?: Written }).best) drafts.push((e as { best: Written }).best);
       throw e;
     }));

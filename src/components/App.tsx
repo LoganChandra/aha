@@ -207,11 +207,11 @@ function Planning({ prompt }: { prompt: string }) {
   }, []);
   const stages = [
     { at: 0, text: 'Reading up on it' },
-    { at: 2.5, text: 'Choosing what to learn first' },
-    { at: 6, text: 'Designing hands-on lessons' },
-    { at: 11, text: 'Almost there' },
+    { at: 4, text: 'Choosing what to learn first' },
+    { at: 10, text: 'Designing hands-on lessons' },
+    { at: 20, text: 'Almost there' },
   ];
-  const progress = 1 - Math.exp(-elapsed / 7); // approaches 1, never reaches it
+  const progress = 1 - Math.exp(-elapsed / 12); // approaches 1, never reaches it
   return (
     <div aria-live="polite">
       <p className="text-[13px] font-medium text-ink-3">Building your course</p>
@@ -460,6 +460,14 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
               <SceneBoundary key={`${course.planId}-${li}`}>
                 <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} callouts={callouts} onTap={task?.kind === 'tap' && !sp.done ? onTap : undefined} />
               </SceneBoundary>
+              {moving && (
+                <button
+                  onClick={() => setPlaying((p) => !p)} aria-label={playing ? 'Pause' : 'Play'}
+                  className="absolute right-3 top-0 flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface/95 text-ink shadow-sm lg:right-4"
+                >
+                  <Icon name={playing ? 'pause' : 'play'} size={15} />
+                </button>
+              )}
             </div>
 
             {/* what to look at or do, inside the picture */}
@@ -557,14 +565,6 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
               )}
             </div>
 
-            {moving && (
-              <button
-                onClick={() => setPlaying((p) => !p)} aria-label={playing ? 'Pause' : 'Play'}
-                className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface/95 text-ink shadow-sm lg:bottom-4 lg:right-4"
-              >
-                <Icon name={playing ? 'pause' : 'play'} size={16} />
-              </button>
-            )}
           </>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center p-6">
@@ -588,14 +588,14 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
               <button onClick={() => goStep(si - 1)} disabled={si === 0} aria-label="Previous step" className="flex h-11 w-11 items-center justify-center rounded-full text-ink-2 disabled:opacity-25"><Icon name="back" size={20} /></button>
               <div className="flex-1" />
               {!done && task && (
-                <button onClick={showMe} className="h-11 rounded-full px-3 text-[14px] font-medium text-ink-3 hover:text-ink-2">Show me</button>
+                <button onClick={showMe} className="h-11 rounded-full px-3 text-[14px] font-medium text-ink-2 hover:text-ink">Show me</button>
               )}
               <motion.button
                 key={`${key}-${done}`}
                 initial={reduced || !done || !task ? false : { scale: 1 }} animate={reduced || !done || !task ? undefined : { scale: [1, 1.05, 1] }} transition={{ duration: 0.28 }}
                 onClick={() => (!lastStep ? goStep(si + 1) : li < total - 1 ? goLesson(li + 1) : setSheet(true))}
                 disabled={!done}
-                className="h-11 min-w-[132px] rounded-full bg-ink px-6 text-[15px] font-semibold text-paper transition-opacity disabled:opacity-25"
+                className="h-11 min-w-[132px] rounded-full bg-ink px-6 text-[15px] font-semibold text-paper transition-colors disabled:bg-sunk disabled:text-ink-3"
               >
                 {!lastStep ? 'Continue' : li < total - 1 ? 'Next lesson' : 'Finish'}
               </motion.button>

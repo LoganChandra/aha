@@ -3,7 +3,7 @@ import { preCheck } from '@/lib/intent';
 import { LEVELS, type Level, type Plan, type Source } from '@/lib/recipe';
 import { RESTING, addSpend, askToken, cacheGet, cacheSet, json, limited, normalisePrompt, overBudget, readJson, signPlan } from '@/lib/server';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 type Cached = { plan: Plan; sources: Source[] };
 

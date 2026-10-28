@@ -2,7 +2,7 @@ import { makeLesson } from '@/lib/engine';
 import { Plan, LEVELS, type Lesson, type Level, type Source } from '@/lib/recipe';
 import { RESTING, addSpend, cacheGet, cacheSet, json, limited, overBudget, readJson, verifyPlan } from '@/lib/server';
 
-export const maxDuration = 120;
+export const maxDuration = 200;
 
 export async function POST(req: Request) {
   const body = await readJson(req);
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   if (limited(req, 'lesson')) return json({ error: 'Too many lessons in the last hour. Try again a little later.' }, 429);
   if (await overBudget()) return json({ error: RESTING }, 503);
   try {
-    const { lesson, meter, repaired, errors } = await makeLesson(plan, index, level, sources, undefined, Date.now() + 105_000);
+    const { lesson, meter, repaired, errors } = await makeLesson(plan, index, level, sources, undefined, Date.now() + 170_000);
     await cacheSet(key, lesson);
     await addSpend(meter.costUsd);
     console.log(JSON.stringify({ ev: 'lesson', index, scene: lesson.scene.type, repaired, errors: errors.slice(0, 3), cost: meter.costUsd, ms: meter.ms, calls: meter.calls }));
