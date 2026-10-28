@@ -2,6 +2,7 @@
 // 2D graph renderer: curves, points you can drag, shapes, shaded areas, angles and live labels, in SVG.
 import { useMemo, useRef } from 'react';
 import { evaluate, fillTemplate, type Env } from '@/lib/expr';
+import { ICONS } from '@/lib/icons';
 import type { G2Item, Scene } from '@/lib/recipe';
 import { tone, useSize } from './runtime';
 
@@ -15,7 +16,7 @@ type Props = {
   scene: Omit<G2, 'items'> & { items: Item[] };
   env: Env;
   focus: string[];
-  params: { id: string; min: number; max: number }[];
+  params: { id: string; min: number; max: number; value?: number }[];
   onDrag: (values: Record<string, number>) => void;
   callouts?: Record<string, string>;
   onTap?: (id: string) => void;
@@ -50,7 +51,7 @@ function reduce(a: number, b: number): [number, number] {
 export default function Graph2D({ scene, env, focus, params, onDrag, callouts = {}, onTap }: Props) {
   const [box, size] = useSize<HTMLDivElement>();
   const svg = useRef<SVGSVGElement>(null);
-  const dragging = useRef<{ x?: string; y?: string; item: Extract<G2Item, { type: 'point' }> } | null>(null);
+  const dragging = useRef<{ x?: string; y?: string; at: [Num, Num] } | null>(null);
 
   const showAxes = scene.axes !== false;
   // The left margin fits the widest y label ("10000" needs more room than "1"), so tick numbers are never cut off.
@@ -63,10 +64,14 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
     return { l: Math.max(30, 12 + longest * 7), r: 14, t: scene.yLabel ? 26 : 14, b: scene.xLabel ? 42 : 26 };
   }, [showAxes, scene.y, size.h, scene.xLabel, scene.yLabel]);
 
+  // Illustrations (no axes) are framed around what is actually drawn, wherever the knobs go, so a model's loose
+  // range never leaves the subject small and off-centre. Plots keep their ranges: the numbers mean something.
+  const framed = useMemo(() => (showAxes ? null : contentBounds(scene.items, params, scene.x, scene.y)), [showAxes, scene.items, params, scene.x, scene.y]);
+
   const view = useMemo(() => {
     const w = Math.max(10, size.w), h = Math.max(10, size.h);
     const iw = w - PAD.l - PAD.r, ih = h - PAD.t - PAD.b;
-    let [x0, x1] = scene.x, [y0, y1] = scene.y;
+    let [x0, x1] = framed ? [framed[0], framed[1]] : scene.x, [y0, y1] = framed ? [framed[2], framed[3]] : scene.y;
     if (scene.equal) {
       // Same scale on both axes, centred: widen whichever range has room to spare.
       const sx = iw / (x1 - x0), sy = ih / (y1 - y0);
@@ -78,7 +83,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
     const invX = (px: number) => x0 + ((px - PAD.l) / iw) * (x1 - x0);
     const invY = (py: number) => y0 + (1 - (py - PAD.t) / ih) * (y1 - y0);
     return { w, h, iw, ih, x0, x1, y0, y1, X, Y, invX, invY };
-  }, [size, scene.x, scene.y, scene.equal, PAD]);
+  }, [size, scene.x, scene.y, scene.equal, PAD, framed]);
 
   const { X, Y, x0, x1, y0, y1 } = view;
   const ev = (v: Num | undefined, fb = 0, extra?: Env) => evaluate(v, extra ? { ...env, ...extra } : env, fb);
@@ -121,6 +126,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   const anchors: Record<string, [number, number]> = {};
 
   function render(it: Item) {
+    if ('show' in it && it.show !== undefined && !(ev(it.show, 1) > 0)) return null;
     const color = tone(it.tone);
     const width = hot(it.id) ? 3.2 : 2.2;
     const op = dim(it.id);
@@ -217,7 +223,36 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
               <circle
                 cx={px} cy={py} r={24} fill="transparent" style={{ cursor: 'grab', touchAction: 'none' }}
                 role="slider" aria-label={`Drag ${it.label ?? 'point'}`} tabIndex={0}
-                onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = { x: it.dragX, y: it.dragY, item: it }; }}
+                onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = { x: it.dragX, y: it.dragY, at: [it.x, it.y] }; }}
+              />
+            )}
+          </g>
+        );
+      }
+      case 'icon': {
+        const node = ICONS[it.name];
+        if (!node) return null;
+        const cx = X(ev(it.at[0])), cy = Y(ev(it.at[1]));
+        const unit = it.size !== undefined ? Math.abs(X(ev(it.size, 1)) - X(0)) : Math.min(view.iw, view.ih) * 0.14;
+        const px = Math.max(22, Math.min(150, unit));
+        const draggable = !!(it.dragX || it.dragY);
+        anchors[it.id] = [cx, cy - px * 0.62];
+        if (it.label) labels.push({ x: cx, y: cy + px * 0.62 + 14, text: fillTemplate(it.label, env), color: 'var(--ink-2)', id: it.id, anchor: 'middle' });
+        const k = (px * 0.62) / 24;
+        return (
+          <g key={it.id} opacity={op}>
+            <circle cx={cx} cy={cy} r={px * 0.56} fill={color} fillOpacity={hot(it.id) ? 0.2 : 0.11} stroke={hot(it.id) ? color : 'none'} strokeWidth={1.5} />
+            <g transform={`translate(${cx - 12 * k},${cy - 12 * k}) scale(${k})`} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              {node.map(([tag, attrs], i) => {
+                const El = tag as 'path';
+                return <El key={i} {...(attrs as Record<string, string>)} vectorEffect="non-scaling-stroke" style={{ strokeWidth: Math.max(1.6, Math.min(2.6, px / 26)) }} />;
+              })}
+            </g>
+            {draggable && (
+              <circle
+                cx={cx} cy={cy} r={Math.max(24, px * 0.6)} fill="transparent" style={{ cursor: 'grab', touchAction: 'none' }}
+                role="slider" aria-label={`Drag ${it.label ?? it.name}`} tabIndex={0}
+                onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = { x: it.dragX, y: it.dragY, at: it.at }; }}
               />
             )}
           </g>
@@ -246,7 +281,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
       if (!p) continue;
       const cost = (v: number) => {
         local[id] = v;
-        const px = evaluate(d.item.x, local, NaN), py = evaluate(d.item.y, local, NaN);
+        const px = evaluate(d.at[0], local, NaN), py = evaluate(d.at[1], local, NaN);
         return (px - wx) ** 2 / (x1 - x0) ** 2 + (py - wy) ** 2 / (y1 - y0) ** 2;
       };
       let best = local[id], bestC = Infinity;
@@ -318,7 +353,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
               </text>
             ))}
           </g>
-          {pins.length > 0 && <Pins pins={pins} w={view.w} h={view.h} />}
+          {pins.length > 0 && <Pins pins={pins} w={view.w} h={view.h} avoid={placed.map((l) => ({ x0: l.x, x1: l.x + textWidth(l.text), y0: l.y - 13, y1: l.y + 4 }))} />}
         </svg>
       )}
     </div>
@@ -326,14 +361,19 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
 }
 
 /** Callouts: short labels in a pill, pinned to their part with a leader line, kept apart and inside the frame. */
-export function Pins({ pins, w, h }: { pins: { id: string; text: string; at: [number, number] }[]; w: number; h: number }) {
-  const placed: Box[] = [];
+type Box = { x0: number; x1: number; y0: number; y1: number };
+
+export function Pins({ pins, w, h, avoid = [] }: { pins: { id: string; text: string; at: [number, number] }[]; w: number; h: number; avoid?: Box[] }) {
+  const placed: Box[] = [...avoid];
   return (
     <g fontFamily="var(--font-sans)" style={{ pointerEvents: 'none' }}>
       {pins.map((p) => {
         const tw = textWidth(p.text) * 0.98 + 18, th = 26;
         // Try above, below, right, left of the anchor; take the first spot that is inside the frame and free.
-        const tries: [number, number][] = [[p.at[0] - tw / 2, p.at[1] - 46], [p.at[0] - tw / 2, p.at[1] + 22], [p.at[0] + 18, p.at[1] - th / 2], [p.at[0] - tw - 18, p.at[1] - th / 2]];
+        const tries: [number, number][] = [
+          [p.at[0] - tw / 2, p.at[1] - 46], [p.at[0] - tw / 2, p.at[1] + 22], [p.at[0] + 18, p.at[1] - th / 2], [p.at[0] - tw - 18, p.at[1] - th / 2],
+          [p.at[0] + 14, p.at[1] - 48], [p.at[0] - tw - 14, p.at[1] - 48], [p.at[0] + 14, p.at[1] + 24], [p.at[0] - tw - 14, p.at[1] + 24],
+        ];
         let spot: [number, number] = tries[0];
         for (const [x, y] of tries) {
           const cx = Math.max(6, Math.min(w - tw - 6, x)), cy = Math.max(6, Math.min(h - th - 6, y));
@@ -355,6 +395,45 @@ export function Pins({ pins, w, h }: { pins: { id: string; text: string; at: [nu
   );
 }
 
+/** Bounding box of everything drawn, sampled at each knob's default, min and max (t = 0), with a margin. */
+function contentBounds(items: Item[], params: { id: string; min: number; max: number; value?: number }[], xr: [number, number], yr: [number, number]): [number, number, number, number] | null {
+  const base: Env = { t: 0 };
+  for (const p of params) base[p.id] = p.value ?? (p.min + p.max) / 2;
+  const envs: Env[] = [base, ...params.flatMap((p) => [{ ...base, [p.id]: p.min }, { ...base, [p.id]: p.max }])];
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  // Only what sits inside (or near) the scene's own range counts: things parked far away are meant to be hidden.
+  const sx = (xr[1] - xr[0]) * 0.15, sy = (yr[1] - yr[0]) * 0.15;
+  const add = (x: number, y: number, r = 0) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (x < xr[0] - sx || x > xr[1] + sx || y < yr[0] - sy || y > yr[1] + sy) return;
+    x0 = Math.min(x0, x - r); x1 = Math.max(x1, x + r); y0 = Math.min(y0, y - r); y1 = Math.max(y1, y + r);
+  };
+  for (const e of envs) {
+    const v = (n: Num | undefined, fb = 0, extra?: Env) => evaluate(n, extra ? { ...e, ...extra } : e, fb);
+    for (const it of items) {
+      if ('show' in it && it.show !== undefined && !(v(it.show, 1) > 0)) continue;
+      switch (it.type) {
+        case 'point': add(v(it.x, NaN), v(it.y, NaN)); break;
+        case 'text': add(v(it.at[0], NaN), v(it.at[1], NaN)); break;
+        case 'icon': add(v(it.at[0], NaN), v(it.at[1], NaN), it.size !== undefined ? v(it.size, 0.5) * 0.6 : 0); break;
+        case 'segment': add(v(it.from[0], NaN), v(it.from[1], NaN)); add(v(it.to[0], NaN), v(it.to[1], NaN)); break;
+        case 'polygon': case 'polyline': it.points.forEach(([a, b]) => add(v(a, NaN), v(b, NaN))); break;
+        case 'circle': add(v(it.center[0], NaN), v(it.center[1], NaN), Math.abs(v(it.r, 0))); break;
+        case 'angle': add(v(it.at[0], NaN), v(it.at[1], NaN), it.r !== undefined ? Math.abs(v(it.r, 0)) : 0); break;
+        case 'parametric': { const a = v(it.s[0], 0), b = v(it.s[1], 1); for (let i = 0; i <= 24; i++) { const sv = a + ((b - a) * i) / 24; add(v(it.x, NaN, { s: sv }), v(it.y, NaN, { s: sv })); } break; }
+        case 'function': case 'area': for (let i = 0; i <= 24; i++) { const xv = xr[0] + ((xr[1] - xr[0]) * i) / 24; const yv = v(it.expr, NaN, { x: xv }); if (yv >= yr[0] && yv <= yr[1]) add(xv, yv); } break;
+      }
+    }
+  }
+  if (!(x1 > x0) && !(y1 > y0)) return null;
+  // Never zoom in past a fifth of the model's own range; keep a margin for labels.
+  const minW = (xr[1] - xr[0]) * 0.2, minH = (yr[1] - yr[0]) * 0.2;
+  if (x1 - x0 < minW) { const c = (x0 + x1) / 2; x0 = c - minW / 2; x1 = c + minW / 2; }
+  if (y1 - y0 < minH) { const c = (y0 + y1) / 2; y0 = c - minH / 2; y1 = c + minH / 2; }
+  const mx = (x1 - x0) * 0.16, my = (y1 - y0) * 0.2;
+  return [x0 - mx, x1 + mx, y0 - my, y1 + my];
+}
+
 type Label = { x: number; y: number; text: string; color: string; id: string; anchor?: 'start' | 'end' | 'middle' };
 
 /** Rough text width at 13px: wide for CJK, narrow for Latin. Good enough to keep labels apart. */
@@ -365,7 +444,7 @@ function textWidth(t: string): number {
 }
 
 /** Keep every label inside the frame and off the others: clamp to the edges, then nudge down (or up) past collisions. */
-type Box = { x0: number; x1: number; y0: number; y1: number };
+
 
 function placeLabels(labels: Label[], w: number, h: number, reserved: Box[] = []): Label[] {
   const boxes: Box[] = [...reserved];

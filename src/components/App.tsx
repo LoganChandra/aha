@@ -422,7 +422,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const focus = answerFocus ?? tapTarget ?? step?.focus ?? [];
   const callouts = useMemo(() => Object.fromEntries((step?.callouts ?? []).map((c) => [c.at, c.text])), [step]);
   // Direct manipulation beats a slider: a knob tied to a draggable point is moved by dragging the point itself.
-  const dragged = useMemo(() => new Set(lesson?.scene.type === 'graph2d' ? lesson.scene.items.flatMap((it) => (it.type === 'point' ? [it.dragX, it.dragY].filter(Boolean) as string[] : [])) : []), [lesson]);
+  const dragged = useMemo(() => new Set(lesson?.scene.type === 'graph2d' ? lesson.scene.items.flatMap((it) => (it.type === 'point' || it.type === 'icon' ? [it.dragX, it.dragY].filter(Boolean) as string[] : [])) : []), [lesson]);
   const slideKnob = task?.kind === 'slide' ? lesson?.params.find((p) => p.id === task.param) : undefined;
   const taskKnob = slideKnob && !dragged.has(slideKnob.id) ? slideKnob : undefined;
   const freeKnobs = lesson && (!task || task.kind === 'tap' || done) && task?.kind !== 'predict' ? lesson.params.filter((p) => p.id !== slideKnob?.id && !dragged.has(p.id)) : [];

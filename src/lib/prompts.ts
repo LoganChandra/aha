@@ -1,5 +1,6 @@
 // Prompts for the two stages (Score plans the path, Stage writes each lesson's scene) and for questions asked
 // mid-lesson. They are written for small, cheap models: short rules, one exact format, one worked example.
+import { ICON_NAMES } from './icons';
 import { PLAYBOOK, playbookPrompt } from './playbook';
 import { LEVEL_BRIEF, type Level, type Plan } from './recipe';
 
@@ -44,7 +45,7 @@ SCENE is exactly one of:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.
    axes:false hides the axes and grid: use it whenever the picture is not a plot of numbers (a force diagram, a ray of light, an object drawn with shapes). Keep axes for real graphs, and name them with xLabel/yLabel.
-   ITEM types (each needs a unique "id", optional "label" and "tone"):
+   ITEM types (each needs a unique "id", optional "label", "tone", and "show": an expression; the item appears only while it is above 0, e.g. "show":"germs>=2"):
    {"type":"function","id":"f","expr":"a*sin(b*x)"}            curve y=f(x); expr may use x
    {"type":"parametric","id":"c","x":"cos(s)","y":"sin(s)","s":[0,"2*pi"]}
    {"type":"point","id":"p","x":"cos(th)","y":"sin(th)","dragX":"th"}   dragX/dragY: dragging the point changes that param
@@ -54,6 +55,9 @@ SCENE is exactly one of:
    {"type":"area","id":"A","expr":"x^2","from":0,"to":"b"}        shaded area under a curve
    {"type":"angle","id":"ang","at":[0,0],"from":0,"to":"th"}       arc showing an angle
    {"type":"text","id":"lbl","at":[1,1],"text":"sin = {sin(th)}"}  {expr} shows a live value
+   {"type":"icon","id":"buyer","name":"user","at":["px",1],"size":1.2,"label":"buyer","dragX":"px"}   a drawn icon; size is its width in x units; can be dragged
+   ICON names (use these exact names): ${ICON_NAMES.join(', ')}.
+   Icons make people, money, places, nature, machines and ideas recognisable at a glance. Prefer an icon to a circle standing in for a thing.
 2. {"type":"diagram","direction":"LR","nodes":[{"id":"bat","label":"Battery","detail":"stores energy","tone":"green","value":"v","unit":"V"}],"edges":[{"from":"bat","to":"inv","label":"DC power","flow":"v/100"}]}
    3 to 8 nodes and no more links than nodes + 2: a diagram is read at a glance, so if there is more, it belongs in another lesson. Keep labels under 20 characters. flow (0 to 1, may use params) animates particles along the edge: faster means more is flowing.
    The app lays a diagram out left-to-right on wide screens and top-to-bottom on phones, so beats never say left, right, above or below for a diagram: name the parts instead ("follow the chain from Pedals to Wheel").

@@ -2,6 +2,7 @@
 // ids line up, steps point at things that exist, every task can be done. Problems come back as plain sentences the model can fix in one
 // retry; `repair` then removes anything still broken so the learner never sees a crash.
 import { compile, evaluate, type Env } from './expr';
+import { ICONS } from './icons';
 import { Lesson, SIZE_ARITY, type G2Item, type Param, type Scene } from './recipe';
 
 type Num = number | string;
@@ -104,8 +105,8 @@ export function checkLesson(raw: unknown): Checked {
       if (errors.length > before) return;
       if (evaluate(t.goal, { ...vals, t: 0 }, 0)) errors.push(`${w}: the goal "${t.goal}" is already true when the step starts, so there is nothing to do. Set the knob elsewhere first or change the goal.`);
       // Reachable by moving this knob, or this knob and its partner on the same draggable point.
-      const partner = scene.type === 'graph2d' ? scene.items.find((it) => it.type === 'point' && (it.dragX === p.id || it.dragY === p.id)) : undefined;
-      const other = partner && partner.type === 'point' ? lesson.params.find((q) => q.id === (partner.dragX === p.id ? partner.dragY : partner.dragX)) : undefined;
+      const partner = scene.type === 'graph2d' ? scene.items.find((it) => (it.type === 'point' || it.type === 'icon') && (it.dragX === p.id || it.dragY === p.id)) : undefined;
+      const other = partner && (partner.type === 'point' || partner.type === 'icon') ? lesson.params.find((q) => q.id === (partner.dragX === p.id ? partner.dragY : partner.dragX)) : undefined;
       let hit: Env | null = null;
       let bestD = Infinity;
       const G = other ? 60 : 400;
@@ -135,6 +136,7 @@ function g2Errors(it: G2Item, scene: Extract<Scene, { type: 'graph2d' }>, env: E
   const w = `item "${it.id}"`;
   const withT = new Set([...params, 't']);
   const withX = new Set([...withT, 'x']);
+  checkExpr(`${w} show`, it.show, withT, errors);
   if (it.type === 'function') {
     checkExpr(w, it.expr, withX, errors);
     if (!errors.length) {
@@ -165,6 +167,10 @@ function g2Errors(it: G2Item, scene: Extract<Scene, { type: 'graph2d' }>, env: E
   } else if (it.type === 'text') {
     it.at.forEach((v) => checkExpr(w, v, withT, errors));
     checkTemplate(w, it.text, withT, errors);
+  } else if (it.type === 'icon') {
+    if (!ICONS[it.name]) errors.push(`${w}: there is no icon "${it.name}". Use one of the listed icon names.`);
+    [...it.at, it.size].forEach((v) => checkExpr(w, v, withT, errors));
+    for (const d of [it.dragX, it.dragY]) if (d && !params.has(d)) errors.push(`${w}: drag param "${d}" is not in params.`);
   }
   return errors;
 }
@@ -285,7 +291,12 @@ function normalise(raw: unknown): unknown {
     if (s.type === 'graph2d') {
       if (!s.x && Array.isArray(s.xRange)) s.x = s.xRange;
       if (!s.y && Array.isArray(s.yRange)) s.y = s.yRange;
-      if (Array.isArray(s.items)) s.items = (s.items as Record<string, unknown>[]).map((it, i) => ({ id: `i${i}`, ...it }));
+      if (Array.isArray(s.items)) s.items = (s.items as Record<string, unknown>[]).map((it, i) => {
+        const q: Record<string, unknown> = { id: `i${i}`, ...it };
+        // Icon names arrive as "Piggy Bank", "piggyBank" or "lucide:piggy-bank"; the set uses kebab-case.
+        if (q.type === 'icon' && typeof q.name === 'string') q.name = q.name.replace(/^lucide[:-]/i, '').replace(/([a-z])([A-Z])/g, '$1-$2').replace(/[\s_]+/g, '-').toLowerCase();
+        return q;
+      });
     }
     if (s.type === 'diagram' && Array.isArray(s.edges)) {
       s.edges = (s.edges as Record<string, unknown>[]).map((e) => ({ id: `${e.from}->${e.to}`, ...e }));
@@ -304,7 +315,7 @@ function normalise(raw: unknown): unknown {
 }
 
 // Keys whose strings are words for people, not expressions.
-const WORDS = new Set(['id', 'type', 'label', 'text', 'tone', 'detail', 'when', 'unit', 'shape', 'axis', 'xLabel', 'yLabel', 'direction', 'kind', 'from', 'to', 'dragX', 'dragY', 'explodeParam']);
+const WORDS = new Set(['id', 'type', 'name', 'label', 'text', 'tone', 'detail', 'when', 'unit', 'shape', 'axis', 'xLabel', 'yLabel', 'direction', 'kind', 'from', 'to', 'dragX', 'dragY', 'explodeParam']);
 
 /** Drop empty and null fields, unwrap "{w}" written where an expression belongs, apply param renames. */
 function cleanScene(v: unknown, rename: Map<string, string>, key = '', parentType = ''): unknown {

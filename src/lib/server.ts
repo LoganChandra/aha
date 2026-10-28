@@ -4,7 +4,7 @@ import { getCache } from '@vercel/functions';
 import type { Level, Plan, Source } from './recipe';
 
 // Bump when prompts or the recipe format change, so old cached lessons are not served against new renderers.
-export const CACHE_VERSION = 'v7';
+export const CACHE_VERSION = 'v8';
 const DAY = 86_400;
 
 const cache = () => getCache({ namespace: `profai-${CACHE_VERSION}` });

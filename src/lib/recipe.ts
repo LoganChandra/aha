@@ -56,7 +56,8 @@ export const Param = z.object({
 export type Param = z.infer<typeof Param>;
 
 // ---- 2D graph: functions, curves, points, shapes. Covers maths, physics, signals, geometry.
-const G2Base = { id: Id, label: Short(60).optional(), tone: Tone.optional() };
+// show: an expression; the item is drawn only while it is above 0 (e.g. "germs>=2").
+const G2Base = { id: Id, label: Short(60).optional(), tone: Tone.optional(), show: Num.optional() };
 export const G2Item = z.discriminatedUnion('type', [
   z.object({ type: z.literal('function'), ...G2Base, expr: Num, dashed: z.boolean().optional(), domain: Vec2.optional() }),
   z.object({ type: z.literal('parametric'), ...G2Base, x: Num, y: Num, s: Vec2, dashed: z.boolean().optional() }),
@@ -67,6 +68,8 @@ export const G2Item = z.discriminatedUnion('type', [
   z.object({ type: z.literal('area'), ...G2Base, expr: Num, from: Num, to: Num, base: Num.optional() }),
   z.object({ type: z.literal('angle'), ...G2Base, at: Vec2, from: Num, to: Num, r: Num.optional() }),
   z.object({ type: z.literal('text'), ...G2Base, at: Vec2, text: Short(80) }),
+  // A drawn icon (person, sun, coin, car...) from the curated set in icons.ts; size is its width in x units.
+  z.object({ type: z.literal('icon'), ...G2Base, name: z.string().max(40), at: Vec2, size: Num.optional(), dragX: z.string().optional(), dragY: z.string().optional() }),
 ]);
 export type G2Item = z.infer<typeof G2Item>;
 

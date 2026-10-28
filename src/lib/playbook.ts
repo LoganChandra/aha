@@ -483,6 +483,37 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'act-it-out',
+    name: 'Act it out',
+    use: 'Ideas about people, money, bodies, societies or nature where the actors matter: immunity, markets, banks, ecosystems, voting, the internet. Use icons as the cast.',
+    moves: 'Introduce the cast by tapping one → change one condition and predict what the actors do → let the learner drive the condition to a goal → state the idea through the cast.',
+    example: {
+      title: 'How a vaccine trains your body',
+      params: [
+        { id: 'shots', label: 'Vaccine doses', min: 0, max: 2, step: 1, value: 0 },
+        { id: 'germs', label: 'Germs invading', min: 1, max: 6, step: 1, value: 3 },
+      ],
+      scene: {
+        type: 'graph2d', x: [0, 12], y: [0, 7], equal: true, axes: false,
+        items: [
+          { id: 'you', type: 'icon', name: 'user', at: [6, 3.4], size: 2.2, tone: 'primary', label: 'you' },
+          { id: 'g1', type: 'icon', name: 'bug', at: [1.2, 5.6], size: 1, tone: 'red', label: 'germ' },
+          { id: 'g2', type: 'icon', name: 'bug', at: [1.2, 3.4], size: 1, tone: 'red', show: 'germs>=2' },
+          { id: 'g3', type: 'icon', name: 'bug', at: [1.2, 1.2], size: 1, tone: 'red', show: 'germs>=3' },
+          { id: 'shield', type: 'icon', name: 'shield-check', at: [9.6, 3.4], size: '0.6 + 0.8*shots', tone: 'green', label: 'antibodies' },
+          { id: 'memory', type: 'icon', name: 'brain', at: [6, 6.1], size: 1, tone: 'cool', label: 'memory cells' },
+          { id: 'readout', type: 'text', at: [0.3, 6.8], text: 'chance you get sick: {round(100*germs/6*(1-0.45*shots))}%' },
+        ],
+      },
+      steps: [
+        { say: 'Germs are trying to get in. Your body fights back with antibodies.', callouts: [{ at: 'g1', text: 'germ' }], task: { kind: 'tap', target: 'shield', hint: 'Tap your defence.' }, after: 'Antibodies are made to fit one germ. Making new ones takes days.' },
+        { say: 'A vaccine shows your body a harmless copy of the germ first.', task: { kind: 'predict', question: 'After one dose, your chance of getting sick…', choices: ['goes up', 'drops', 'stays the same'], answer: 1, reveal: { set: { shots: 1 } } }, after: 'Memory cells now recognise the germ and react in hours, not days.' },
+        { say: 'Give enough doses to get your chance of getting sick below 20%.', task: { kind: 'slide', param: 'shots', goal: 'round(100*germs/6*(1-0.45*shots)) < 20', hint: 'Add doses.' }, after: 'A booster builds a bigger, faster-ready defence.' },
+        { say: 'A vaccine is a rehearsal: your body learns the germ before the real one arrives.', focus: ['memory', 'shield'] },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */
