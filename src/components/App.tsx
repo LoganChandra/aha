@@ -415,7 +415,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   // Direct manipulation beats a slider: a knob tied to a draggable point is moved by dragging the point itself.
   const dragged = useMemo(() => new Set(lesson?.scene.type === 'graph2d' ? lesson.scene.items.flatMap((it) => (it.type === 'point' || it.type === 'icon' ? [it.dragX, it.dragY].filter(Boolean) as string[] : [])) : []), [lesson]);
   const slideKnob = task?.kind === 'slide' ? lesson?.params.find((p) => p.id === task.param) : undefined;
-  const taskKnob = slideKnob && !dragged.has(slideKnob.id) ? slideKnob : undefined;
+  // Dragging the picture is the main way, but never the only way (WCAG 2.5.7): the slider is always there too.
+  const taskKnob = slideKnob;
   // Where the active slide task wants the knob: drives the glowing handle and the direction arrows.
   const guide = useMemo(() => {
     if (!slideKnob || task?.kind !== 'slide' || done) return undefined;
@@ -423,7 +424,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     return target === null ? undefined : { param: slideKnob.id, target };
   }, [slideKnob, task, done, env]);
   // Knobs only appear when the step is about them: during a tap or a prediction they would steal the picture's space.
-  const freeKnobs = lesson && (!task || done) ? lesson.params.filter((p) => p.id !== slideKnob?.id && !dragged.has(p.id)) : [];
+  const freeKnobs = lesson && (!task || done) ? lesson.params.filter((p) => p.id !== slideKnob?.id) : [];
   const stepsDone = lesson ? lesson.steps.filter((_, i) => i < si || (i === si && done)).length : 0;
 
   return (
@@ -569,11 +570,6 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                       );
                     })}
                   </div>
-                </div>
-              )}
-              {task?.kind === 'slide' && !taskKnob && !done && !answer && (
-                <div className="pointer-events-auto flex items-center gap-2.5 rounded-full border-2 border-[var(--t-primary)]/40 bg-surface/95 px-4 py-2.5 text-[16.5px] font-semibold text-ink shadow-[var(--shadow)] backdrop-blur">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--t-primary)]" />{task.hint}
                 </div>
               )}
               {task?.kind === 'tap' && !done && !answer && (
