@@ -98,7 +98,7 @@ export const Diagram = z.object({
     to: Id,
     label: Short(40).optional(),
     flow: Num.optional(),
-  }), 0, 24),
+  }), 0, 14),
 });
 
 // ---- 3D model: a machine or structure built from solids and ready-made parts, with an exploded view.

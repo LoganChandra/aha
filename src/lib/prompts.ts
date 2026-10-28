@@ -50,7 +50,7 @@ SCENE is exactly one of:
    {"type":"angle","id":"ang","at":[0,0],"from":0,"to":"th"}       arc showing an angle
    {"type":"text","id":"lbl","at":[1,1],"text":"sin = {sin(th)}"}  {expr} shows a live value
 2. {"type":"diagram","direction":"LR","nodes":[{"id":"bat","label":"Battery","detail":"stores energy","tone":"green","value":"v","unit":"V"}],"edges":[{"from":"bat","to":"inv","label":"DC power","flow":"v/100"}]}
-   2 to 12 nodes. flow (0 to 1, may use params) animates particles along the edge: faster means more is flowing.
+   3 to 8 nodes and no more links than nodes + 2: a diagram is read at a glance, so if there is more, it belongs in another lesson. Keep labels under 20 characters. flow (0 to 1, may use params) animates particles along the edge: faster means more is flowing.
    The app lays a diagram out left-to-right on wide screens and top-to-bottom on phones, so beats never say left, right, above or below for a diagram: name the parts instead ("follow the chain from Pedals to Wheel").
 3. {"type":"model3d","explodeParam":"ex","parts":[{"id":"stator","label":"Stator","shape":"cylinder","size":[1,1.2],"position":[0,0,0],"rotation":[0,0,90],"tone":"neutral","opacity":0.5,"explode":[0,1.5,0],"spin":{"axis":"y","speed":"rpm/60"}}]}
    y is up. Keep everything inside about -3..3.
