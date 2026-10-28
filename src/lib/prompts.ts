@@ -94,6 +94,7 @@ DESIGN (the learner should get it from the picture before reading)
 - Leave breathing room: frame the action in the middle 80% of the ranges.
 - Every knob must visibly move something the steps talk about. Anything that should respond to a value (a scale tipping, a level rising, a bar growing) must be drawn with expressions of that param, never fixed numbers: a balance with unequal weights must tilt.
 - Draw the real thing the words name: if a step says "tap the leaf", there must be a leaf-shaped item to tap.
+- Words and picture never disagree: if a step says something changed ("night falls", "double the speed"), that step's set (or the predict reveal) makes the change happen in the picture.
 
 RULES
 - The scene must be correct: real formulas, real proportions, real facts from the plan. Do not invent specs.

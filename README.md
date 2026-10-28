@@ -2,7 +2,7 @@
 
 Type anything you want to understand. ProfAI plans a short lesson path for your level and teaches each lesson with a visual you can play with: drag points, turn knobs, explode a machine, and stop at any point to ask why.
 
-Live: https://profai-two.vercel.app
+Live: https://profai-poc.vercel.app
 
 ## How it works
 

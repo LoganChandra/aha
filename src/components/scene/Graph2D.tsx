@@ -59,8 +59,9 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
     const [a, b] = scene.y;
     const step = niceStep(b - a, Math.max(80, size.h - 40), 52);
     const longest = Math.max(...[a, b, (a + b) / 2].map((v) => tickLabel(Math.round(v / step) * step, step, false).length));
-    return { l: Math.max(30, 12 + longest * 7), r: 14, t: 14, b: 26 };
-  }, [showAxes, scene.y, size.h]);
+    // Axis titles get their own room outside the plot, so curves never run through them.
+    return { l: Math.max(30, 12 + longest * 7), r: 14, t: scene.yLabel ? 26 : 14, b: scene.xLabel ? 42 : 26 };
+  }, [showAxes, scene.y, size.h, scene.xLabel, scene.yLabel]);
 
   const view = useMemo(() => {
     const w = Math.max(10, size.w), h = Math.max(10, size.h);
@@ -274,8 +275,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   const textIds = new Set(scene.items.filter((i) => i.type === 'text').map((i) => i.id));
   // Axis titles are fixed; seed them as taken space so item labels move around them.
   const reserved: Box[] = [];
-  if (showAxes && scene.xLabel) { const w = textWidth(scene.xLabel); reserved.push({ x0: PAD.l + view.iw - w, x1: PAD.l + view.iw, y0: Y(ay) - 20, y1: Y(ay) - 4 }); }
-  if (showAxes && scene.yLabel) { const w = textWidth(scene.yLabel); reserved.push({ x0: X(ax) + 8, x1: X(ax) + 8 + w, y0: PAD.t, y1: PAD.t + 16 }); }
+  if (showAxes && scene.xLabel) { const w = textWidth(scene.xLabel) + 20; reserved.push({ x0: PAD.l + view.iw - w, x1: PAD.l + view.iw, y0: view.h - 22, y1: view.h }); }
+  if (showAxes && scene.yLabel) { const w = textWidth(scene.yLabel) + 20; reserved.push({ x0: PAD.l, x1: PAD.l + w, y0: 0, y1: 20 }); }
   const placed = placeLabels(labels, view.w, view.h, reserved);
 
   return (
@@ -301,8 +302,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
             <g fontSize={11.5} fill="var(--ink-2)" fontFamily="var(--font-sans)" fontWeight={500}>
               {xTicks.filter((v) => (Math.abs(v) > xs / 1000 || ax !== 0) && X(v) > PAD.l + 8 && X(v) < PAD.l + view.iw - 8).map((v) => <text key={`tx${v}`} x={X(v)} y={Math.min(view.h - 6, Y(ay) + 16)} textAnchor="middle">{tickLabel(v, xs, usePi)}</text>)}
               {yTicks.filter((v) => Math.abs(v) > ys / 1000 && Y(v) > PAD.t + 8 && Y(v) < PAD.t + view.ih - 8).map((v) => <text key={`ty${v}`} x={Math.max(PAD.l - 6, X(ax) - 6)} y={Y(v) + 4} textAnchor="end">{tickLabel(v, ys, false)}</text>)}
-              {scene.xLabel && <text x={PAD.l + view.iw} y={Y(ay) - 8} textAnchor="end" fill="var(--ink-2)" fontWeight={500}>{scene.xLabel}</text>}
-              {scene.yLabel && <text x={X(ax) + 8} y={PAD.t + 12} fill="var(--ink-2)" fontWeight={500}>{scene.yLabel}</text>}
+              {scene.xLabel && <text x={PAD.l + view.iw} y={view.h - 8} textAnchor="end" fill="var(--ink-2)" fontWeight={600}>{scene.xLabel} →</text>}
+              {scene.yLabel && <text x={PAD.l} y={15} fill="var(--ink-2)" fontWeight={600}>↑ {scene.yLabel}</text>}
             </g>
           )}
           <g clipPath="url(#plot)">{drawn}</g>
@@ -343,10 +344,10 @@ export function Pins({ pins, w, h }: { pins: { id: string; text: string; at: [nu
         const lx = Math.max(spot[0] + 10, Math.min(spot[0] + tw - 10, p.at[0])), ly = spot[1] > p.at[1] ? spot[1] : spot[1] + th;
         return (
           <g key={p.id} className="pin">
-            <line x1={p.at[0]} y1={p.at[1]} x2={lx} y2={ly} stroke="var(--ink)" strokeWidth={1.2} opacity={0.55} />
-            <circle cx={p.at[0]} cy={p.at[1]} r={3.5} fill="var(--ink)" />
-            <rect x={spot[0]} y={spot[1]} width={tw} height={th} rx={13} fill="var(--ink)" />
-            <text x={spot[0] + tw / 2} y={spot[1] + 17.5} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--paper)">{p.text}</text>
+            <line x1={p.at[0]} y1={p.at[1]} x2={lx} y2={ly} stroke="var(--ink-2)" strokeWidth={1} />
+            <circle cx={p.at[0]} cy={p.at[1]} r={2.5} fill="var(--ink-2)" />
+            <rect x={spot[0]} y={spot[1]} width={tw} height={th} rx={13} fill="var(--surface)" stroke="var(--ink-2)" strokeWidth={1} />
+            <text x={spot[0] + tw / 2} y={spot[1] + 17.5} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--ink)">{p.text}</text>
           </g>
         );
       })}

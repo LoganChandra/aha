@@ -86,7 +86,7 @@ function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel, callout,
       {(p.label || callout) && (
         <Html center position={[0, 0, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
           <div
-            className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold shadow-sm ${callout ? 'bg-ink text-paper' : 'border border-line bg-surface/95 text-ink'}`}
+            className={`whitespace-nowrap rounded-full border bg-surface/95 px-2.5 py-1 text-[12px] font-semibold text-ink shadow-sm ${callout ? 'border-ink-2' : 'border-line'}`}
             style={{ transform: 'translateY(-26px)', opacity: showLabel || callout ? 1 : 0, transition: 'opacity 200ms' }}
             aria-hidden={!(showLabel || callout)}
           >
@@ -137,7 +137,8 @@ export default function Model3D({ scene, env, focus, t, playing, callouts = {}, 
     const b = new THREE.Box3();
     for (const p of scene.parts) {
       const half = halfExtent(p.shape, p.size.map((v) => Math.abs(evaluate(v, env, 0.5))));
-      for (const k of [0, 1]) {
+      // Frame what is on screen now: assembled it fills the view, and the camera eases back as it comes apart.
+      for (const k of [0, explode]) {
         const pos = (p.position ?? [0, 0, 0]).map((v, i) => evaluate(v, env, 0) + k * evaluate((p.explode ?? [0, 0, 0])[i], env, 0));
         b.expandByPoint(new THREE.Vector3(pos[0] - half, pos[1] - half, pos[2] - half));
         b.expandByPoint(new THREE.Vector3(pos[0] + half, pos[1] + half, pos[2] + half));
@@ -147,8 +148,12 @@ export default function Model3D({ scene, env, focus, t, playing, callouts = {}, 
     const centred = b.clone().translate(c.clone().negate());
     return { center: c, box: centred, floor: centred.min.y, radius: Math.max(0.5, b.getSize(new THREE.Vector3()).length() / 2) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene]);
+  }, [scene, Math.round(explode * 20)]);
   const dir = (scene.camera ?? [1.4, 0.9, 2]) as [number, number, number];
+  // The same callout text on several parts ("turns" three times) is shown once.
+  const seenCallout = new Set<string>();
+  const callout1: Record<string, string> = {};
+  for (const [id, text] of Object.entries(callouts)) if (!seenCallout.has(text)) { seenCallout.add(text); callout1[id] = text; }
   // One label per name: twelve parts called "Cell" get one "Cell" tag, not twelve.
   const firstOfLabel = new Set<string>();
   const seen = new Set<string>();
@@ -172,7 +177,7 @@ export default function Model3D({ scene, env, focus, t, playing, callouts = {}, 
               key={p.id} p={p} env={env} t={t} explode={explode} colors={colors}
               dimmed={focus.length > 0 && !focus.includes(p.id)} hot={focus.includes(p.id)}
               showLabel={!Object.keys(callouts).length && firstOfLabel.has(p.id) && (focusedLabels.has(p.id) || labelAll)}
-              callout={callouts[p.id]} onTap={onTap}
+              callout={callout1[p.id]} onTap={onTap}
             />
           ))}
         </group>

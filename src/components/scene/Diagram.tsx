@@ -80,7 +80,7 @@ export default function Diagram({ scene, env, focus, t, playing, callouts = {}, 
   const scale = narrow ? Math.max(0.6, Math.min(1, size.w / layout.gw)) : Math.max(fit(layout), MIN);
   const contentW = Math.max(size.w, layout.gw * scale), contentH = Math.max(size.h, layout.gh * scale);
   const ox = (contentW - layout.gw * scale) / 2, oy = (contentH - layout.gh * scale) / 2;
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.55 : 1);
 
   return (
     <div ref={box} className="no-scrollbar absolute inset-0 select-none overflow-auto overscroll-contain">
@@ -103,9 +103,12 @@ export default function Diagram({ scene, env, focus, t, playing, callouts = {}, 
                   <path d={`M${end.x},${end.y}l${-9 * Math.cos(ang - 0.42)},${-9 * Math.sin(ang - 0.42)}M${end.x},${end.y}l${-9 * Math.cos(ang + 0.42)},${-9 * Math.sin(ang + 0.42)}`} stroke="var(--ink-3)" strokeWidth={2} strokeLinecap="round" />
                   {flow > 0 && <FlowDots d={d} flow={flow} t={t} playing={playing} color={tone(scene.nodes.find((n) => n.id === e.from)?.tone)} />}
                   {showLabel && (
-                    <text x={e.lx ?? mid.x} y={(e.ly ?? mid.y) + 4} textAnchor="middle" fontSize={12} fill="var(--ink-2)" stroke="var(--surface)" strokeWidth={4} paintOrder="stroke">
-                      {e.label}
-                    </text>
+                    <g>
+                      <rect x={(e.lx ?? mid.x) - e.label!.length * 3.4 - 6} y={(e.ly ?? mid.y) - 9} width={e.label!.length * 6.8 + 12} height={18} rx={9} fill="var(--surface)" stroke="var(--line)" />
+                      <text x={e.lx ?? mid.x} y={(e.ly ?? mid.y) + 4} textAnchor="middle" fontSize={12} fontWeight={500} fill="var(--ink-2)">
+                        {e.label}
+                      </text>
+                    </g>
                   )}
                 </g>
               );

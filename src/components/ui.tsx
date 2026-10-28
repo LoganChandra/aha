@@ -75,7 +75,7 @@ export function Knob({ p, value, onChange }: { p: Param; value: number; onChange
     );
   }
   const step = p.step ?? (p.max - p.min) / 200;
-  const value_ = <span className="min-w-[44px] shrink-0 text-right text-[13px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>;
+  const value_ = <span className="min-w-[44px] shrink-0 whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>;
   const input = (
     <input
       id={`k-${p.id}`} type="range" className="knob" min={p.min} max={p.max} step={step} value={value}
@@ -84,7 +84,7 @@ export function Knob({ p, value, onChange }: { p: Param; value: number; onChange
     />
   );
   // A long name gets its own line rather than being cut off.
-  if (p.label.length > 16) {
+  if (p.label.length > 16 || (p.unit?.length ?? 0) > 6) {
     return (
       <div className="pt-1">
         <div className="flex items-baseline justify-between gap-3">

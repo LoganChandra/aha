@@ -24,8 +24,9 @@ const tiers = (maxTokens: number, think: boolean): Route[] => [
   { model: BACKUP, reasoning: think ? MEDIUM : { effort: 'low' }, maxTokens: maxTokens + 4000 }, // GLM cannot turn thinking off
   { model: LAST, reasoning: think ? MEDIUM : { enabled: false }, maxTokens },
 ];
-export const PLAN_ROUTES: Route[] = tiers(10_000, true);
-export const LESSON_ROUTES: Route[] = tiers(20_000, true);
+export const PLAN_ROUTES: Route[] = tiers(10_000, true).map((r) => (r.model === PRIMARY || r.model === LAST ? { ...r, reasoning: { effort: 'low' } } : r)); // planner thinks lightly: it was 18/18 without thinking, and the first wait matters
+// LESSON_THINK=off is only for A/B runs (scripts); production uses the default.
+export const LESSON_ROUTES: Route[] = tiers(20_000, process.env.LESSON_THINK !== 'off');
 export const ASK_ROUTES: Route[] = tiers(800, false);
 
 export type Meter = { costUsd: number; ms: number; calls: { model: string; ok: boolean; costUsd: number; ms: number; note?: string }[] };
