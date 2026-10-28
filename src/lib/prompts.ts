@@ -42,7 +42,19 @@ Return ONLY JSON in this format:
 
 NUMBERS: any number in a scene may instead be an expression string using the param ids, t (seconds, runs when playing), and functions sin cos tan asin acos atan atan2 sqrt abs exp ln log10 pow min max floor round mod rad deg clamp if(c,a,b) sum(k,1,n,expr). Use * for multiply and ^ for power. Angles are radians; rad(30) converts degrees. Never use a name that is not a param id or t, and do not invent functions: write the formula out in full.
 
-SCENE is exactly one of:
+SCENE is exactly one of the following. TEMPLATES FIRST: templates are designed scenes that always look polished; you only fill in words, icons and numbers. Use a template whenever the lesson fits one, and draw freely (graph2d, model3d) only when none fits.
+
+T1. PIPELINE (processes and flows: photosynthesis, digestion, the internet, electricity, supply chains, how a law is made):
+   {"type":"pipeline","stages":[{"id":"sun","label":"Sunlight","icon":"sun","tone":"accent","value":"light*100","unit":"%"},{"id":"leaf","label":"Leaf","icon":"leaf","tone":"green"},{"id":"sugar","label":"Sugar","icon":"cookie","tone":"warm","value":"light*40","unit":"g"}],"side":[{"id":"water","label":"Water","icon":"droplet","tone":"cool","stage":"leaf","dir":"in"},{"id":"o2","label":"Oxygen","icon":"wind","tone":"cool","stage":"leaf","dir":"out"}],"flow":"light","flowLabel":"energy flowing"}
+   2-6 stages in order; side items (0-4) flow into or out of a stage. flow (0-1, may use params) sets how fast things move. value shows a live number under a stage.
+T2. ICON ARRAY ("out of 100": probability, risk, statistics, surveys, populations, test accuracy, vaccines):
+   {"type":"iconArray","total":100,"icon":"user","caption":"100 people exposed","groups":[{"id":"sick","label":"get sick","tone":"red","count":"round(100*risk*(1-eff))"},{"id":"safe","label":"protected","tone":"green","count":"round(100*risk*eff)"}]}
+   total 4-100; group counts are expressions, coloured in order; the rest stay pale.
+T3. BALANCE (equations, trade-offs, supply vs demand, forces that cancel, budgets):
+   {"type":"balance","caption":"Solve 3x + 2 = 11","left":{"id":"l","label":"3x + 2","icon":"scale","weight":"3*x0+2","tone":"primary"},"right":{"id":"r","label":"11","weight":11,"tone":"accent"}}
+   The beam tips toward the heavier side and settles level when the weights are equal (perfect for "drag x until it balances").
+
+FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.
    axes:false hides the axes and grid: use it whenever the picture is not a plot of numbers (a force diagram, a ray of light, an object drawn with shapes). Keep axes for real graphs, and name them with xLabel/yLabel.
@@ -68,6 +80,8 @@ SCENE is exactly one of:
    Plain solids: box [w,h,d]; cylinder [radius,height]; sphere [r]; cone [radius,height]; torus [radius,thickness]; capsule [radius,length]; tube [outerRadius,innerRadius,height]. Cylinders, cones, capsules, tubes, gears, wheels, springs, coils, fans, cells and lenses stand along y (their axle or axis is y); rotate [0,0,90] to lay them along x, [90,0,0] along z (wheels on a car facing sideways). Build the real proportions of the object. rotation in degrees. explode is how far the part moves when the explode param (0 to 1) is at 1; set explodeParam to that param's id. spin speed is turns per second. 6 to 30 parts; label the parts that matter.
 4. {"type":"chart","kind":"bar","yLabel":"","unit":"","bars":[{"id":"a","label":"Petrol","value":30,"tone":"warm"}]}  or kind "line" with "series":[{"id":"s","label":"","points":[[x,y],...]}]
 5. {"type":"timeline","events":[{"id":"e1","when":"1905","label":"Special relativity","detail":"..."}]}
+
+Task targets in templates: stage, side, group and left/right ids can be tap targets, focus ids and callout ids.
 
 tone is one of: primary (blue), accent (orange), warm (rust), cool (teal), green, red, neutral (grey). Use colour to mean something (same tone = same kind of thing). If the words mention a colour, use exactly these names; better, name the part instead.
 UNITS: the words and the knobs use the same units. Below intermediate level, angles are in degrees (knob in degrees, formulas use rad(angle)).

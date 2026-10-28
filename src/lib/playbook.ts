@@ -339,33 +339,28 @@ export const PLAYBOOK: Pattern[] = [
   {
     id: 'follow-the-flow',
     name: 'Follow the flow',
-    use: 'ONLY genuine processes and networks with no drawable shape: a supply chain, a food web, how a request crosses the internet, a legal process.',
-    moves: 'Name the stages by tapping the first and last → cut or boost one input and predict the knock-on → find the bottleneck → state the flow in one line.',
+    use: 'Any process or sequence: photosynthesis, digestion, the internet, electricity from plant to plug, a supply chain. Use the PIPELINE template.',
+    moves: 'Name the stages by tapping the input and the output → cut or boost the input and predict the knock-on → drive the input to a goal → state the flow in one line.',
     example: {
       title: 'How a plant makes food',
       params: [{ id: 'light', label: 'Sunlight', min: 0, max: 1, step: 0.01, value: 0.7 }],
       scene: {
-        type: 'diagram', direction: 'LR',
-        nodes: [
-          { id: 'sun', label: 'Sunlight', detail: 'the energy', tone: 'accent', value: 'light*100', unit: '%' },
-          { id: 'water', label: 'Water', detail: 'from the roots', tone: 'cool' },
-          { id: 'co2', label: 'CO₂', detail: 'from the air', tone: 'neutral' },
-          { id: 'leaf', label: 'Leaf', detail: 'chlorophyll', tone: 'green' },
-          { id: 'sugar', label: 'Sugar', detail: 'food for the plant', tone: 'green', value: 'light*100', unit: '%' },
-          { id: 'o2', label: 'Oxygen', detail: 'released', tone: 'cool' },
+        type: 'pipeline', flow: 'light', flowLabel: 'energy flowing',
+        stages: [
+          { id: 'sun', label: 'Sunlight', icon: 'sun', tone: 'accent', value: 'round(light*100)', unit: '%' },
+          { id: 'leaf', label: 'Leaf', icon: 'leaf', tone: 'green' },
+          { id: 'sugar', label: 'Sugar made', icon: 'cookie', tone: 'warm', value: 'round(light*40)', unit: 'g' },
         ],
-        edges: [
-          { from: 'sun', to: 'leaf', flow: 'light' },
-          { from: 'water', to: 'leaf', flow: 'light*0.8' },
-          { from: 'co2', to: 'leaf', flow: 'light*0.8' },
-          { from: 'leaf', to: 'sugar', label: 'makes', flow: 'light' },
-          { from: 'leaf', to: 'o2', flow: 'light' },
+        side: [
+          { id: 'water', label: 'Water', icon: 'droplet', tone: 'cool', stage: 'leaf', dir: 'in' },
+          { id: 'co2', label: 'CO₂', icon: 'cloud', tone: 'neutral', stage: 'leaf', dir: 'in' },
+          { id: 'o2', label: 'Oxygen', icon: 'wind', tone: 'cool', stage: 'leaf', dir: 'out' },
         ],
       },
       steps: [
-        { say: 'Three things go into a leaf. Which one is the energy source?', task: { kind: 'tap', target: 'sun', hint: 'Tap the energy source.' }, after: 'Light powers it. Water and CO₂ are the raw materials.' },
+        { say: 'A leaf takes in three things. Which one is the energy?', task: { kind: 'tap', target: 'sun', hint: 'Tap the energy source.' }, after: 'Light is the power. Water and CO₂ are the raw materials.' },
         { say: 'Night falls.', task: { kind: 'predict', question: 'With no light, sugar-making…', choices: ['carries on', 'stops', 'speeds up'], answer: 1, reveal: { set: { light: 0 } } }, after: 'No energy, no sugar, even with plenty of water and air.' },
-        { say: 'Bring the sun back up until the leaf makes at least 80% of its sugar.', task: { kind: 'slide', param: 'light', goal: 'light>0.8', hint: 'Slide Sunlight up.' }, after: 'More light, more flow through the whole chain.' },
+        { say: 'Bring the sun up until the leaf makes at least 30 g of sugar.', task: { kind: 'slide', param: 'light', goal: 'round(light*40) >= 30', hint: 'Slide Sunlight up.' }, after: 'More light, more flow through the whole chain.' },
         { say: 'Light + water + CO₂ → sugar + oxygen, made in the leaf.', focus: ['leaf', 'sugar'] },
       ],
     },
@@ -511,6 +506,52 @@ export const PLAYBOOK: Pattern[] = [
         { say: 'A vaccine shows your body a harmless copy of the germ first.', task: { kind: 'predict', question: 'After one dose, your chance of getting sick…', choices: ['goes up', 'drops', 'stays the same'], answer: 1, reveal: { set: { shots: 1 } } }, after: 'Memory cells now recognise the germ and react in hours, not days.' },
         { say: 'Give enough doses to get your chance of getting sick below 20%.', task: { kind: 'slide', param: 'shots', goal: 'round(100*germs/6*(1-0.45*shots)) < 20', hint: 'Add doses.' }, after: 'A booster builds a bigger, faster-ready defence.' },
         { say: 'A vaccine is a rehearsal: your body learns the germ before the real one arrives.', focus: ['memory', 'shield'] },
+      ],
+    },
+  },
+  {
+    id: 'out-of-a-hundred',
+    name: 'Out of a hundred',
+    use: 'Odds, risk, percentages, test accuracy, surveys, what a statistic means for real people. Use the ICON ARRAY template.',
+    moves: 'Show 100 people and what happens to them → predict the effect of a change → drive a knob to a target count → state the number in plain words.',
+    example: {
+      title: 'What "90% effective" means',
+      params: [
+        { id: 'eff', label: 'Vaccine effectiveness', min: 0, max: 1, step: 0.05, value: 0 , unit: '' },
+      ],
+      scene: {
+        type: 'iconArray', total: 100, icon: 'user', caption: '100 people exposed to the flu',
+        groups: [
+          { id: 'sick', label: 'get sick', tone: 'red', count: 'round(30*(1-eff))' },
+          { id: 'safe', label: 'protected by the vaccine', tone: 'green', count: 'round(30*eff)' },
+        ],
+      },
+      steps: [
+        { say: 'Without a vaccine, 30 of these 100 people catch the flu.', task: { kind: 'tap', target: 'sick', hint: 'Tap the group that gets sick.' }, after: 'Thirty red people: that is the risk with no protection.' },
+        { say: 'Before you touch anything: a 50% effective vaccine means…', task: { kind: 'predict', question: 'how many still get sick?', choices: ['50', '15', '0'], answer: 1, reveal: { set: { eff: 0.5 } } }, after: 'Half of the 30 are protected: 15 still get sick. Not 50.' },
+        { say: 'Raise effectiveness until only 3 people get sick.', task: { kind: 'slide', param: 'eff', goal: 'round(30*(1-eff)) <= 3', hint: 'Slide effectiveness up.' }, after: '90% effective: 27 of the 30 who would have caught it are protected.' },
+        { say: 'Effectiveness is the share of would-be cases that never happen.', focus: ['safe'] },
+      ],
+    },
+  },
+  {
+    id: 'make-it-balance',
+    name: 'Make it balance',
+    use: 'Equations, trade-offs, forces that cancel, budgets, supply meeting demand. Use the BALANCE template.',
+    moves: 'Show the two sides → predict which way it tips → drive the unknown until it levels → state the rule.',
+    example: {
+      title: 'Solving an equation by balancing',
+      params: [{ id: 'xv', label: 'x', min: 0, max: 6, step: 1, value: 1 }],
+      scene: {
+        type: 'balance', caption: 'Find x so that 3x + 2 = 11',
+        left: { id: 'lhs', label: '3x + 2', icon: 'package', weight: '3*xv+2', tone: 'primary' },
+        right: { id: 'rhs', label: '11', icon: 'coins', weight: 11, tone: 'accent' },
+      },
+      steps: [
+        { say: 'An equation is a balance: both sides must weigh the same.', task: { kind: 'tap', target: 'rhs', hint: 'Tap the heavier side.' }, after: 'With x = 1 the left weighs 5, the right 11, so it tips right.' },
+        { say: 'Change x until the beam is level.', task: { kind: 'slide', param: 'xv', goal: '3*xv+2 == 11', hint: 'Slide x up.' }, after: 'x = 3: 3×3 + 2 = 11. Level.' },
+        { say: 'Push x one past the answer.', task: { kind: 'predict', question: 'At x = 4 the beam tips…', choices: ['left', 'right', 'stays level'], answer: 0, reveal: { set: { xv: 4 } } }, after: 'Too much on the left: 14 against 11.' },
+        { say: 'Solving an equation is finding the value that makes both sides weigh the same.', set: { xv: 3 }, focus: ['lhs', 'rhs'] },
       ],
     },
   },

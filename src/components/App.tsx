@@ -262,6 +262,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const askSeq = useRef(0);
   const [sheet, setSheet] = useState(false);
   const [asking, setAsking] = useState(false);
+  // Lessons finished: their recap card is showing (or was shown).
+  const [wrapped, setWrapped] = useState<Record<number, boolean>>({});
   // What happened on each step: done, the predict choice, a wrong tap (for the nudge).
   const [progress, setProgress] = useState<Record<string, { done?: boolean; pick?: number; miss?: number; shown?: boolean }>>({});
   const [instant, setInstant] = useState(false);
@@ -466,6 +468,42 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
               )}
             </div>
 
+            {/* The recap: what this lesson taught, in the learner's own steps. Retrieval plus a moment of satisfaction. */}
+            <AnimatePresence>
+              {wrapped[li] && lastStep && (
+                <motion.div
+                  className="absolute inset-0 z-20 flex items-center justify-center bg-paper/70 p-4 backdrop-blur-sm"
+                  initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
+                >
+                  <motion.div
+                    className="w-full max-w-[520px] rounded-[24px] border border-line bg-surface p-6 shadow-[var(--stage-shadow)]"
+                    initial={reduced ? false : { y: 16, scale: 0.97 }} animate={{ y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  >
+                    <motion.span
+                      className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--t-green)] text-white"
+                      initial={reduced ? false : { scale: 0.3 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 18, delay: 0.1 }}
+                    >
+                      <Icon name="check" size={26} />
+                    </motion.span>
+                    <p className="mt-4 text-[14px] font-semibold uppercase tracking-[0.05em] text-ink-3">Lesson {li + 1} done</p>
+                    <h3 className="mt-1 font-serif text-[26px] leading-tight text-ink">{lesson.title}</h3>
+                    <ul className="mt-4 space-y-2.5">
+                      {lesson.steps.map((st) => st.after).filter(Boolean).slice(0, 4).map((a, i) => (
+                        <motion.li
+                          key={i} className="flex gap-3 text-[17px] leading-snug text-ink"
+                          initial={reduced ? false : { opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.08, duration: 0.25 }}
+                        >
+                          <span className="mt-[9px] h-2 w-2 shrink-0 rounded-full bg-[var(--t-primary)]" />
+                          <RichText text={a!} env={env} />
+                        </motion.li>
+                      ))}
+                    </ul>
+                    {li < total - 1 && <p className="mt-5 text-[15px] text-ink-2">Next: <span className="font-semibold text-ink">{course.plan.lessons[li + 1]?.title}</span></p>}
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* what to look at or do, inside the picture */}
             <div ref={topRef} className="pointer-events-none absolute inset-x-3 top-3 flex lg:inset-x-4 lg:top-4">
               <AnimatePresence mode="wait" initial={false}>
@@ -595,11 +633,11 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
               <motion.button
                 key={`${key}-${done}`}
                 initial={reduced || !done || !task ? false : { scale: 1 }} animate={reduced || !done || !task ? undefined : { scale: [1, 1.05, 1] }} transition={{ duration: 0.28 }}
-                onClick={() => (!lastStep ? goStep(si + 1) : li < total - 1 ? goLesson(li + 1) : setSheet(true))}
+                onClick={() => (!lastStep ? goStep(si + 1) : !wrapped[li] ? setWrapped((w) => ({ ...w, [li]: true })) : li < total - 1 ? goLesson(li + 1) : setSheet(true))}
                 disabled={!done}
                 className="h-12 min-w-[132px] shrink-0 whitespace-nowrap rounded-full bg-ink px-6 text-[17px] font-semibold text-paper transition-colors disabled:bg-sunk disabled:text-ink-3"
               >
-                {!lastStep ? 'Continue' : li < total - 1 ? 'Next lesson' : 'Finish'}
+                {!lastStep ? 'Continue' : !wrapped[li] ? 'Finish lesson' : li < total - 1 ? 'Next lesson' : 'All lessons'}
               </motion.button>
             </div>
           )}
@@ -686,6 +724,9 @@ function sceneIds(l: Lesson): string[] {
     case 'model3d': return s.parts.map((p) => p.id);
     case 'chart': return [...(s.bars ?? []).map((b) => b.id), ...(s.series ?? []).map((x) => x.id)];
     case 'timeline': return s.events.map((e) => e.id);
+    case 'pipeline': return [...s.stages.map((x) => x.id), ...(s.side ?? []).map((x) => x.id)];
+    case 'iconArray': return s.groups.map((g) => g.id);
+    case 'balance': return [s.left.id, s.right.id];
   }
 }
 
@@ -697,6 +738,9 @@ function summarise(l: Lesson): string {
     case 'model3d': return `3D model: ${s.parts.map((p) => `${p.id}${p.label ? ` "${p.label}"` : ''}`).join(', ')}`.slice(0, 780);
     case 'chart': return `Chart: ${(s.bars ?? []).map((b) => `${b.label}=${b.value}`).join(', ')}${(s.series ?? []).map((x) => x.label).join(', ')}`.slice(0, 780);
     case 'timeline': return `Timeline: ${s.events.map((e) => `${e.when} ${e.label}`).join('; ')}`.slice(0, 780);
+    case 'pipeline': return `Process: ${s.stages.map((x) => x.label).join(' → ')}${(s.side ?? []).length ? `; also ${(s.side ?? []).map((x) => `${x.label} (${x.dir})`).join(', ')}` : ''}`.slice(0, 780);
+    case 'iconArray': return `Out of ${s.total}: ${s.groups.map((g) => `${g.label} = ${g.count}`).join(', ')}`.slice(0, 780);
+    case 'balance': return `Balance: ${s.left.label} (${s.left.weight}) vs ${s.right.label} (${s.right.weight})`.slice(0, 780);
   }
 }
 

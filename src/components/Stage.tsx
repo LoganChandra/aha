@@ -9,6 +9,9 @@ import Diagram from './scene/Diagram';
 import Graph2D from './scene/Graph2D';
 import { useClock } from './scene/runtime';
 import Timeline from './scene/Timeline';
+import Balance from './scene/Balance';
+import IconArray from './scene/IconArray';
+import Pipeline from './scene/Pipeline';
 
 // three.js is only downloaded when a lesson actually has a 3D model.
 const Model3D = dynamic(() => import('./scene/Model3D'), { ssr: false, loading: () => <div className="shimmer absolute inset-6 rounded-[var(--radius)]" /> });
@@ -34,6 +37,9 @@ function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guid
     case 'model3d': return <Model3D scene={s} env={e} focus={focus} t={t} playing={playing} callouts={callouts} onTap={onTap} />;
     case 'chart': return <Chart scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'timeline': return <Timeline scene={s} focus={focus} callouts={callouts} onTap={onTap} />;
+    case 'pipeline': return <Pipeline scene={s} env={e} focus={focus} t={t} playing={playing} callouts={callouts} onTap={onTap} />;
+    case 'iconArray': return <IconArray scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
+    case 'balance': return <Balance scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
   }
 }
 

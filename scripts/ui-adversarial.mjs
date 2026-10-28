@@ -130,7 +130,7 @@ await check('walk every step and lesson 2 loads', {}, async (page) => {
   await startCourse(page);
   await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
   for (let i = 0; i < 10; i++) {
-    if (await page.getByRole('button', { name: 'Next lesson' }).count()) break;
+    if (await page.getByRole('button', { name: /^(Next lesson|Finish lesson)$/ }).count()) break;
     const show = page.getByRole('button', { name: 'Show me' });
     if (await show.count()) await show.click();
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -138,6 +138,7 @@ await check('walk every step and lesson 2 loads', {}, async (page) => {
   }
   const show = page.getByRole('button', { name: 'Show me' });
   if (await show.count()) await show.click();
+  if (await page.getByRole('button', { name: 'Finish lesson' }).count()) await page.getByRole('button', { name: 'Finish lesson' }).click();
   await page.getByRole('button', { name: 'Next lesson' }).click();
   await page.getByText(/Lesson 2 of/).waitFor();
   await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });

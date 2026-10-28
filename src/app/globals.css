@@ -227,3 +227,18 @@ input[type='range'].knob.guide::-webkit-slider-thumb {
   background: var(--stage);
   box-shadow: var(--stage-shadow);
 }
+
+/* Icons arrive with a small spring when a scene opens: a beat of delight, then still. */
+@keyframes pop-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pop-in {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pop-in { animation: none; }
+}

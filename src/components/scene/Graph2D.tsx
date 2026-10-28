@@ -257,7 +257,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           const c = pts.reduce((s, p) => [s[0] + p[0] / pts.length, s[1] + p[1] / pts.length], [0, 0]);
           labels.push({ x: c[0], y: c[1] + 4, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'middle' });
         }
-        return <polygon key={it.id} points={pts.map((p) => p.join(',')).join(' ')} fill={color} fillOpacity={hot(it.id) ? 0.26 : 0.15} stroke={color} strokeWidth={width * 0.75} strokeLinejoin="round" opacity={op} filter={fx('shadow')} />;
+        return <polygon key={it.id} points={pts.map((p) => p.join(',')).join(' ')} fill={fx(`grad-${it.tone ?? 'primary'}`)} fillOpacity={hot(it.id) ? 1 : 0.8} stroke={color} strokeWidth={width * 0.75} strokeLinejoin="round" opacity={op} filter={fx('shadow')} />;
       }
       case 'angle': {
         const cx = ev(it.at[0]), cy = ev(it.at[1]);
@@ -301,7 +301,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         if (it.label) labels.push({ x: cx, y: cy + px * 0.62 + 18, text: fillTemplate(it.label, env), color: 'var(--ink)', id: it.id, anchor: 'middle' });
         const k = (px * 0.62) / 24;
         return (
-          <g key={it.id} opacity={op}>
+          <g key={it.id} opacity={op} className="pop-in">
             <circle cx={cx} cy={cy} r={px * 0.56} fill="var(--surface)" stroke="none" filter={fx('shadow')} />
             <circle cx={cx} cy={cy} r={px * 0.56} fill={color} fillOpacity={hot(it.id) ? 0.22 : 0.12} stroke={hot(it.id) ? color : 'none'} strokeWidth={1.5} />
             <g transform={`translate(${cx - 12 * k},${cy - 12 * k}) scale(${k})`} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

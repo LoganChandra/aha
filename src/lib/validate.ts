@@ -35,6 +35,9 @@ function sceneIds(scene: Scene): string[] {
     case 'model3d': return scene.parts.map((p) => p.id);
     case 'chart': return [...(scene.bars ?? []).map((b) => b.id), ...(scene.series ?? []).map((s) => s.id)];
     case 'timeline': return scene.events.map((e) => e.id);
+    case 'pipeline': return [...scene.stages.map((x) => x.id), ...(scene.side ?? []).map((x) => x.id)];
+    case 'iconArray': return scene.groups.map((g) => g.id);
+    case 'balance': return [scene.left.id, scene.right.id];
   }
 }
 
@@ -62,6 +65,8 @@ export function checkLesson(raw: unknown): Checked {
   if (scene.type === 'graph2d') {
     if (!(scene.x[1] > scene.x[0]) || !(scene.y[1] > scene.y[0])) errors.push('graph2d: x and y ranges must be [min, max] with max > min.');
     for (const it of scene.items) errors.push(...g2Errors(it, scene, env, params));
+    const texts = scene.items.filter((i) => i.type === 'text').length;
+    if (texts > 3) errors.push(`graph2d: ${texts} text items is clutter; keep at most 3 short readouts and put names on items as labels.`);
     // Icons must have room: two visible icons closer than their sizes collide on screen.
     const icons = scene.items.filter((i) => i.type === 'icon' && !(i.show !== undefined && !(evaluate(i.show, env, 1) > 0))) as Extract<G2Item, { type: 'icon' }>[];
     const shown = icons.length;
@@ -87,6 +92,16 @@ export function checkLesson(raw: unknown): Checked {
       if (p.spin) checkExpr(`part "${p.id}" spin`, p.spin.speed, withT, errors);
     }
     if (scene.explodeParam && !params.has(scene.explodeParam)) errors.push(`explodeParam "${scene.explodeParam}" is not in params.`);
+  } else if (scene.type === 'pipeline') {
+    for (const st of scene.stages) { if (!ICONS[st.icon]) errors.push(`stage "${st.id}": no icon "${st.icon}"; use a listed icon name.`); checkExpr(`stage "${st.id}" value`, st.value, withT, errors); }
+    checkExpr('pipeline flow', scene.flow, withT, errors);
+    const ids = new Set(scene.stages.map((x) => x.id));
+    for (const sd of scene.side ?? []) { if (!ICONS[sd.icon]) errors.push(`side "${sd.id}": no icon "${sd.icon}".`); if (!ids.has(sd.stage)) errors.push(`side "${sd.id}": stage "${sd.stage}" is not a stage id.`); }
+  } else if (scene.type === 'iconArray') {
+    if (!ICONS[scene.icon]) errors.push(`iconArray: no icon "${scene.icon}".`);
+    for (const g of scene.groups) checkExpr(`group "${g.id}" count`, g.count, withT, errors);
+  } else if (scene.type === 'balance') {
+    for (const side of [scene.left, scene.right]) { if (side.icon && !ICONS[side.icon]) errors.push(`balance "${side.id}": no icon "${side.icon}".`); checkExpr(`balance "${side.id}" weight`, side.weight, withT, errors); }
   } else if (scene.type === 'chart') {
     if (!scene.bars?.length && !scene.series?.length) errors.push('chart: give bars or series.');
     for (const b of scene.bars ?? []) checkExpr(`bar "${b.id}"`, b.value, withT, errors);

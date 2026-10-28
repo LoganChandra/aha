@@ -155,7 +155,33 @@ export const Timeline = z.object({
   events: Many(z.object({ id: Id, when: Short(24), label: Short(50), detail: Short(140).optional(), tone: Tone.optional() }), 2, 14),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline]);
+// ---- Templates: designed scenes the model only fills in. Layout, spacing, motion are ours, so they always look right.
+const IconName = z.string().max(40);
+/** Stages in order, each a big icon; things flow between them. Processes: photosynthesis, the internet, digestion. */
+export const Pipeline = z.object({
+  type: z.literal('pipeline'),
+  stages: Many(z.object({ id: Id, label: Short(28), icon: IconName, tone: Tone.optional(), value: Num.optional(), unit: Short(12).optional(), detail: Short(60).optional() }), 2, 6),
+  flow: Num.optional(),
+  flowLabel: Short(30).optional(),
+  side: Many(z.object({ id: Id, label: Short(24), icon: IconName, tone: Tone.optional(), stage: Id, dir: z.enum(['in', 'out']).catch('in') }), 0, 4).optional(),
+});
+/** A grid of people (or things), some coloured: "out of 100". Probability, risk, statistics, populations. */
+export const IconArray = z.object({
+  type: z.literal('iconArray'),
+  total: z.number().int().min(4).max(100),
+  icon: IconName,
+  caption: Short(60).optional(),
+  groups: Many(z.object({ id: Id, label: Short(30), tone: Tone.optional(), count: Num }), 1, 4),
+});
+/** A balance that tips toward the heavier side. Equations, trade-offs, supply versus demand. */
+export const Balance = z.object({
+  type: z.literal('balance'),
+  left: z.object({ id: Id, label: Short(28), icon: IconName.optional(), weight: Num, tone: Tone.optional(), unit: Short(12).optional() }),
+  right: z.object({ id: Id, label: Short(28), icon: IconName.optional(), weight: Num, tone: Tone.optional(), unit: Short(12).optional() }),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

@@ -61,12 +61,18 @@ PART 4. WRITING THE WORDS
 
 PART 5. CHOOSING THE SCENE TYPE
 
+Templates come first, because they always look polished:
+- PIPELINE for any process, sequence or flow, including everything that used to be a boxes-and-arrows diagram.
+- ICON ARRAY for any "how many out of", odds, risk, percentages of people or things.
+- BALANCE for equations, trade-offs and anything that should "even out".
+Only when no template fits do you draw freely:
+
 - graph2d with axes: whenever the idea is a relationship between numbers (a curve, a rate, a distribution, growth, a trade-off). The learner drags a point along the curve or a parameter that reshapes it.
 - graph2d without axes (a drawing): physical situations and stories. Forces on a box, light through a lens, a pendulum, planets, a market stall with icons, a cell with icons, water flowing. Shapes (circle, polygon, segment with arrow) and icons, all positioned with expressions so they respond.
 - model3d: NEVER for processes (photosynthesis, digestion, reactions, economics, history, how the internet works): balls and boxes floating in space teach nothing. Draw those as a 2D scene with icons. model3d only for real 3D machines and structures where seeing the arrangement IS the point: motors, engines, the eye, a battery pack, a molecule, a gearbox, a building's frame. Use ready-made parts. Pull it apart with an explode knob, spin the moving parts, tap parts to name them.
 - chart: comparing amounts across categories, especially when a knob reshapes them (probabilities with temperature, budget shares, populations). Bars that move are far better than bars that sit still.
 - timeline: history and sequences where order is the point. Tap the cause, predict the consequence.
-- diagram (boxes and arrows): last resort, only for genuine processes and networks with nothing to draw (an approval process, a food web, a supply chain), and only with a knob that changes what flows.
+- diagram (boxes and arrows): replaced by PIPELINE; last resort, only for genuine processes and networks with nothing to draw (an approval process, a food web, a supply chain), and only with a knob that changes what flows.
 
 PART 6. SUBJECT BY SUBJECT
 
