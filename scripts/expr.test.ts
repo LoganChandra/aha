@@ -31,3 +31,11 @@ test('templates', () => {
   expect(fillTemplate('sin = {sin(th)}', { th: Math.PI / 2 })).toBe('sin = 1');
   expect(fillTemplate('$\\frac{a}{b}$ and {a}', { a: 2 })).toBe('$\\frac{a}{b}$ and 2');
 });
+test('runaway loops are cut off', () => {
+  const t0 = performance.now();
+  expect(Number.isNaN(evaluate('sum(k, -1/0, 0, k)', {}, NaN))).toBe(true);
+  expect(Number.isNaN(evaluate('sum(k, 1e17, 1e17, 1)', {}, NaN))).toBe(true);
+  expect(Number.isNaN(evaluate('sum(i,1,2000,sum(j,1,2000,sum(m,1,2000,1)))', {}, NaN))).toBe(true);
+  expect(evaluate('sum(k,1,100,sum(j,1,100,1))', {})).toBe(10000);
+  expect(performance.now() - t0).toBeLessThan(500);
+});

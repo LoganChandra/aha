@@ -157,7 +157,7 @@ function parse(src: string): Node {
 function compileNode(n: Node, bound: Set<string>): Compiled {
   switch (n.k) {
     case 'num': { const v = n.v; return () => v; }
-    case 'var': { const name = n.name; return (env) => { const v = env[name]; return v === undefined ? NaN : v; }; }
+    case 'var': { const name = n.name; return (env) => { const v = env[name]; return typeof v === 'number' ? v : NaN; }; }
     case 'un': { const a = compileNode(n.a, bound); return n.op === '-' ? (e) => -a(e) : (e) => (a(e) ? 0 : 1); }
     case 'tern': { const c = compileNode(n.c, bound), a = compileNode(n.a, bound), b = compileNode(n.b, bound); return (e) => (c(e) ? a(e) : b(e)); }
     case 'bin': {
@@ -195,16 +195,28 @@ function compileNode(n: Node, bound: Set<string>): Compiled {
   }
 }
 
+// Work budget for one evaluation, shared by every loop inside it (nested sums included). A recipe can then never
+// freeze a frame: past the budget the value is NaN and the renderer skips it.
+const OPS_PER_EVAL = 20_000;
+let ops = 0;
+class Budget extends Error {}
+
 function compileLoop(n: Extract<Node, { k: 'sum' }>, bound: Set<string>, init: number, fold: (a: number, v: number) => number): Compiled {
   const from = compileNode(n.from, bound), to = compileNode(n.to, bound);
   const inner = new Set(bound); inner.add(n.idx);
   const body = compileNode(n.body, inner);
   const idx = n.idx;
   return (env) => {
-    const a = Math.round(from(env)), b = Math.min(Math.round(to(env)), a + 2000); // hard cap keeps a frame cheap
+    const a = Math.round(from(env)), b = Math.round(to(env));
+    if (!Number.isFinite(a) || !Number.isFinite(b) || Math.abs(a) > 1e9 || Math.abs(b) > 1e9) return NaN;
+    const count = Math.min(b - a + 1, 2000); // iterations are counted, so huge bounds cannot stall k++
     let acc = init;
     const local: Env = Object.create(env);
-    for (let k = a; k <= b; k++) { local[idx] = k; acc = fold(acc, body(local)); }
+    for (let i = 0; i < count; i++) {
+      if (++ops > OPS_PER_EVAL) throw new Budget();
+      local[idx] = a + i;
+      acc = fold(acc, body(local));
+    }
     return acc;
   };
 }
@@ -234,7 +246,12 @@ export function compile(src: string | number): { fn: Compiled; vars: string[] } 
   const tree = parse(key);
   const vars = new Set<string>();
   freeVars(tree, new Set(), vars);
-  const res = { fn: compileNode(tree, new Set()), vars: [...vars] };
+  const inner = compileNode(tree, new Set());
+  const fn: Compiled = (env) => {
+    ops = 0;
+    try { return inner(env); } catch (e) { if (e instanceof Budget) return NaN; throw e; }
+  };
+  const res = { fn, vars: [...vars] };
   if (cache.size > 5000) cache.clear();
   cache.set(key, res);
   return res;

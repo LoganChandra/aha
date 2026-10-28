@@ -22,6 +22,7 @@ type Props = {
 const PAD = { l: 34, r: 14, t: 14, b: 26 };
 
 function niceStep(range: number, px: number, target = 64): number {
+  if (!Number.isFinite(range) || range <= 0) return 1;
   const raw = range / Math.max(1, px / target);
   const mag = Math.pow(10, Math.floor(Math.log10(raw)));
   const n = raw / mag;
@@ -73,12 +74,14 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
   const hot = (id: string) => focus.includes(id);
 
   // ---- grid and axes
-  const pi = !!scene.piTicks;
-  const xs = pi ? (x1 - x0 > 4 * Math.PI ? Math.PI : x1 - x0 > 1.6 * Math.PI ? Math.PI / 2 : Math.PI / 4) : niceStep(x1 - x0, view.iw);
+  // Ticks in multiples of pi only while that stays a sensible count; any range always ends up with at most ~40 ticks.
+  const piStep = x1 - x0 > 4 * Math.PI ? Math.PI : x1 - x0 > 1.6 * Math.PI ? Math.PI / 2 : Math.PI / 4;
+  const usePi = !!scene.piTicks && (x1 - x0) / piStep <= 40;
+  const xs = usePi ? piStep : niceStep(x1 - x0, view.iw);
   const ys = niceStep(y1 - y0, view.ih, 52);
   const xTicks: number[] = [], yTicks: number[] = [];
-  for (let v = Math.ceil(x0 / xs) * xs; v <= x1 + 1e-9; v += xs) xTicks.push(v);
-  for (let v = Math.ceil(y0 / ys) * ys; v <= y1 + 1e-9; v += ys) yTicks.push(v);
+  for (let i = 0, v0 = Math.ceil(x0 / xs) * xs; i < 60; i++) { const v = v0 + i * xs; if (v > x1 + 1e-9) break; xTicks.push(v); }
+  for (let i = 0, v0 = Math.ceil(y0 / ys) * ys; i < 60; i++) { const v = v0 + i * ys; if (v > y1 + 1e-9) break; yTicks.push(v); }
   const showAxes = scene.axes !== false;
   const ax = Math.min(Math.max(0, x0), x1), ay = Math.min(Math.max(0, y0), y1);
 
@@ -261,7 +264,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
           )}
           {showAxes && (
             <g fontSize={11} fill="var(--ink-3)" fontFamily="var(--font-sans)">
-              {xTicks.filter((v) => Math.abs(v) > xs / 1000 || ax !== 0).map((v) => <text key={`tx${v}`} x={X(v)} y={Math.min(view.h - 6, Y(ay) + 16)} textAnchor="middle">{tickLabel(v, xs, pi)}</text>)}
+              {xTicks.filter((v) => Math.abs(v) > xs / 1000 || ax !== 0).map((v) => <text key={`tx${v}`} x={X(v)} y={Math.min(view.h - 6, Y(ay) + 16)} textAnchor="middle">{tickLabel(v, xs, usePi)}</text>)}
               {yTicks.filter((v) => Math.abs(v) > ys / 1000).map((v) => <text key={`ty${v}`} x={Math.max(PAD.l - 6, X(ax) - 6)} y={Y(v) + 4} textAnchor="end">{tickLabel(v, ys, false)}</text>)}
               {scene.xLabel && <text x={PAD.l + view.iw} y={Y(ay) - 8} textAnchor="end" fill="var(--ink-2)" fontWeight={500}>{scene.xLabel}</text>}
               {scene.yLabel && <text x={X(ax) + 8} y={PAD.t + 12} fill="var(--ink-2)" fontWeight={500}>{scene.yLabel}</text>}

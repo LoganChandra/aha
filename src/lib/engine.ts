@@ -62,7 +62,7 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
   const t0 = Date.now();
   const res = await hedge(routes, 9000, async (route) => {
     try {
-      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 45_000, temperature: 0.3 });
+      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 25_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       const parsed = Plan.safeParse(r.data);
       if (!parsed.success) throw new AiError(`plan shape: ${parsed.error.issues[0]?.message}`);
@@ -83,13 +83,16 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
 type Written = { lesson: Lesson; errors: string[] };
 
 /** One model writes the lesson, with one repair turn if the checker finds problems. */
-async function writeWith(route: Route, user: string, m: Meter): Promise<Written> {
+async function writeWith(route: Route, user: string, m: Meter, deadline: number): Promise<Written> {
   const messages: Msg[] = [{ role: 'system', content: LESSON_SYSTEM }, { role: 'user', content: user }];
   let best: Written | null = null;
   for (let attempt = 0; attempt < 2; attempt++) {
+    // Every call fits inside the function's time limit, so a slow first try cannot starve the others.
+    const left = deadline - Date.now() - 2000;
+    if (left < 8000) break;
     let r;
     try {
-      r = await chatJson(route, messages, { timeoutMs: 60_000, temperature: 0.4 });
+      r = await chatJson(route, messages, { timeoutMs: Math.min(45_000, left), temperature: 0.4 });
     } catch (e) {
       m.calls.push({ model: route.model, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
       break; // a dead or garbled model gets no repair turn
@@ -105,14 +108,14 @@ async function writeWith(route: Route, user: string, m: Meter): Promise<Written>
   throw new AiError(`${route.model} produced no lesson`);
 }
 
-export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = LESSON_ROUTES): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[] }> {
+export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = LESSON_ROUTES, deadline = Date.now() + 105_000): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[] }> {
   const m = meter();
   const t0 = Date.now();
   const user = lessonUser(plan, index, level, sources);
   // Imperfect drafts from every route are kept; if no route writes a clean lesson, the least broken one is repaired.
   const drafts: Written[] = [];
   try {
-    const { lesson } = await hedge(routes, 12_000, (route) => writeWith(route, user, m).catch((e) => {
+    const { lesson } = await hedge(routes, 12_000, (route) => writeWith(route, user, m, deadline).catch((e) => {
       if ((e as { best?: Written }).best) drafts.push((e as { best: Written }).best);
       throw e;
     }));
@@ -152,7 +155,7 @@ ${history.length ? `Earlier in this lesson:\n${history.slice(-3).map((h) => `Q: 
 Their question: """${question.slice(0, 500)}"""`;
   const answer = await hedge(routes, 6000, async (route) => {
     try {
-      const r = await chatJson<Answer>(route, [{ role: 'system', content: ASK_SYSTEM }, { role: 'user', content: user }], { timeoutMs: 25_000, temperature: 0.3 });
+      const r = await chatJson<Answer>(route, [{ role: 'system', content: ASK_SYSTEM }, { role: 'user', content: user }], { timeoutMs: 20_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });
       const a = r.data;

@@ -28,19 +28,22 @@ function layoutFor(scene: D, dir: 'LR' | 'TB') {
   const g = new dagre.graphlib.Graph({ multigraph: true });
   g.setGraph({ rankdir: dir, nodesep: dir === 'TB' ? 26 : 34, ranksep: dir === 'TB' ? 46 : 70, marginx: 12, marginy: 12 });
   g.setDefaultEdgeLabel(() => ({}));
+  // dagre keeps nodes in a plain object, so ids like "constructor" break it. It only ever sees n0..nN.
+  const key = new Map(scene.nodes.map((n, i) => [n.id, `n${i}`]));
   const meta = new Map<string, { lines: string[]; h: number }>();
   for (const n of scene.nodes) {
     const lines = n.detail ? wrap(n.detail, 26) : [];
     const h = 44 + lines.length * 16 + (n.value !== undefined ? 20 : 0);
     meta.set(n.id, { lines, h });
-    g.setNode(n.id, { width: NODE_W, height: h });
+    g.setNode(key.get(n.id)!, { width: NODE_W, height: h });
   }
-  scene.edges.forEach((e, i) => g.setEdge(e.from, e.to, {}, `e${i}`));
+  const edgesIn = scene.edges.filter((e) => key.has(e.from) && key.has(e.to));
+  edgesIn.forEach((e, i) => g.setEdge(key.get(e.from)!, key.get(e.to)!, {}, `e${i}`));
   dagre.layout(g);
   const gw = g.graph().width ?? 1, gh = g.graph().height ?? 1;
-  const nodes = scene.nodes.map((n) => ({ ...n, ...(g.node(n.id) as { x: number; y: number; width: number; height: number }), ...meta.get(n.id)! }));
-  const edges = scene.edges.map((e, i) => {
-    const pts = (g.edge({ v: e.from, w: e.to, name: `e${i}` }) as { points: { x: number; y: number }[] } | undefined)?.points ?? [];
+  const nodes = scene.nodes.map((n) => ({ ...n, ...(g.node(key.get(n.id)!) as { x: number; y: number; width: number; height: number }), ...meta.get(n.id)! }));
+  const edges = edgesIn.map((e, i) => {
+    const pts = (g.edge({ v: key.get(e.from)!, w: key.get(e.to)!, name: `e${i}` }) as { points: { x: number; y: number }[] } | undefined)?.points ?? [];
     return { ...e, key: e.id ?? `${e.from}->${e.to}`, pts };
   });
   return { nodes, edges, gw, gh };

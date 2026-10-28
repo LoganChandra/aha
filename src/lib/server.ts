@@ -35,6 +35,31 @@ export function verifyPlan(sp: SignedPlan, id: string): boolean {
   return want.length === got.length && timingSafeEqual(want, got);
 }
 
+/** Proof that a question comes from someone holding a course this server planned. */
+export const askToken = (planId: string) => createHmac('sha256', secret()).update(`ask:${planId}`).digest('base64url').slice(0, 24);
+export function verifyAskToken(planId: string, token: string): boolean {
+  if (!planId || !token) return false;
+  const want = Buffer.from(askToken(planId));
+  const got = Buffer.from(String(token));
+  return want.length === got.length && timingSafeEqual(want, got);
+}
+
+// ---- daily spend cap. The runtime cache is regional and not atomic, so this is a soft cap that trails by a few
+// requests; the hard backstop is the credit limit on the OpenRouter key itself.
+const DAILY_CAP_USD = Number(process.env.DAILY_CAP_USD || 10);
+const today = () => new Date().toISOString().slice(0, 10);
+export async function overBudget(): Promise<boolean> {
+  const spent = (await cacheGet<number>(`spend:${today()}`)) ?? 0;
+  return spent >= DAILY_CAP_USD;
+}
+export async function addSpend(usd: number): Promise<void> {
+  if (!(usd > 0)) return;
+  const key = `spend:${today()}`;
+  const spent = (await cacheGet<number>(key)) ?? 0;
+  await cacheSet(key, spent + usd, 2 * DAY);
+}
+export const RESTING = 'ProfAI has taught a lot today and is resting until tomorrow. Courses others started are still open.';
+
 export const hash = (s: string) => createHash('sha256').update(s).digest('base64url').slice(0, 24);
 
 // ---- rate limit (per instance; enough to stop one visitor burning the key, not a distributed quota)
@@ -49,7 +74,8 @@ export function limited(req: Request, kind: keyof typeof LIMITS): boolean {
   const b = buckets.get(key);
   if (!b || b.reset < now) { buckets.set(key, { n: 1, reset: now + window * 1000 }); return false; }
   b.n++;
-  if (buckets.size > 20_000) buckets.clear();
+  // Evict only expired buckets: wiping the map would reset everyone's limit for whoever filled it.
+  if (buckets.size > 50_000) for (const [k, v] of buckets) if (v.reset < now) buckets.delete(k);
   return b.n > max;
 }
 

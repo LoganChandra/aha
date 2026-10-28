@@ -1,6 +1,6 @@
 import { answerQuestion, type AskContext } from '@/lib/engine';
 import { LEVELS, type Level } from '@/lib/recipe';
-import { json, limited, readJson } from '@/lib/server';
+import { RESTING, addSpend, json, limited, overBudget, readJson, verifyAskToken } from '@/lib/server';
 
 export const maxDuration = 45;
 
@@ -11,7 +11,9 @@ export async function POST(req: Request) {
   const question = str(body?.question, 500).trim();
   const c = (body?.context ?? {}) as Record<string, unknown>;
   if (!question) return json({ error: 'Ask a question.' }, 400);
+  if (!verifyAskToken(str(body?.planId, 64), str(body?.askToken, 64))) return json({ error: 'Start a course to ask questions about it.' }, 403);
   if (limited(req, 'ask')) return json({ error: 'Lots of questions in the last hour. Try again a little later.' }, 429);
+  if (await overBudget()) return json({ error: RESTING }, 503);
   const level = (LEVELS as readonly string[]).includes(c.level as string) ? (c.level as Level) : 'beginner';
   const ctx: AskContext = {
     topic: str(c.topic, 100),
@@ -30,6 +32,7 @@ export async function POST(req: Request) {
   const history = (Array.isArray(body?.history) ? body!.history : []).slice(-3).map((h) => ({ q: str((h as Record<string, unknown>).q, 300), a: str((h as Record<string, unknown>).a, 600) }));
   try {
     const { answer, meter } = await answerQuestion(question, ctx, history);
+    await addSpend(meter.costUsd);
     console.log(JSON.stringify({ ev: 'ask', cost: meter.costUsd, ms: meter.ms, calls: meter.calls }));
     return json({ answer });
   } catch (e) {

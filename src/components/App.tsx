@@ -7,10 +7,11 @@ import type { Env } from '@/lib/expr';
 import { LEVEL_LABEL, LEVELS, type Lesson, type Level, type Plan, type Source } from '@/lib/recipe';
 import RichText from './RichText';
 import { useGlide, useReducedMotion, usesTime } from './scene/runtime';
+import SceneBoundary from './SceneBoundary';
 import Stage from './Stage';
 import { Icon, Knob, PromptBar } from './ui';
 
-type Course = { prompt: string; level: Level; planId: string; plan: Plan; sources: Source[] };
+type Course = { prompt: string; level: Level; planId: string; askToken: string; plan: Plan; sources: Source[] };
 type Slot = { status: 'idle' | 'loading' | 'ready' | 'error'; lesson?: Lesson; error?: string };
 type Answer = { q: string; a?: string; error?: string; pending: boolean };
 
@@ -37,11 +38,16 @@ export default function App() {
   const [course, setCourse] = useState<Course | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
   const slotsRef = useRef<Slot[]>([]);
-  slotsRef.current = slots;
+  // The course a lesson response belongs to; a response for an older course is dropped.
+  const coursePlanId = useRef('');
 
-  // Restore the last level choice on this device; nothing else is stored.
+  // Restore the last level choice on this device after hydration (the server cannot know it); nothing else is stored.
   useEffect(() => {
-    try { const l = localStorage.getItem('profai-level') as Level | null; if (l && LEVELS.includes(l)) setLevel(l); } catch {}
+    try {
+      const l = localStorage.getItem('profai-level') as Level | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (l && LEVELS.includes(l)) setLevel(l);
+    } catch {}
   }, []);
   const pickLevel = (l: Level) => { setLevel(l); try { localStorage.setItem('profai-level', l); } catch {} };
 
@@ -49,12 +55,17 @@ export default function App() {
     if (i < 0 || i >= c.plan.lessons.length) return;
     const s = slotsRef.current[i];
     if (s && (s.status === 'loading' || s.status === 'ready')) return;
-    setSlots((prev) => { const n = [...prev]; n[i] = { status: 'loading' }; return n; });
+    const put = (slot: Slot) => {
+      if (coursePlanId.current !== c.planId) return;
+      slotsRef.current = slotsRef.current.map((s, j) => (j === i ? slot : s));
+      setSlots(slotsRef.current);
+    };
+    put({ status: 'loading' });
     try {
       const { lesson } = await post<{ lesson: Lesson }>('/api/lesson', { plan: c.plan, sources: c.sources, level: c.level, planId: c.planId, index: i });
-      setSlots((prev) => { const n = [...prev]; n[i] = { status: 'ready', lesson }; return n; });
+      put({ status: 'ready', lesson });
     } catch (e) {
-      setSlots((prev) => { const n = [...prev]; n[i] = { status: 'error', error: (e as Error).message }; return n; });
+      put({ status: 'error', error: (e as Error).message });
     }
   }, []);
 
@@ -71,7 +82,8 @@ export default function App() {
     setPrompt(p);
     setView('planning');
     try {
-      const r = await post<{ plan: Plan; sources: Source[]; planId: string; level: Level }>('/api/plan', { prompt: p, level: lvl });
+      coursePlanId.current = '';
+      const r = await post<{ plan: Plan; sources: Source[]; planId: string; askToken: string; level: Level }>('/api/plan', { prompt: p, level: lvl });
       if (r.plan.status === 'clarify') {
         setHomeMsg({ kind: 'clarify', text: r.plan.question || 'What would you like to understand?', options: r.plan.options });
         setPrompt('');
@@ -84,7 +96,8 @@ export default function App() {
         setView('home');
         return;
       }
-      const c: Course = { prompt: p, level: lvl, planId: r.planId, plan: r.plan, sources: r.sources };
+      const c: Course = { prompt: p, level: lvl, planId: r.planId, askToken: r.askToken, plan: r.plan, sources: r.sources };
+      coursePlanId.current = c.planId;
       const empty: Slot[] = r.plan.lessons.map(() => ({ status: 'idle' }));
       slotsRef.current = empty;
       setSlots(empty);
@@ -101,12 +114,13 @@ export default function App() {
 
   // The phone's back gesture leaves a course for the home screen instead of leaving ProfAI.
   useEffect(() => {
-    const onPop = () => { setView((v) => (v === 'course' ? 'home' : v)); setCourse(null); setSlots([]); setHomeMsg(null); };
+    const onPop = () => { coursePlanId.current = ''; setView((v) => (v === 'course' ? 'home' : v)); setCourse(null); setSlots([]); setHomeMsg(null); };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   function goHome() {
+    coursePlanId.current = '';
     if (window.history.state?.profai === 'course') { window.history.back(); return; }
     setView('home');
     setCourse(null);
@@ -207,6 +221,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   // Knob values from before an answer moved them; "Back to the lesson" puts them back.
   const [beforeAnswer, setBeforeAnswer] = useState<Env | null>(null);
   const [history, setHistory] = useState<{ q: string; a: string }[]>([]);
+  // Bumped whenever the learner moves; an answer that arrives after a move is dropped.
+  const askSeq = useRef(0);
   const [sheet, setSheet] = useState(false);
   const [check, setCheck] = useState<{ open: boolean; pick?: number }>({ open: false });
 
@@ -232,6 +248,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   function goBeat(next: number) {
     if (!lesson) return;
     const n = Math.max(0, Math.min(lesson.beats.length - 1, next));
+    askSeq.current++;
     setBi(n);
     setAnswer(null);
     setAnswerFocus(null);
@@ -245,6 +262,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
 
   function goLesson(n: number) {
     if (n < 0 || n >= total) return;
+    askSeq.current++;
     setLi(n);
     setBi(0);
     setAnswer(null);
@@ -264,9 +282,12 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     if (!q || !lesson) return;
     setAskText('');
     setAnswer({ q, pending: true });
+    const seq = ++askSeq.current;
     try {
       const r = await post<{ answer: { answer: string; set?: Record<string, number>; focus?: string[] } }>('/api/ask', {
         question: q,
+        planId: course.planId,
+        askToken: course.askToken,
         history,
         context: {
           topic: course.plan.topic,
@@ -278,6 +299,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
           params: lesson.params.map((p) => ({ id: p.id, label: p.label, value: env[p.id] ?? p.value, min: p.min, max: p.max })),
         },
       });
+      if (seq !== askSeq.current) return;
       setAnswer({ q, a: r.answer.answer, pending: false });
       setHistory((h) => [...h.slice(-4), { q, a: r.answer.answer }]);
       if (r.answer.set && Object.keys(r.answer.set).length) {
@@ -287,6 +309,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
       }
       setAnswerFocus(r.answer.focus?.length ? r.answer.focus : null);
     } catch (e) {
+      if (seq !== askSeq.current) return;
       setAnswer({ q, error: (e as Error).message, pending: false });
     }
   }
@@ -321,7 +344,9 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
       <section className="relative mx-3 h-[42dvh] min-h-[250px] shrink-0 overflow-hidden rounded-[var(--radius)] border border-line bg-surface lg:row-start-2 lg:mx-4 lg:mb-4 lg:h-auto">
         {lesson ? (
           <>
-            <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} />
+            <SceneBoundary key={`${course.planId}-${li}`}>
+              <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} />
+            </SceneBoundary>
             {moving && (
               <button
                 onClick={() => setPlaying((p) => !p)} aria-label={playing ? 'Pause' : 'Play'}
