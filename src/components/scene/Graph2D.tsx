@@ -17,6 +17,8 @@ type Props = {
   focus: string[];
   params: { id: string; min: number; max: number }[];
   onDrag: (values: Record<string, number>) => void;
+  callouts?: Record<string, string>;
+  onTap?: (id: string) => void;
 };
 
 const PAD = { l: 34, r: 14, t: 14, b: 26 };
@@ -46,7 +48,7 @@ function reduce(a: number, b: number): [number, number] {
   return [a / k, b / k];
 }
 
-export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
+export default function Graph2D({ scene, env, focus, params, onDrag, callouts = {}, onTap }: Props) {
   const [box, size] = useSize<HTMLDivElement>();
   const svg = useRef<SVGSVGElement>(null);
   const dragging = useRef<{ x?: string; y?: string; item: Extract<G2Item, { type: 'point' }> } | null>(null);
@@ -106,6 +108,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
 
   const n = Math.min(600, Math.max(120, Math.round(view.iw / 1.5)));
   const labels: Label[] = [];
+  // Where each item sits on screen: callouts pin here and tap targets centre here.
+  const anchors: Record<string, [number, number]> = {};
 
   function render(it: Item) {
     const color = tone(it.tone);
@@ -115,6 +119,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
       case 'function': {
         const da = it.domain ? ev(it.domain[0], x0) : x0, db = it.domain ? ev(it.domain[1], x1) : x1;
         const d = curve((x) => [x, ev(it.expr, NaN, { x })], Math.max(x0, da), Math.min(x1, db), n);
+        { const ax0 = Math.max(x0, da) + (Math.min(x1, db) - Math.max(x0, da)) * 0.62, ay0 = ev(it.expr, NaN, { x: ax0 }); if (Number.isFinite(ay0)) anchors[it.id] = [X(ax0), Y(Math.max(y0, Math.min(y1, ay0)))]; }
         if (it.label) {
           const lx = Math.min(x1, db) - (x1 - x0) * 0.02, ly = ev(it.expr, NaN, { x: lx });
           if (Number.isFinite(ly) && ly > y0 && ly < y1) labels.push({ x: X(lx) - 4, y: Y(ly) - 8, text: it.label, color, id: it.id, anchor: 'end' });
@@ -124,10 +129,12 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
       case 'parametric': {
         const a = ev(it.s[0], 0), b = ev(it.s[1], 1);
         const d = curve((s) => [ev(it.x, NaN, { s }), ev(it.y, NaN, { s })], a, b, n);
+        { const sm = (a + b) / 2; anchors[it.id] = [X(ev(it.x, 0, { s: sm })), Y(ev(it.y, 0, { s: sm }))]; }
         return <path key={it.id} d={d} fill="none" stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" strokeLinejoin="round" opacity={op} />;
       }
       case 'polyline': {
         const pts = it.points.map(([a, b]) => `${X(ev(a)).toFixed(1)},${Y(ev(b)).toFixed(1)}`).join(' ');
+        { const m = it.points[Math.floor(it.points.length / 2)]; if (m) anchors[it.id] = [X(ev(m[0])), Y(ev(m[1]))]; }
         const last = it.points[it.points.length - 1];
         if (it.label && last) labels.push({ x: X(ev(last[0])) - 4, y: Y(ev(last[1])) - 10, text: it.label, color, id: it.id, anchor: 'end' });
         return (
@@ -140,6 +147,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
       case 'area': {
         const a = Math.max(x0, ev(it.from, x0)), b = Math.min(x1, ev(it.to, x1));
         if (!(b > a)) return null;
+        anchors[it.id] = [X((a + b) / 2), Y(clampY(ev(it.expr, 0, { x: (a + b) / 2 }) / 2))];
         let d = '';
         const m = 160;
         for (let i = 0; i <= m; i++) { const x = a + ((b - a) * i) / m; d += `${i ? 'L' : 'M'}${X(x).toFixed(1)},${Y(clampY(ev(it.expr, 0, { x }))).toFixed(1)}`; }
@@ -149,6 +157,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
       }
       case 'segment': {
         const ax_ = X(ev(it.from[0])), ay_ = Y(ev(it.from[1])), bx = X(ev(it.to[0])), by = Y(ev(it.to[1]));
+        anchors[it.id] = [(ax_ + bx) / 2, (ay_ + by) / 2];
         if (it.label) labels.push({ x: (ax_ + bx) / 2 + 6, y: (ay_ + by) / 2 - 6, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'start' });
         return (
           <g key={it.id} opacity={op}>
@@ -161,11 +170,13 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
         const cx = X(ev(it.center[0])), cy = Y(ev(it.center[1]));
         const r = Math.abs(X(ev(it.center[0]) + ev(it.r, 1)) - cx);
         const ry = Math.abs(Y(ev(it.center[1]) + ev(it.r, 1)) - cy);
+        anchors[it.id] = [cx, cy - ry];
         if (it.label) labels.push({ x: cx, y: cy - ry - 8, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'middle' });
         return <ellipse key={it.id} cx={cx} cy={cy} rx={r} ry={ry} fill={it.fill ? color : 'none'} fillOpacity={0.12} stroke={color} strokeWidth={width * 0.8} opacity={op} />;
       }
       case 'polygon': {
         const pts = it.points.map(([a, b]) => [X(ev(a)), Y(ev(b))]);
+        anchors[it.id] = [pts.reduce((q, p) => q + p[0], 0) / pts.length, pts.reduce((q, p) => q + p[1], 0) / pts.length];
         if (it.label) {
           const c = pts.reduce((s, p) => [s[0] + p[0] / pts.length, s[1] + p[1] / pts.length], [0, 0]);
           labels.push({ x: c[0], y: c[1] + 4, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'middle' });
@@ -180,11 +191,13 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
         let d = `M${X(cx)},${Y(cy)}`;
         for (let i = 0; i <= steps; i++) { const th = a + ((b - a) * i) / steps; d += `L${X(cx + r * Math.cos(th)).toFixed(1)},${Y(cy + r * Math.sin(th)).toFixed(1)}`; }
         const mid = (a + b) / 2;
+        anchors[it.id] = [X(cx + r * Math.cos(mid)), Y(cy + r * Math.sin(mid))];
         if (it.label) labels.push({ x: X(cx + r * 1.6 * Math.cos(mid)), y: Y(cy + r * 1.6 * Math.sin(mid)) + 4, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'middle' });
         return <path key={it.id} d={d + 'Z'} fill={color} fillOpacity={0.16} stroke={color} strokeWidth={1.6} opacity={op} />;
       }
       case 'point': {
         const px = X(ev(it.x)), py = Y(ev(it.y));
+        anchors[it.id] = [px, py];
         const draggable = !!(it.dragX || it.dragY);
         if (it.label) labels.push({ x: px + 10, y: py - 10, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'start' });
         return (
@@ -202,6 +215,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
         );
       }
       case 'text': {
+        anchors[it.id] = [X(ev(it.at[0])), Y(ev(it.at[1]))];
         labels.push({ x: X(ev(it.at[0])), y: Y(ev(it.at[1])), text: fillTemplate(it.text, env), color: it.tone ? color : 'var(--ink)', id: it.id, anchor: 'start' });
         return null;
       }
@@ -239,7 +253,16 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
     if (Object.keys(next).length) onDrag(next);
   }
 
-  const drawn = scene.items.map(render);
+  const drawn = scene.items.map((it) => {
+    const el = render(it);
+    if (!onTap || !el) return el;
+    return <g key={`tap-${it.id}`} onClick={() => onTap(it.id)} style={{ cursor: 'pointer' }}>{el}</g>;
+  });
+  // A generous invisible target at each item, so thin lines are easy to tap with a thumb.
+  const tapTargets = onTap ? Object.entries(anchors).map(([id, [x, y]]) => (
+    <circle key={`hit-${id}`} cx={x} cy={y} r={22} fill="transparent" style={{ cursor: 'pointer' }} onClick={() => onTap(id)} role="button" aria-label={`Tap ${scene.items.find((i) => i.id === id)?.label ?? id}`} />
+  )) : null;
+  const pins = Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }));
   const textIds = new Set(scene.items.filter((i) => i.type === 'text').map((i) => i.id));
   // Axis titles are fixed; seed them as taken space so item labels move around them.
   const reserved: Box[] = [];
@@ -267,14 +290,15 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
             </g>
           )}
           {showAxes && (
-            <g fontSize={11} fill="var(--ink-3)" fontFamily="var(--font-sans)">
-              {xTicks.filter((v) => Math.abs(v) > xs / 1000 || ax !== 0).map((v) => <text key={`tx${v}`} x={X(v)} y={Math.min(view.h - 6, Y(ay) + 16)} textAnchor="middle">{tickLabel(v, xs, usePi)}</text>)}
-              {yTicks.filter((v) => Math.abs(v) > ys / 1000).map((v) => <text key={`ty${v}`} x={Math.max(PAD.l - 6, X(ax) - 6)} y={Y(v) + 4} textAnchor="end">{tickLabel(v, ys, false)}</text>)}
+            <g fontSize={11.5} fill="var(--ink-2)" fontFamily="var(--font-sans)" fontWeight={500}>
+              {xTicks.filter((v) => (Math.abs(v) > xs / 1000 || ax !== 0) && X(v) > PAD.l + 8 && X(v) < PAD.l + view.iw - 8).map((v) => <text key={`tx${v}`} x={X(v)} y={Math.min(view.h - 6, Y(ay) + 16)} textAnchor="middle">{tickLabel(v, xs, usePi)}</text>)}
+              {yTicks.filter((v) => Math.abs(v) > ys / 1000 && Y(v) > PAD.t + 8 && Y(v) < PAD.t + view.ih - 8).map((v) => <text key={`ty${v}`} x={Math.max(PAD.l - 6, X(ax) - 6)} y={Y(v) + 4} textAnchor="end">{tickLabel(v, ys, false)}</text>)}
               {scene.xLabel && <text x={PAD.l + view.iw} y={Y(ay) - 8} textAnchor="end" fill="var(--ink-2)" fontWeight={500}>{scene.xLabel}</text>}
               {scene.yLabel && <text x={X(ax) + 8} y={PAD.t + 12} fill="var(--ink-2)" fontWeight={500}>{scene.yLabel}</text>}
             </g>
           )}
           <g clipPath="url(#plot)">{drawn}</g>
+          {tapTargets}
           <g fontFamily="var(--font-sans)" fontSize={13} fontWeight={600}>
             {placed.map((l, i) => (
               <text
@@ -285,9 +309,40 @@ export default function Graph2D({ scene, env, focus, params, onDrag }: Props) {
               </text>
             ))}
           </g>
+          {pins.length > 0 && <Pins pins={pins} w={view.w} h={view.h} />}
         </svg>
       )}
     </div>
+  );
+}
+
+/** Callouts: short labels in a pill, pinned to their part with a leader line, kept apart and inside the frame. */
+export function Pins({ pins, w, h }: { pins: { id: string; text: string; at: [number, number] }[]; w: number; h: number }) {
+  const placed: Box[] = [];
+  return (
+    <g fontFamily="var(--font-sans)" style={{ pointerEvents: 'none' }}>
+      {pins.map((p) => {
+        const tw = textWidth(p.text) * 0.98 + 18, th = 26;
+        // Try above, below, right, left of the anchor; take the first spot that is inside the frame and free.
+        const tries: [number, number][] = [[p.at[0] - tw / 2, p.at[1] - 46], [p.at[0] - tw / 2, p.at[1] + 22], [p.at[0] + 18, p.at[1] - th / 2], [p.at[0] - tw - 18, p.at[1] - th / 2]];
+        let spot: [number, number] = tries[0];
+        for (const [x, y] of tries) {
+          const cx = Math.max(6, Math.min(w - tw - 6, x)), cy = Math.max(6, Math.min(h - th - 6, y));
+          spot = [cx, cy];
+          if (!placed.some((b) => cx < b.x1 && cx + tw > b.x0 && cy < b.y1 && cy + th > b.y0)) break;
+        }
+        placed.push({ x0: spot[0], x1: spot[0] + tw, y0: spot[1], y1: spot[1] + th });
+        const lx = Math.max(spot[0] + 10, Math.min(spot[0] + tw - 10, p.at[0])), ly = spot[1] > p.at[1] ? spot[1] : spot[1] + th;
+        return (
+          <g key={p.id} className="pin">
+            <line x1={p.at[0]} y1={p.at[1]} x2={lx} y2={ly} stroke="var(--ink)" strokeWidth={1.2} opacity={0.55} />
+            <circle cx={p.at[0]} cy={p.at[1]} r={3.5} fill="var(--ink)" />
+            <rect x={spot[0]} y={spot[1]} width={tw} height={th} rx={13} fill="var(--ink)" />
+            <text x={spot[0] + tw / 2} y={spot[1] + 17.5} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--paper)">{p.text}</text>
+          </g>
+        );
+      })}
+    </g>
   );
 }
 

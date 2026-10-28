@@ -5,6 +5,7 @@ import dagre from '@dagrejs/dagre';
 import { useMemo } from 'react';
 import { evaluate, formatNumber, type Env } from '@/lib/expr';
 import type { Scene } from '@/lib/recipe';
+import { Pins } from './Graph2D';
 import { tone, useSize } from './runtime';
 
 type D = Extract<Scene, { type: 'diagram' }>;
@@ -56,7 +57,7 @@ function layoutFor(scene: D, dir: 'LR' | 'TB') {
   return { nodes, edges, gw, gh };
 }
 
-export default function Diagram({ scene, env, focus, t, playing }: { scene: D; env: Env; focus: string[]; t: number; playing: boolean }) {
+export default function Diagram({ scene, env, focus, t, playing, callouts = {}, onTap }: { scene: D; env: Env; focus: string[]; t: number; playing: boolean; callouts?: Record<string, string>; onTap?: (id: string) => void }) {
   const [box, size] = useSize<HTMLDivElement>();
   const both = useMemo(() => ({ LR: layoutFor(scene, 'LR'), TB: layoutFor(scene, 'TB') }), [scene]);
   // Text never shrinks below ~72%: past that the diagram scrolls. Pick the direction that fits without scrolling,
@@ -112,7 +113,7 @@ export default function Diagram({ scene, env, focus, t, playing }: { scene: D; e
               const x = n.x - n.width / 2, y = n.y - n.height / 2;
               const v = n.value !== undefined ? evaluate(n.value, env, NaN) : NaN;
               return (
-                <g key={n.id} opacity={dim(n.id)}>
+                <g key={n.id} opacity={dim(n.id)} onClick={onTap ? () => onTap(n.id) : undefined} style={onTap ? { cursor: 'pointer' } : undefined} role={onTap ? 'button' : undefined} aria-label={onTap ? `Tap ${n.label}` : undefined}>
                   <rect x={x} y={y} width={n.width} height={n.height} rx={12} fill="var(--surface)" stroke={hot ? color : 'var(--line-2)'} strokeWidth={hot ? 2.4 : 1.2} />
                   <rect x={x} y={y + 12} width={4} height={n.height - 24} rx={2} fill={color} />
                   {n.title.map((l, i) => <text key={`t${i}`} x={x + 16} y={y + 26 + i * 18} fontSize={14.5} fontWeight={650} fill="var(--ink)">{l}</text>)}
@@ -126,6 +127,10 @@ export default function Diagram({ scene, env, focus, t, playing }: { scene: D; e
               );
             })}
           </g>
+          <Pins
+            w={contentW} h={contentH}
+            pins={layout.nodes.filter((n) => callouts[n.id]).map((n) => ({ id: n.id, text: callouts[n.id], at: [ox + n.x * scale, oy + (n.y - n.height / 2) * scale] as [number, number] }))}
+          />
         </svg>
       )}
     </div>
@@ -155,8 +160,9 @@ function FlowDots({ d, flow, t, playing, color }: { d: string; flow: number; t: 
   }, [d]);
   if (!path) return null;
   const len = path.getTotalLength();
-  const count = 2 + Math.round(flow * 3);
-  const speed = 40 + flow * 140; // px per second
+  // Calm, readable motion: a few dots at walking pace, faster only as more flows.
+  const count = 2 + Math.round(flow * 2);
+  const speed = 16 + flow * 46; // px per second
   return (
     <g>
       {Array.from({ length: count }, (_, i) => {

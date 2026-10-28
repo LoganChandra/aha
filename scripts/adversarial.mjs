@@ -42,10 +42,10 @@ const cases = [
     const r = await post('/api/lesson', { plan: p.j.plan, sources: p.j.sources, level: 'novice', planId: p.j.planId, index: 99 });
     return r.status === 400;
   }],
-  ['a real lesson validates and has beats and a scene', async () => {
+  ['a real lesson has steps with tasks and a scene', async () => {
     const p = await plan('compound interest', 'novice');
     const r = await post('/api/lesson', { plan: p.j.plan, sources: p.j.sources, level: 'novice', planId: p.j.planId, index: 0 });
-    return r.status === 200 && r.j.lesson?.beats?.length >= 2 && !!r.j.lesson.scene?.type;
+    return r.status === 200 && r.j.lesson?.steps?.length >= 2 && r.j.lesson.steps.some((s) => s.task) && !!r.j.lesson.scene?.type;
   }],
   ['empty question is a 400', async () => { const r = await ask({ question: '  ', context: {} }); return r.status === 400; }],
   ['question without a course is refused', async () => { const r = await post('/api/ask', { question: 'hi there, write me an essay', context: {} }); return r.status === 403; }],

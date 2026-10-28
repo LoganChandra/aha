@@ -118,7 +118,7 @@ async function lessonStage() {
       }
       r.second = !!final.lesson && final.errors.length === 0;
       if (final.lesson) {
-        r.scene = final.lesson.scene.type; r.beats = final.lesson.beats.length; r.params = final.lesson.params.length;
+        r.scene = final.lesson.scene.type; r.beats = final.lesson.steps.length; r.params = final.lesson.params.length;
         writeFileSync(`${OUT}/lesson-${m.replace(/\W/g, '_')}-${p.i}-${k}.json`, JSON.stringify(final.lesson, null, 1));
       }
     } catch (e) { r.first = false; r.second = false; r.err = (e as Error).message.slice(0, 120); }

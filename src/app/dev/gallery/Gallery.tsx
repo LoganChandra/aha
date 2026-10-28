@@ -23,18 +23,19 @@ export default function Gallery() {
       setLesson(d.lesson); setErrors(d.errors);
       const e: Env = {};
       for (const p of d.lesson?.params ?? []) e[p.id] = p.value;
-      for (let i = 0; i <= b; i++) Object.assign(e, d.lesson?.beats[i]?.set ?? {});
+      for (let i = 0; i <= b; i++) Object.assign(e, d.lesson?.steps[i]?.set ?? {});
       setEnv(e);
     });
   }, [f, b]);
   if (!f) return <ul className="p-6 text-sm">{files.map((x) => <li key={x}><a className="underline" href={`?f=${x}`}>{x}</a></li>)}</ul>;
   if (!lesson) return <p className="p-6">{errors.join(' | ') || 'loading'}</p>;
-  const beat = lesson.beats[Math.min(b, lesson.beats.length - 1)];
+  const beat = lesson.steps[Math.min(b, lesson.steps.length - 1)];
+  const callouts = Object.fromEntries((beat.callouts ?? []).map((c) => [c.at, c.text]));
   return (
     <main className="flex h-[100dvh] flex-col gap-3 p-3">
       <h1 className="font-serif text-xl">{lesson.title} <span className="text-xs text-ink-3">{lesson.scene.type} {errors.length ? `ERR ${errors.length}` : ''}</span></h1>
-      <div className="relative h-[55dvh] rounded-[14px] border border-line bg-surface"><Stage lesson={lesson} env={env} focus={beat.focus ?? []} playing={false} onDrag={(v) => setEnv((e) => ({ ...e, ...v }))} /></div>
-      <p className="font-serif text-[18px] leading-relaxed"><RichText text={beat.text} env={env} /></p>
+      <div className="relative h-[55dvh] rounded-[14px] border border-line bg-surface"><Stage lesson={lesson} env={env} focus={beat.focus ?? []} playing={false} callouts={callouts} onDrag={(v) => setEnv((e) => ({ ...e, ...v }))} /></div>
+      <p className="font-serif text-[18px] leading-relaxed"><RichText text={beat.say} env={env} /></p>
     </main>
   );
 }

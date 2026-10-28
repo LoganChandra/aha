@@ -30,6 +30,13 @@ const FNS: Record<string, (...a: number[]) => number> = {
   smoothstep: (a, b, x) => { const s = Math.min(1, Math.max(0, (x - a) / (b - a))); return s * s * (3 - 2 * s); },
   fact: (n) => { let r = 1; for (let i = 2; i <= Math.min(170, Math.floor(n)); i++) r *= i; return r; },
   sigmoid: (x) => 1 / (1 + Math.exp(-x)),
+  // Abramowitz & Stegun 7.1.26, error under 1.5e-7: enough for any picture.
+  erf: (x) => {
+    const sgn = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a);
+    const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a);
+    return sgn * y;
+  },
+  normcdf: (x, mu = 0, s = 1) => 0.5 * (1 + FNS.erf((x - mu) / (s * Math.SQRT2))),
   relu: (x) => Math.max(0, x),
   gauss: (x, mu = 0, s = 1) => Math.exp(-((x - mu) ** 2) / (2 * s * s)) / (s * Math.sqrt(2 * Math.PI)),
 };

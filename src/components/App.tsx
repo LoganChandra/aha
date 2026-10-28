@@ -3,10 +3,10 @@
 // Home -> planning -> course. In a course the prompt bar is for questions: stop anywhere and ask.
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Env } from '@/lib/expr';
+import { evaluate, type Env } from '@/lib/expr';
 import { LEVEL_LABEL, LEVELS, type Lesson, type Level, type Plan, type Source } from '@/lib/recipe';
 import RichText from './RichText';
-import { useGlide, useReducedMotion, usesTime } from './scene/runtime';
+import { useGlide, useReducedMotion, useSize, usesTime } from './scene/runtime';
 import SceneBoundary from './SceneBoundary';
 import Stage from './Stage';
 import { Icon, Knob, PromptBar } from './ui';
@@ -153,18 +153,7 @@ function Home({ prompt, setPrompt, level, setLevel, planning, msg, onSubmit }: {
       </header>
       <section className="flex flex-1 flex-col justify-center pb-6">
         {planning ? (
-          <div aria-live="polite">
-            <p className="text-[13px] font-medium text-ink-3">Planning your lessons</p>
-            <h1 className="mt-2 font-serif text-[30px] leading-[1.15] tracking-[-0.01em] text-ink sm:text-[40px]">{prompt}</h1>
-            <div className="mt-8 space-y-3">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="text-[13px] tabular-nums text-ink-3">{i + 1}</span>
-                  <div className="shimmer h-[18px] flex-1 rounded-md" style={{ maxWidth: `${82 - i * 9}%` }} />
-                </div>
-              ))}
-            </div>
-          </div>
+          <Planning prompt={prompt} />
         ) : (
           <>
             <h1 className="font-serif text-[34px] leading-[1.1] tracking-[-0.015em] text-ink sm:text-[52px]">What do you want to understand?</h1>
@@ -204,6 +193,54 @@ function Home({ prompt, setPrompt, level, setLevel, planning, msg, onSubmit }: {
   );
 }
 
+/**
+ * While the course is planned (5-15 s): the real stages, each appearing when it typically starts, and a bar that
+ * eases toward the end without ever claiming to be done. Honest, calm, and it gives the eye somewhere to rest.
+ */
+function Planning({ prompt }: { prompt: string }) {
+  const reduced = useReducedMotion();
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const t0 = performance.now();
+    const id = setInterval(() => setElapsed((performance.now() - t0) / 1000), 200);
+    return () => clearInterval(id);
+  }, []);
+  const stages = [
+    { at: 0, text: 'Reading up on it' },
+    { at: 2.5, text: 'Choosing what to learn first' },
+    { at: 6, text: 'Designing hands-on lessons' },
+    { at: 11, text: 'Almost there' },
+  ];
+  const progress = 1 - Math.exp(-elapsed / 7); // approaches 1, never reaches it
+  return (
+    <div aria-live="polite">
+      <p className="text-[13px] font-medium text-ink-3">Building your course</p>
+      <h1 className="mt-2 font-serif text-[30px] leading-[1.15] tracking-[-0.01em] text-ink sm:text-[40px]">{prompt}</h1>
+      <div className="mt-6 h-[3px] w-full max-w-[420px] overflow-hidden rounded-full bg-line">
+        <div className="h-full rounded-full bg-ink transition-[width] duration-200 ease-out" style={{ width: `${Math.round(progress * 92)}%` }} />
+      </div>
+      <ol className="mt-6 space-y-3">
+        {stages.map((st, i) => {
+          const started = elapsed >= st.at;
+          const finished = i < stages.length - 1 && elapsed >= stages[i + 1].at;
+          if (!started) return null;
+          return (
+            <motion.li
+              key={st.text} className="flex items-center gap-3 text-[15px]"
+              initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              <span className={`flex h-5 w-5 items-center justify-center rounded-full ${finished ? 'bg-ink text-paper' : 'border-2 border-line-2'}`}>
+                {finished ? <Icon name="check" size={12} /> : <span className={`h-1.5 w-1.5 rounded-full bg-ink-2 ${reduced ? '' : 'animate-pulse'}`} />}
+              </span>
+              <span className={finished ? 'text-ink-3' : 'font-medium text-ink'}>{st.text}</span>
+            </motion.li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- course
 
 function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel }: {
@@ -211,9 +248,9 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
 }) {
   const reduced = useReducedMotion();
   const [li, setLi] = useState(0);
-  const [bi, setBi] = useState(0);
+  const [si, setSi] = useState(0);
   const [values, setValues] = useState<Record<number, Env>>({});
-  // Per-lesson play state; until the learner or a beat changes it, a moving scene plays (still under reduced motion).
+  // Per-lesson play state; until the learner or a step changes it, a moving scene plays (still under reduced motion).
   const [playState, setPlayState] = useState<Record<number, boolean>>({});
   const [askText, setAskText] = useState('');
   const [answer, setAnswer] = useState<Answer | null>(null);
@@ -224,58 +261,119 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   // Bumped whenever the learner moves; an answer that arrives after a move is dropped.
   const askSeq = useRef(0);
   const [sheet, setSheet] = useState(false);
-  const [check, setCheck] = useState<{ open: boolean; pick?: number }>({ open: false });
+  // What happened on each step: done, the predict choice, a wrong tap (for the nudge).
+  const [progress, setProgress] = useState<Record<string, { done?: boolean; pick?: number; miss?: number; shown?: boolean }>>({});
+  const [instant, setInstant] = useState(false);
+  // The caption and the control panel sit inside the scene; the drawing is laid out in the space between them.
+  const [topRef, topSize] = useSize<HTMLDivElement>();
+  const [botRef, botSize] = useSize<HTMLDivElement>();
 
   const slot = slots[li];
   const lesson = slot?.status === 'ready' ? slot.lesson! : null;
-  const beat = lesson ? lesson.beats[Math.min(bi, lesson.beats.length - 1)] : null;
+  const step = lesson ? lesson.steps[Math.min(si, lesson.steps.length - 1)] : null;
+  const key = `${li}-${si}`;
+  const sp = progress[key] ?? {};
+  const task = step?.task;
+  const done = !task || !!sp.done;
   const total = course.plan.lessons.length;
-  const moving = useMemo(() => (lesson ? usesTime(lesson.scene) || lesson.scene.type === 'diagram' && lesson.scene.edges.some((e) => e.flow !== undefined) : false), [lesson]);
+  const meta = course.plan.lessons[li];
+  const lastStep = lesson ? si >= lesson.steps.length - 1 : false;
+  const moving = useMemo(() => (lesson ? usesTime(lesson.scene) || (lesson.scene.type === 'diagram' && lesson.scene.edges.some((e) => e.flow !== undefined)) : false), [lesson]);
 
-  // Keep the next lesson building while this one is read.
+  // Keep the next lesson building while this one is studied.
   useEffect(() => {
     if (slot?.status === 'ready') loadLesson(course, li + 1);
     if (slot?.status === 'idle') loadLesson(course, li);
   }, [slot?.status, li, course, loadLesson]);
 
   const env = useMemo(() => values[li] ?? (lesson ? startValues(lesson) : {}), [values, li, lesson]);
-  const playing = playState[li] ?? (!reduced && (lesson?.beats[0]?.play ?? true));
+  const playing = playState[li] ?? (!reduced && (lesson?.steps[0]?.play ?? true));
   const setPlaying = (p: boolean | ((x: boolean) => boolean)) => setPlayState((s) => ({ ...s, [li]: typeof p === 'function' ? p(playing) : p }));
-  // Knob values from a beat or an answer glide into place; a finger on a knob moves it instantly.
-  const [instant, setInstant] = useState(false);
   const shownEnv = useGlide(env, instant || reduced);
 
-  function goBeat(next: number) {
-    if (!lesson) return;
-    const n = Math.max(0, Math.min(lesson.beats.length - 1, next));
+  const mark = useCallback((k: string, patch: { done?: boolean; pick?: number; miss?: number; shown?: boolean }) => setProgress((p) => ({ ...p, [k]: { ...p[k], ...patch } })), []);
+
+  const celebrate = useCallback(() => {
+    try { if (!reduced) navigator.vibrate?.(12); } catch {}
+  }, [reduced]);
+
+  // A slide task is done the moment the learner's own move makes its goal hold.
+  const checkGoal = useCallback((next: Env) => {
+    if (!task || task.kind !== 'slide' || sp.done) return;
+    if (evaluate(task.goal, { ...next, t: 0 }, 0)) { mark(key, { done: true }); celebrate(); }
+  }, [task, sp.done, key, mark, celebrate]);
+
+  function resetAsk() {
     askSeq.current++;
-    setBi(n);
     setAnswer(null);
     setAnswerFocus(null);
     setBeforeAnswer(null);
-    setCheck({ open: false });
-    const b = lesson.beats[n];
+  }
+
+  function goStep(next: number) {
+    if (!lesson) return;
+    const n = Math.max(0, Math.min(lesson.steps.length - 1, next));
+    resetAsk();
+    setSi(n);
+    const st = lesson.steps[n];
     setInstant(false);
-    if (b.set) setValues((v) => ({ ...v, [li]: { ...(v[li] ?? startValues(lesson)), ...clampSet(lesson, b.set!) } }));
-    if (b.play !== undefined && !reduced) setPlaying(b.play);
+    if (st.set) setValues((v) => ({ ...v, [li]: { ...(v[li] ?? startValues(lesson)), ...clampSet(lesson, st.set!) } }));
+    if (st.play !== undefined && !reduced) setPlaying(st.play);
   }
 
   function goLesson(n: number) {
     if (n < 0 || n >= total) return;
-    askSeq.current++;
+    resetAsk();
     setLi(n);
-    setBi(0);
-    setAnswer(null);
-    setAnswerFocus(null);
-    setBeforeAnswer(null);
+    setSi(0);
     setHistory([]);
-    setCheck({ open: false });
     setSheet(false);
     loadLesson(course, n);
   }
 
-  const setKnob = (id: string, v: number) => { setInstant(true); setValues((all) => ({ ...all, [li]: { ...env, ...all[li], [id]: v } })); };
-  const onDrag = useCallback((vals: Record<string, number>) => { setInstant(true); setValues((all) => ({ ...all, [li]: { ...env, ...all[li], ...vals } })); }, [li, env]);
+  const setKnob = (id: string, v: number) => { setInstant(true); const next = { ...env, [id]: v }; setValues((all) => ({ ...all, [li]: next })); checkGoal(next); };
+  const onDrag = useCallback((vals: Record<string, number>) => { setInstant(true); const next = { ...env, ...vals }; setValues((all) => ({ ...all, [li]: next })); checkGoal(next); }, [li, env, checkGoal]);
+
+  const onTap = useCallback((id: string) => {
+    if (!task || task.kind !== 'tap' || sp.done) return;
+    if (id === task.target) { mark(key, { done: true }); celebrate(); }
+    else mark(key, { miss: (sp.miss ?? 0) + 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task, sp.done, sp.miss, key, mark]);
+
+  function pick(i: number) {
+    if (!lesson || !task || task.kind !== 'predict' || sp.pick !== undefined) return;
+    mark(key, { pick: i, done: true });
+    if (i === task.answer) celebrate();
+    const r = task.reveal;
+    setInstant(false);
+    if (r?.set) setValues((v) => ({ ...v, [li]: { ...(v[li] ?? startValues(lesson)), ...clampSet(lesson, r.set!) } }));
+    if (r?.play && !reduced) setPlaying(true);
+  }
+
+  // "Show me": finish the task for them, visibly, so skipping still teaches.
+  function showMe() {
+    if (!lesson || !task) return;
+    if (task.kind === 'slide') {
+      const p = lesson.params.find((q) => q.id === task.param);
+      if (p) {
+        // Land in the middle of the nearest stretch of values where the goal holds, not on its edge.
+        const N = 600, ok: boolean[] = [];
+        for (let k = 0; k <= N; k++) ok.push(!!evaluate(task.goal, { ...env, t: 0, [p.id]: p.min + ((p.max - p.min) * k) / N }, 0));
+        let best: number | null = null;
+        for (let k = 0; k <= N; k++) {
+          if (!ok[k] || (k > 0 && ok[k - 1])) continue;
+          let e = k;
+          while (e < N && ok[e + 1]) e++;
+          const mid = p.min + ((p.max - p.min) * (k + e)) / 2 / N;
+          if (best === null || Math.abs(mid - env[p.id]) < Math.abs(best - env[p.id])) best = mid;
+        }
+        if (best !== null) { const b = best; setInstant(false); setValues((all) => ({ ...all, [li]: { ...env, ...all[li], [p.id]: b } })); }
+      }
+      mark(key, { done: true, shown: true });
+    } else if (task.kind === 'tap') mark(key, { done: true, shown: true });
+    else pick(task.answer);
+  }
 
   async function ask() {
     const q = askText.trim();
@@ -293,7 +391,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
           topic: course.plan.topic,
           level: course.level,
           lessonTitle: lesson.title,
-          beatText: beat?.text ?? '',
+          beatText: step?.say ?? '',
           sceneSummary: summarise(lesson),
           sceneIds: sceneIds(lesson),
           params: lesson.params.map((p) => ({ id: p.id, label: p.label, value: env[p.id] ?? p.value, min: p.min, max: p.max })),
@@ -320,14 +418,20 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     if (beforeAnswer) { const b = beforeAnswer; setInstant(false); setValues((v) => ({ ...v, [li]: b })); setBeforeAnswer(null); }
   }
 
-  const focus = answerFocus ?? beat?.focus ?? [];
-  const lastBeat = lesson ? bi >= lesson.beats.length - 1 : false;
-  const meta = course.plan.lessons[li];
+  const tapTarget = task?.kind === 'tap' && sp.done ? [task.target] : null;
+  const focus = answerFocus ?? tapTarget ?? step?.focus ?? [];
+  const callouts = useMemo(() => Object.fromEntries((step?.callouts ?? []).map((c) => [c.at, c.text])), [step]);
+  // Direct manipulation beats a slider: a knob tied to a draggable point is moved by dragging the point itself.
+  const dragged = useMemo(() => new Set(lesson?.scene.type === 'graph2d' ? lesson.scene.items.flatMap((it) => (it.type === 'point' ? [it.dragX, it.dragY].filter(Boolean) as string[] : [])) : []), [lesson]);
+  const slideKnob = task?.kind === 'slide' ? lesson?.params.find((p) => p.id === task.param) : undefined;
+  const taskKnob = slideKnob && !dragged.has(slideKnob.id) ? slideKnob : undefined;
+  const freeKnobs = lesson && (!task || task.kind === 'tap' || done) && task?.kind !== 'predict' ? lesson.params.filter((p) => p.id !== slideKnob?.id && !dragged.has(p.id)) : [];
+  const stepsDone = lesson ? lesson.steps.filter((_, i) => i < si || (i === si && done)).length : 0;
 
   return (
-    <main className="flex h-[100dvh] flex-col overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[56px_minmax(0,1fr)_auto]">
-      {/* header */}
-      <header className="flex h-14 shrink-0 items-center gap-1 px-2 lg:col-span-2 lg:px-4">
+    <main className="flex h-[100dvh] flex-col overflow-hidden">
+      {/* header: back, where you are, all lessons */}
+      <header className="flex h-14 shrink-0 items-center gap-1 px-2 lg:px-4">
         <button onClick={onHome} aria-label="New topic" className="flex h-10 items-center gap-1 rounded-full px-2 text-[15px] font-medium text-ink-2 hover:text-ink">
           <Icon name="back" size={20} /><span className="hidden sm:inline">New topic</span>
         </button>
@@ -339,129 +443,165 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
           <Icon name="list" />
         </button>
       </header>
+      {/* step progress, like a book's page marker */}
+      <div className="mx-3 mb-2 flex gap-1 lg:mx-4" aria-label={lesson ? `Step ${si + 1} of ${lesson.steps.length}` : 'Loading'}>
+        {(lesson?.steps ?? [0, 1, 2, 3, 4]).map((_, i) => (
+          <div key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-line">
+            <motion.div className="h-full rounded-full bg-ink" initial={false} animate={{ width: lesson && i < stepsDone ? '100%' : lesson && i === si ? '35%' : '0%' }} transition={{ duration: reduced ? 0 : 0.3, ease: [0.2, 0.8, 0.2, 1] }} />
+          </div>
+        ))}
+      </div>
 
-      {/* stage */}
-      <section className="relative mx-3 h-[42dvh] min-h-[250px] shrink-0 overflow-hidden rounded-[var(--radius)] border border-line bg-surface lg:row-start-2 lg:mx-4 lg:mb-4 lg:h-auto">
-        {lesson ? (
+      {/* the scene: the lesson happens here */}
+      <section className="relative mx-3 min-h-[300px] flex-1 overflow-hidden rounded-[var(--radius)] border border-line bg-surface lg:mx-4">
+        {lesson && step ? (
           <>
-            <SceneBoundary key={`${course.planId}-${li}`}>
-              <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} />
-            </SceneBoundary>
+            <div className="absolute inset-x-0" style={{ top: topSize.h ? topSize.h + 16 : 0, bottom: botSize.h ? botSize.h + 16 : 0, transition: reduced ? undefined : 'top 220ms ease, bottom 220ms ease' }}>
+              <SceneBoundary key={`${course.planId}-${li}`}>
+                <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} callouts={callouts} onTap={task?.kind === 'tap' && !sp.done ? onTap : undefined} />
+              </SceneBoundary>
+            </div>
+
+            {/* what to look at or do, inside the picture */}
+            <div ref={topRef} className="pointer-events-none absolute inset-x-3 top-3 flex lg:inset-x-4 lg:top-4">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={answer ? `a-${answer.q}` : `${key}-${done ? 'd' : 'o'}`}
+                  initial={reduced ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                  transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
+                  className={`pointer-events-auto max-w-[520px] rounded-2xl border bg-surface/95 px-4 py-3 shadow-[var(--shadow)] backdrop-blur ${task && done && !answer ? 'border-[var(--t-green)]/50' : 'border-line'}`}
+                  aria-live="polite"
+                >
+                  {answer ? (
+                    <>
+                      <p className="text-[12.5px] font-medium text-ink-3">You asked: {answer.q}</p>
+                      <div className="mt-1 font-serif text-[16.5px] leading-[1.45] text-ink">
+                        {answer.pending ? <div className="space-y-2 py-1"><div className="shimmer h-3.5 w-[260px] max-w-full rounded" /><div className="shimmer h-3.5 w-[180px] rounded" /></div>
+                          : answer.error ? <span className="text-ink-2">{answer.error}</span>
+                          : <RichText text={answer.a!} env={env} />}
+                      </div>
+                      {!answer.pending && <button onClick={closeAnswer} className="mt-2 text-[13.5px] font-semibold text-[var(--t-primary)]">Back to the lesson</button>}
+                    </>
+                  ) : (
+                    <>
+                      {si === 0 && !done && <p className="mb-0.5 text-[12.5px] font-semibold text-ink-3">{lesson.title}</p>}
+                      {task && done ? (
+                        <div className="flex gap-2.5">
+                          <motion.span
+                            initial={reduced ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 520, damping: 22 }}
+                            className={`mt-[2px] flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-white ${task.kind === 'predict' && sp.pick !== task.answer ? 'bg-[var(--t-accent)]' : 'bg-[var(--t-green)]'}`}
+                          >
+                            <Icon name={task.kind === 'predict' && sp.pick !== task.answer ? 'reset' : 'check'} size={14} />
+                          </motion.span>
+                          <p className="font-serif text-[16.5px] leading-[1.45] text-ink">
+                            {task.kind === 'predict' && sp.pick !== task.answer && <span className="font-semibold">Not quite. Watch: </span>}
+                            {!(task.kind === 'predict' && sp.pick !== task.answer) && !sp.shown && <span className="font-semibold">{praise(key)} </span>}
+                            <RichText text={step.after || step.say} env={env} />
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="font-serif text-[16.5px] leading-[1.45] text-ink lg:text-[17.5px]"><RichText text={step.say} env={env} /></p>
+                      )}
+                    </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* the task and the knobs, also inside the picture */}
+            <div ref={botRef} className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-start gap-2 lg:inset-x-4 lg:bottom-4">
+              {task?.kind === 'predict' && !answer && (
+                <div className="pointer-events-auto w-full max-w-[520px] rounded-2xl border border-line bg-surface/95 p-3 shadow-[var(--shadow)] backdrop-blur">
+                  <p className="mb-2 text-[14.5px] font-semibold text-ink"><RichText text={task.question} /></p>
+                  <div className="grid gap-1.5 sm:grid-cols-2">
+                    {task.choices.map((c, i) => {
+                      const picked = sp.pick === i, right = i === task.answer, settled = sp.pick !== undefined;
+                      return (
+                        <button
+                          key={i} onClick={() => pick(i)} disabled={settled}
+                          className={`flex min-h-[44px] items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-[14.5px] transition-colors duration-150 ${settled && right ? 'border-[var(--t-green)] bg-[var(--t-green)]/10' : settled && picked ? 'border-[var(--t-accent)] bg-[var(--t-accent)]/10' : 'border-line hover:border-ink-3'} ${settled && !right && !picked ? 'opacity-50' : ''}`}
+                        >
+                          <span><RichText text={c} /></span>
+                          {settled && right && <span className="text-[var(--t-green)]"><Icon name="check" size={16} /></span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {task?.kind === 'slide' && !taskKnob && !done && !answer && (
+                <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-line bg-surface/95 px-3.5 py-2 text-[14px] font-medium text-ink shadow-[var(--shadow)] backdrop-blur">
+                  <span className="h-2 w-2 rounded-full bg-[var(--t-primary)]" />{task.hint}
+                </div>
+              )}
+              {task?.kind === 'tap' && !done && !answer && (
+                <motion.div
+                  key={`miss-${sp.miss ?? 0}`}
+                  initial={reduced || !sp.miss ? false : { x: [0, -6, 6, -4, 4, 0] }} animate={{ x: 0 }} transition={{ duration: 0.32 }}
+                  className="pointer-events-auto flex items-center gap-2 rounded-full border border-line bg-surface/95 px-3.5 py-2 text-[14px] font-medium text-ink shadow-[var(--shadow)] backdrop-blur"
+                >
+                  <span className="h-2 w-2 rounded-full bg-[var(--t-primary)]" />
+                  {sp.miss ? `Not that one. ${task.hint}` : task.hint}
+                </motion.div>
+              )}
+              {(taskKnob || freeKnobs.length > 0) && !answer && task?.kind !== 'predict' && (
+                <div className="pointer-events-auto w-full max-w-[520px] rounded-2xl border border-line bg-surface/95 px-3.5 py-1.5 shadow-[var(--shadow)] backdrop-blur">
+                  {taskKnob && task?.kind === 'slide' && (
+                    <>
+                      {!done && <p className="pt-1.5 text-[13px] font-medium text-ink-2">{task.hint}</p>}
+                      <Knob p={taskKnob} value={env[taskKnob.id] ?? taskKnob.value} onChange={(v) => setKnob(taskKnob.id, v)} />
+                    </>
+                  )}
+                  {freeKnobs.map((p) => <Knob key={p.id} p={p} value={env[p.id] ?? p.value} onChange={(v) => setKnob(p.id, v)} />)}
+                </div>
+              )}
+            </div>
+
             {moving && (
               <button
                 onClick={() => setPlaying((p) => !p)} aria-label={playing ? 'Pause' : 'Play'}
-                className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface/95 text-ink shadow-sm"
+                className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface/95 text-ink shadow-sm lg:bottom-4 lg:right-4"
               >
                 <Icon name={playing ? 'pause' : 'play'} size={16} />
               </button>
             )}
           </>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+          <div className="absolute inset-0 flex items-center justify-center p-6">
             {slot?.status === 'error' ? (
-              <>
+              <div className="text-center">
                 <p className="text-[15px] text-ink-2">{slot.error}</p>
-                <button onClick={() => retryLesson(course, li)} className="rounded-full bg-ink px-4 py-2 text-[14px] font-semibold text-paper">Try again</button>
-              </>
+                <button onClick={() => retryLesson(course, li)} className="mt-3 rounded-full bg-ink px-4 py-2 text-[14px] font-semibold text-paper">Try again</button>
+              </div>
             ) : (
-              <>
-                <div className="shimmer absolute inset-4 rounded-[10px] opacity-60" />
-                <p className="relative text-[13px] font-medium text-ink-2">Building lesson {li + 1}</p>
-                <p className="relative max-w-[320px] font-serif text-[18px] leading-snug text-ink">{meta?.title}</p>
-              </>
+              <Drawing title={meta?.title ?? ''} aha={meta?.goal ?? ''} lessonNo={li + 1} reduced={reduced} />
             )}
           </div>
         )}
       </section>
 
-      {/* lesson panel */}
-      <section className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-3 pb-2 lg:row-span-1 lg:row-start-2 lg:px-6 lg:pt-1">
-        <div className="mx-auto w-full max-w-[640px]">
-          <h2 className="font-serif text-[21px] font-semibold leading-tight tracking-[-0.01em] text-ink lg:text-[26px]">{lesson?.title ?? meta?.title}</h2>
-          <div className="mt-2 min-h-[84px]" aria-live="polite">
-            <AnimatePresence mode="wait" initial={false}>
-              {answer ? (
-                <motion.div key={`a${answer.q}`} initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="rounded-[var(--radius)] border border-line bg-surface p-4">
-                  <p className="text-[13px] font-medium text-ink-3">You asked</p>
-                  <p className="text-[15px] font-medium text-ink">{answer.q}</p>
-                  <div className="mt-3 font-serif text-[18px] leading-[1.5] text-ink">
-                    {answer.pending ? <div className="space-y-2"><div className="shimmer h-4 w-[92%] rounded" /><div className="shimmer h-4 w-[70%] rounded" /></div>
-                      : answer.error ? <span className="text-ink-2">{answer.error}</span>
-                      : <RichText text={answer.a!} env={env} />}
-                  </div>
-                  {!answer.pending && (
-                    <button onClick={closeAnswer} className="mt-3 text-[14px] font-semibold text-[var(--t-primary)]">Back to the lesson</button>
-                  )}
-                </motion.div>
-              ) : beat ? (
-                <motion.p key={`b${li}-${bi}`} initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} className="font-serif text-[17.5px] leading-[1.5] text-ink lg:text-[19px]">
-                  <RichText text={beat.text} env={env} />
-                </motion.p>
-              ) : (
-                <div className="space-y-2.5"><div className="shimmer h-4 w-[94%] rounded" /><div className="shimmer h-4 w-[86%] rounded" /><div className="shimmer h-4 w-[60%] rounded" /></div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {lesson && lesson.params.length > 0 && (
-            <div className="mt-3 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-1">
-              {lesson.params.map((p) => <Knob key={p.id} p={p} value={env[p.id] ?? p.value} onChange={(v) => setKnob(p.id, v)} />)}
-            </div>
-          )}
-
-          {lesson && check.open && lesson.check && (
-            <div className="mt-4 rounded-[var(--radius)] border border-line bg-surface p-4">
-              <p className="font-serif text-[17px] leading-snug text-ink"><RichText text={lesson.check.question} /></p>
-              <div className="mt-3 flex flex-col gap-2">
-                {lesson.check.choices.map((c, i) => {
-                  const picked = check.pick === i, right = i === lesson.check!.answer, done = check.pick !== undefined;
-                  return (
-                    <button
-                      key={i} disabled={done} onClick={() => setCheck({ open: true, pick: i })}
-                      className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-left text-[15px] transition-colors ${done && right ? 'border-[var(--t-green)] text-ink' : done && picked ? 'border-[var(--t-red)] text-ink' : 'border-line text-ink hover:border-line-2'}`}
-                    >
-                      <RichText text={c} />
-                      {done && right && <span className="text-[var(--t-green)]"><Icon name="check" size={18} /></span>}
-                    </button>
-                  );
-                })}
-              </div>
-              {check.pick !== undefined && <p className="mt-3 text-[15px] leading-snug text-ink-2"><RichText text={lesson.check.why} /></p>}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* steps + ask */}
-      <footer className="shrink-0 border-t border-line bg-paper px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2.5 lg:col-start-2 lg:row-start-3 lg:border-t-0 lg:px-6">
-        <div className="mx-auto w-full max-w-[640px]">
+      {/* next, skip, ask */}
+      <footer className="shrink-0 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2.5 lg:px-4">
+        <div className="mx-auto w-full max-w-[760px]">
           {lesson && (
-            <div className="mb-2.5 flex items-center gap-2">
-              <button onClick={() => goBeat(bi - 1)} disabled={bi === 0} className="h-10 rounded-full px-3 text-[15px] font-medium text-ink-2 disabled:opacity-30">Back</button>
-              <div className="flex flex-1 justify-center gap-1.5" aria-label={`Step ${bi + 1} of ${lesson.beats.length}`}>
-                {lesson.beats.map((_, i) => (
-                  <button key={i} onClick={() => goBeat(i)} aria-label={`Step ${i + 1}`} className="flex h-6 items-center px-[3px]">
-                    <span className={`block h-[6px] rounded-full transition-all ${i === bi ? 'w-5 bg-ink' : 'w-[6px] bg-line-2'}`} />
-                  </button>
-                ))}
-              </div>
-              {!lastBeat ? (
-                <button onClick={() => goBeat(bi + 1)} className="h-10 rounded-full bg-ink px-5 text-[15px] font-semibold text-paper">Next</button>
-              ) : (
-                <div className="flex items-center gap-1">
-                  {lesson.check && !check.open && (
-                    <button onClick={() => setCheck({ open: true })} className="h-10 rounded-full px-3 text-[14px] font-medium text-ink-2 hover:text-ink">Quick check</button>
-                  )}
-                  {li < total - 1 ? (
-                    <button onClick={() => goLesson(li + 1)} className="h-10 rounded-full bg-ink px-5 text-[15px] font-semibold text-paper">Next lesson</button>
-                  ) : (
-                    <button onClick={() => setSheet(true)} className="h-10 rounded-full bg-ink px-5 text-[15px] font-semibold text-paper">Finish</button>
-                  )}
-                </div>
+            <div className="mb-3 flex items-center gap-2">
+              <button onClick={() => goStep(si - 1)} disabled={si === 0} aria-label="Previous step" className="flex h-11 w-11 items-center justify-center rounded-full text-ink-2 disabled:opacity-25"><Icon name="back" size={20} /></button>
+              <div className="flex-1" />
+              {!done && task && (
+                <button onClick={showMe} className="h-11 rounded-full px-3 text-[14px] font-medium text-ink-3 hover:text-ink-2">Show me</button>
               )}
+              <motion.button
+                key={`${key}-${done}`}
+                initial={reduced || !done || !task ? false : { scale: 1 }} animate={reduced || !done || !task ? undefined : { scale: [1, 1.05, 1] }} transition={{ duration: 0.28 }}
+                onClick={() => (!lastStep ? goStep(si + 1) : li < total - 1 ? goLesson(li + 1) : setSheet(true))}
+                disabled={!done}
+                className="h-11 min-w-[132px] rounded-full bg-ink px-6 text-[15px] font-semibold text-paper transition-opacity disabled:opacity-25"
+              >
+                {!lastStep ? 'Continue' : li < total - 1 ? 'Next lesson' : 'Finish'}
+              </motion.button>
             </div>
           )}
-          <PromptBar value={askText} onChange={setAskText} onSubmit={ask} placeholder="Ask about this lesson" busy={answer?.pending} />
+          <PromptBar value={askText} onChange={setAskText} onSubmit={ask} placeholder="Ask anything about this" busy={answer?.pending} />
         </div>
       </footer>
 
@@ -477,10 +617,36 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   );
 }
 
+const PRAISE = ['Exactly.', 'Nice.', 'Right.', 'Spot on.', 'Yes.', 'That\'s it.'];
+function praise(seed: string): string {
+  let h = 0;
+  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return PRAISE[Math.abs(h) % PRAISE.length];
+}
+
+/** While a lesson is drawn: the lesson's title and goal, and a pen line drawing itself. Calm, and honest about what is happening. */
+function Drawing({ title, aha, lessonNo, reduced }: { title: string; aha: string; lessonNo: number; reduced: boolean }) {
+  return (
+    <div className="flex max-w-[420px] flex-col items-center text-center">
+      <svg width="120" height="56" viewBox="0 0 120 56" aria-hidden className="mb-5 text-ink-3">
+        <motion.path
+          d="M4 44 C 24 44, 26 12, 46 12 S 70 44, 90 30 S 110 8, 116 10"
+          fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+          initial={{ pathLength: reduced ? 1 : 0 }} animate={{ pathLength: 1 }}
+          transition={reduced ? { duration: 0 } : { duration: 1.6, ease: [0.45, 0, 0.2, 1], repeat: Infinity, repeatType: 'reverse', repeatDelay: 0.25 }}
+        />
+      </svg>
+      <p className="text-[12.5px] font-medium text-ink-3">Drawing lesson {lessonNo}</p>
+      <p className="mt-1 font-serif text-[20px] leading-snug text-ink">{title}</p>
+      {aha && <p className="mt-2 text-[14px] leading-snug text-ink-2">{aha}</p>}
+    </div>
+  );
+}
+
 function startValues(lesson: Lesson): Env {
   const env: Env = {};
   for (const p of lesson.params) env[p.id] = p.value;
-  return { ...env, ...clampSet(lesson, lesson.beats[0]?.set ?? {}) };
+  return { ...env, ...clampSet(lesson, lesson.steps[0]?.set ?? {}) };
 }
 
 function clampSet(lesson: Lesson, set: Record<string, number>): Env {

@@ -1,5 +1,5 @@
 // Checks a lesson recipe beyond its shape: every expression parses, uses only known names and draws something,
-// ids line up, beats point at things that exist. Problems come back as plain sentences the model can fix in one
+// ids line up, steps point at things that exist, every task can be done. Problems come back as plain sentences the model can fix in one
 // retry; `repair` then removes anything still broken so the learner never sees a crash.
 import { compile, evaluate, type Env } from './expr';
 import { Lesson, SIZE_ARITY, type G2Item, type Param, type Scene } from './recipe';
@@ -83,13 +83,50 @@ export function checkLesson(raw: unknown): Checked {
   }
 
   const known = new Set(sceneIds(scene));
-  lesson.beats.forEach((b, i) => {
-    for (const k of Object.keys(b.set ?? {})) if (!params.has(k)) errors.push(`beat ${i + 1}: set uses "${k}", which is not a param.`);
-    checkTemplate(`beat ${i + 1}`, b.text, withT, errors);
-    const missing = (b.focus ?? []).filter((f) => !known.has(f));
-    if (missing.length) errors.push(`beat ${i + 1}: focus ids ${missing.join(', ')} are not in the scene (ids: ${[...known].slice(0, 30).join(', ')}).`);
+  // Walk the steps in order with the knob values they would have, so each task is checked from where it starts.
+  const vals: Env = { ...env };
+  let tasks = 0;
+  lesson.steps.forEach((st, i) => {
+    const w = `step ${i + 1}`;
+    for (const [k, v] of Object.entries(st.set ?? {})) { if (!params.has(k)) errors.push(`${w}: set uses "${k}", which is not a param.`); else vals[k] = v; }
+    checkTemplate(w, st.say, withT, errors);
+    if (st.after) checkTemplate(`${w} after`, st.after, withT, errors);
+    const missing = [...(st.focus ?? []), ...(st.callouts ?? []).map((c) => c.at)].filter((f) => !known.has(f));
+    if (missing.length) errors.push(`${w}: ids ${missing.join(', ')} are not in the scene (ids: ${[...known].slice(0, 30).join(', ')}).`);
+    const t = st.task;
+    if (!t) return;
+    tasks++;
+    if (t.kind === 'slide') {
+      const p = lesson.params.find((q) => q.id === t.param);
+      if (!p) { errors.push(`${w}: slide task param "${t.param}" is not a param.`); return; }
+      const before = errors.length;
+      checkExpr(`${w} goal`, t.goal, withT, errors);
+      if (errors.length > before) return;
+      if (evaluate(t.goal, { ...vals, t: 0 }, 0)) errors.push(`${w}: the goal "${t.goal}" is already true when the step starts, so there is nothing to do. Set the knob elsewhere first or change the goal.`);
+      // Reachable by moving this knob, or this knob and its partner on the same draggable point.
+      const partner = scene.type === 'graph2d' ? scene.items.find((it) => it.type === 'point' && (it.dragX === p.id || it.dragY === p.id)) : undefined;
+      const other = partner && partner.type === 'point' ? lesson.params.find((q) => q.id === (partner.dragX === p.id ? partner.dragY : partner.dragX)) : undefined;
+      let hit: Env | null = null;
+      let bestD = Infinity;
+      const G = other ? 60 : 400;
+      for (let a = 0; a <= G; a++) for (let b = 0; b <= (other ? G : 0); b++) {
+        const trial: Env = { ...vals, t: 0, [p.id]: p.min + ((p.max - p.min) * a) / G };
+        if (other) trial[other.id] = other.min + ((other.max - other.min) * b) / G;
+        if (!evaluate(t.goal, trial, 0)) continue;
+        const d = Math.abs(trial[p.id] - vals[p.id]) + (other ? Math.abs(trial[other.id] - vals[other.id]) : 0);
+        if (d < bestD) { bestD = d; hit = trial; }
+      }
+      if (!hit) errors.push(`${w}: no value of "${p.id}"${other ? ` and "${other.id}"` : ''} in range makes the goal "${t.goal}" true. Widen the goal (use a tolerance like abs(${p.id}-target)<0.1).`);
+      // The learner finishes the task, so later steps start from a value where the goal holds.
+      else { vals[p.id] = hit[p.id]; if (other) vals[other.id] = hit[other.id]; }
+    } else if (t.kind === 'tap') {
+      if (!known.has(t.target)) errors.push(`${w}: tap target "${t.target}" is not a scene id.`);
+    } else if (t.kind === 'predict') {
+      if (t.answer >= t.choices.length) errors.push(`${w}: predict answer index is past the last choice.`);
+      for (const [k, v] of Object.entries(t.reveal?.set ?? {})) { if (!params.has(k)) errors.push(`${w}: reveal sets "${k}", which is not a param.`); else vals[k] = v; }
+    }
   });
-  if (lesson.check && lesson.check.answer >= lesson.check.choices.length) errors.push('check: answer index is past the last choice.');
+  if (tasks < 2) errors.push(`only ${tasks} step(s) give the learner something to do. At least 3 steps need a task (slide, tap or predict).`);
   return { lesson, errors };
 }
 
@@ -170,13 +207,26 @@ export function repair(lesson: Lesson): Lesson {
     };
   }
   const known = new Set(sceneIds(scene));
-  const beats = lesson.beats.map((b) => ({
-    ...b,
-    set: b.set ? Object.fromEntries(Object.entries(b.set).filter(([k]) => params.some((p) => p.id === k))) : undefined,
-    focus: b.focus?.filter((f) => known.has(f)),
-  }));
-  const check = lesson.check && lesson.check.answer < lesson.check.choices.length ? lesson.check : undefined;
-  return { ...lesson, params, scene, beats, check };
+  const ids = new Set(params.map((p) => p.id));
+  const keepSet = (set?: Record<string, number>) => (set ? Object.fromEntries(Object.entries(set).filter(([k]) => ids.has(k))) : undefined);
+  const steps = lesson.steps.map((st) => {
+    let task = st.task;
+    if (task?.kind === 'slide') {
+      const sl = task;
+      let ok = params.some((q) => q.id === sl.param);
+      try { ok = ok && compile(sl.goal).vars.every((v) => ids.has(v) || v === 't'); } catch { ok = false; }
+      if (!ok) task = undefined;
+    } else if (task?.kind === 'tap' && !known.has(task.target)) task = undefined;
+    else if (task?.kind === 'predict') task = task.answer < task.choices.length ? { ...task, reveal: task.reveal ? { ...task.reveal, set: keepSet(task.reveal.set) } : undefined } : undefined;
+    return {
+      ...st,
+      set: keepSet(st.set),
+      focus: st.focus?.filter((f) => known.has(f)),
+      callouts: st.callouts?.filter((c) => known.has(c.at)),
+      task,
+    };
+  });
+  return { ...lesson, params, scene, steps };
 }
 
 /** Forgive the small shape mistakes cheap models make before the strict parse. */
@@ -198,14 +248,34 @@ function normalise(raw: unknown): unknown {
     if (typeof q.id === 'string' && RESERVED.has(q.id)) { const n = `${q.id}Val`; rename.set(q.id, n); q.id = n; }
     return q;
   });
-  if (Array.isArray(out.beats)) {
-    out.beats = (out.beats as unknown[]).map((b) => (typeof b === 'string' ? { text: b } : b)).map((b) => {
+  // Older recipes said "beats" with "text"; current ones say "steps" with "say".
+  if (!Array.isArray(out.steps) && Array.isArray(out.beats)) out.steps = out.beats;
+  delete out.beats;
+  const fixSet = (set: unknown) => set && typeof set === 'object'
+    ? Object.fromEntries(Object.entries(set as Record<string, unknown>).map(([k, v]) => [rename.get(k) ?? k, typeof v === 'string' && !isNaN(Number(v)) ? Number(v) : v]).filter(([, v]) => typeof v === 'number'))
+    : undefined;
+  if (Array.isArray(out.steps)) {
+    out.steps = (out.steps as unknown[]).map((b) => (typeof b === 'string' ? { say: b } : b)).filter((b) => b && typeof b === 'object').map((b) => {
       const q = { ...(b as Record<string, unknown>) };
-      if (q.set && typeof q.set === 'object') {
-        q.set = Object.fromEntries(Object.entries(q.set as Record<string, unknown>).map(([k, v]) => [rename.get(k) ?? k, typeof v === 'string' && !isNaN(Number(v)) ? Number(v) : v]).filter(([, v]) => typeof v === 'number'));
-      }
+      if (q.say === undefined && typeof q.text === 'string') q.say = q.text;
+      delete q.text;
+      if (q.set) q.set = fixSet(q.set);
       if (typeof q.focus === 'string') q.focus = [q.focus];
-      if (typeof q.text === 'string') q.text = renameInTemplates(q.text, rename);
+      if (typeof q.say === 'string') q.say = renameInTemplates(q.say, rename);
+      if (typeof q.after === 'string') q.after = renameInTemplates(q.after, rename);
+      if (q.task === null || q.task === '') delete q.task;
+      const t = q.task as Record<string, unknown> | undefined;
+      if (t && typeof t === 'object') {
+        const tk = { ...t };
+        if (typeof tk.param === 'string') tk.param = rename.get(tk.param) ?? tk.param;
+        if (typeof tk.goal === 'string') tk.goal = renameIds(tk.goal.replace(/[{}]/g, ''), rename);
+        if (typeof tk.goal === 'number' || typeof tk.goal === 'boolean') delete tk.goal;
+        if (tk.kind === 'predict' && typeof tk.answer === 'string' && Array.isArray(tk.choices)) { const i = (tk.choices as string[]).indexOf(tk.answer); if (i >= 0) tk.answer = i; }
+        if (tk.reveal && typeof tk.reveal === 'object') { const r = { ...(tk.reveal as Record<string, unknown>) }; if (r.set) r.set = fixSet(r.set); tk.reveal = r; }
+        if (!tk.hint && tk.kind !== 'predict') tk.hint = tk.kind === 'tap' ? 'Tap it in the picture.' : 'Move the knob.';
+        q.task = tk;
+      }
+      if (Array.isArray(q.callouts)) q.callouts = (q.callouts as Record<string, unknown>[]).filter((c) => c && typeof c.at === 'string' && typeof c.text === 'string');
       return q;
     });
   }

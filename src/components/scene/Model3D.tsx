@@ -43,7 +43,7 @@ const MATERIALS: Record<Material, { color?: string; roughness: number; metalness
   copper: { color: '#c7793a', roughness: 0.38, metalness: 0.55 },
 };
 
-function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel }: { p: Part; env: Env; t: number; explode: number; colors: Record<string, string>; dimmed: boolean; hot: boolean; showLabel: boolean }) {
+function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel, callout, onTap }: { p: Part; env: Env; t: number; explode: number; colors: Record<string, string>; dimmed: boolean; hot: boolean; showLabel: boolean; callout?: string; onTap?: (id: string) => void }) {
   // Geometry only rebuilds when a size expression's value changes.
   const sizeKey = p.size.map((v) => evaluate(v, env, 0.5).toFixed(3)).join(',');
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,17 +52,23 @@ function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel }: { p: P
   const pos = (p.position ?? [0, 0, 0]).map((v) => evaluate(v, env, 0));
   const ex = (p.explode ?? [0, 0, 0]).map((v) => evaluate(v, env, 0) * explode);
   const rot = (p.rotation ?? [0, 0, 0]).map((v) => deg(evaluate(v, env, 0)));
-  if (p.spin) {
-    const turns = evaluate(p.spin.speed, env, 0) * t;
-    const i = { x: 0, y: 1, z: 2 }[p.spin.axis];
-    rot[i] += turns * Math.PI * 2;
-  }
+  // Spin turns the part about its own axle (inside its rotation), so a wheel laid on its side still rolls.
+  const spinRot: [number, number, number] = [0, 0, 0];
+  if (p.spin) spinRot[{ x: 0, y: 1, z: 2 }[p.spin.axis]] = evaluate(p.spin.speed, env, 0) * t * Math.PI * 2;
   const color = colors[p.tone ?? 'neutral'] ?? '#999';
   const base = p.opacity ?? 1;
   const opacity = dimmed ? Math.min(base, 0.14) : base;
   return (
     <group position={[pos[0] + ex[0], pos[1] + ex[1], pos[2] + ex[2]]}>
-      <group rotation={new THREE.Euler(rot[0], rot[1], rot[2], 'XYZ')}>
+      <group
+        rotation={new THREE.Euler(rot[0], rot[1], rot[2], 'XYZ')}
+      >
+      <group
+        rotation={spinRot}
+        onClick={onTap ? (e) => { e.stopPropagation(); onTap(p.id); } : undefined}
+        onPointerOver={onTap ? () => { document.body.style.cursor = 'pointer'; } : undefined}
+        onPointerOut={onTap ? () => { document.body.style.cursor = ''; } : undefined}
+      >
         {pieces.map((piece, k) => {
           const m = MATERIALS[piece.mat];
           const c = piece.mat === 'main' ? color : piece.mat === 'glass' ? colors.cool : m.color!;
@@ -75,15 +81,16 @@ function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel }: { p: P
           );
         })}
       </group>
+      </group>
       {/* Labels stay mounted and fade in and out: mounting and unmounting drei's Html portals mid-render breaks React 19. */}
-      {p.label && (
+      {(p.label || callout) && (
         <Html center position={[0, 0, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
           <div
-            className="whitespace-nowrap rounded-full border border-line bg-surface/95 px-2.5 py-1 text-[12px] font-semibold text-ink shadow-sm"
-            style={{ transform: 'translateY(-26px)', opacity: showLabel ? 1 : 0, transition: 'opacity 200ms' }}
-            aria-hidden={!showLabel}
+            className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold shadow-sm ${callout ? 'bg-ink text-paper' : 'border border-line bg-surface/95 text-ink'}`}
+            style={{ transform: 'translateY(-26px)', opacity: showLabel || callout ? 1 : 0, transition: 'opacity 200ms' }}
+            aria-hidden={!(showLabel || callout)}
           >
-            {p.label}
+            {callout ?? p.label}
           </div>
         </Html>
       )}
@@ -122,7 +129,7 @@ function Fit({ box, dir }: { box: THREE.Box3; dir: [number, number, number] }) {
 
 /* eslint-enable react-hooks/immutability */
 
-export default function Model3D({ scene, env, focus, t, playing }: { scene: M; env: Env; focus: string[]; t: number; playing: boolean }) {
+export default function Model3D({ scene, env, focus, t, playing, callouts = {}, onTap }: { scene: M; env: Env; focus: string[]; t: number; playing: boolean; callouts?: Record<string, string>; onTap?: (id: string) => void }) {
   const colors = useToneColors();
   const explode = scene.explodeParam ? Math.max(0, Math.min(1, evaluate(scene.explodeParam, env, 0))) : 0;
   // Centre the model and size the camera on its fully exploded extent, so exploding never leaves the frame.
@@ -164,7 +171,8 @@ export default function Model3D({ scene, env, focus, t, playing }: { scene: M; e
             <PartMesh
               key={p.id} p={p} env={env} t={t} explode={explode} colors={colors}
               dimmed={focus.length > 0 && !focus.includes(p.id)} hot={focus.includes(p.id)}
-              showLabel={firstOfLabel.has(p.id) && (focusedLabels.has(p.id) || labelAll)}
+              showLabel={!Object.keys(callouts).length && firstOfLabel.has(p.id) && (focusedLabels.has(p.id) || labelAll)}
+              callout={callouts[p.id]} onTap={onTap}
             />
           ))}
         </group>

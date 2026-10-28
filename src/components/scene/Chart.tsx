@@ -7,12 +7,14 @@ import { tone, useSize } from './runtime';
 
 type C = Extract<Scene, { type: 'chart' }>;
 
-export default function Chart({ scene, env, focus }: { scene: C; env: Env; focus: string[] }) {
-  if (scene.kind === 'line' && scene.series?.length) return <LineChart scene={scene} env={env} focus={focus} />;
-  return <Bars scene={scene} env={env} focus={focus} />;
+type Extra = { callouts?: Record<string, string>; onTap?: (id: string) => void };
+
+export default function Chart({ scene, env, focus, callouts, onTap }: { scene: C; env: Env; focus: string[] } & Extra) {
+  if (scene.kind === 'line' && scene.series?.length) return <LineChart scene={scene} env={env} focus={focus} callouts={callouts} onTap={onTap} />;
+  return <Bars scene={scene} env={env} focus={focus} callouts={callouts} onTap={onTap} />;
 }
 
-function Bars({ scene, env, focus }: { scene: C; env: Env; focus: string[] }) {
+function Bars({ scene, env, focus, callouts = {}, onTap }: { scene: C; env: Env; focus: string[] } & Extra) {
   const [box, size] = useSize<HTMLDivElement>();
   const bars = (scene.bars ?? []).map((b) => ({ ...b, v: evaluate(b.value, env, 0) }));
   const max = Math.max(1e-9, ...bars.map((b) => Math.abs(b.v)));
@@ -24,7 +26,11 @@ function Bars({ scene, env, focus }: { scene: C; env: Env; focus: string[] }) {
         {bars.map((b) => {
           const op = focus.length && !focus.includes(b.id) ? 0.3 : 1;
           return (
-            <div key={b.id} className="grid items-center gap-3" style={{ gridTemplateColumns: 'minmax(72px, 30%) 1fr', opacity: op, transition: 'opacity 300ms' }}>
+            <div
+              key={b.id} className={`grid items-center gap-3 rounded-lg ${onTap ? 'cursor-pointer hover:bg-sunk' : ''}`}
+              style={{ gridTemplateColumns: 'minmax(72px, 30%) 1fr', opacity: op, transition: 'opacity 300ms' }}
+              onClick={onTap ? () => onTap(b.id) : undefined} role={onTap ? 'button' : undefined}
+            >
               <div className="truncate text-right text-[13px] font-medium text-ink-2" title={b.label}>{b.label}</div>
               <div className="flex items-center gap-2" style={{ height: rowH * 0.66 }}>
                 <div
@@ -32,6 +38,7 @@ function Bars({ scene, env, focus }: { scene: C; env: Env; focus: string[] }) {
                   style={{ width: `${(Math.abs(b.v) / max) * 82}%`, minWidth: 3, background: tone(b.tone), transition: 'width 500ms cubic-bezier(.2,.8,.2,1)' }}
                 />
                 <span className="shrink-0 text-[13px] font-semibold tabular-nums text-ink">{formatNumber(b.v)}{scene.unit ? ` ${scene.unit}` : ''}</span>
+                {callouts[b.id] && <span className="shrink-0 rounded-full bg-ink px-2.5 py-0.5 text-[12px] font-semibold text-paper">{callouts[b.id]}</span>}
               </div>
             </div>
           );
@@ -41,7 +48,7 @@ function Bars({ scene, env, focus }: { scene: C; env: Env; focus: string[] }) {
   );
 }
 
-function LineChart({ scene, env, focus }: { scene: C; env: Env; focus: string[] }) {
+function LineChart({ scene, env, focus, callouts, onTap }: { scene: C; env: Env; focus: string[] } & Extra) {
   const series = scene.series ?? [];
   const pts = series.flatMap((s) => s.points.map(([x, y]) => [evaluate(x, env, 0), evaluate(y, env, 0)]));
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
@@ -51,7 +58,7 @@ function LineChart({ scene, env, focus }: { scene: C; env: Env; focus: string[] 
   return (
     <Graph2D
       scene={{ type: 'graph2d', x: pad(Math.min(...xs), Math.max(...xs)), y: pad(yMin, Math.max(...ys)), xLabel: scene.xLabel, yLabel: scene.yLabel, items }}
-      env={env} focus={focus} params={[]} onDrag={() => {}}
+      env={env} focus={focus} params={[]} onDrag={() => {}} callouts={callouts} onTap={onTap}
     />
   );
 }

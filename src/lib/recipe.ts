@@ -14,12 +14,14 @@ export const LEVEL_LABEL: Record<Level, string> = {
 };
 /** What each level means to the writer. Built on the expertise-reversal effect: full guidance for novices,
  * less scaffolding and more doing as expertise grows (Kalyuga; Salden et al. 2010). */
+// Higher levels go DEEPER per step, never DENSER: every level keeps one idea per step and short sentences
+// (Logan, 2026-10-28: higher levels became "way too complicated for anybody").
 export const LEVEL_BRIEF: Record<Level, string> = {
-  novice: 'Never studied this. No jargon at all; every term gets an everyday picture first. One idea per step, guided all the way. Analogies from daily life.',
-  beginner: 'Knows the everyday basics and a few terms. Short definitions, then the idea. Mostly guided, with an occasional "try it" moment.',
-  intermediate: 'Studied this before (school or work). Uses standard terms and notation. Focus on why it works and how the parts connect, not just what.',
-  expert: 'Uses this regularly. Skip basics. Go straight to mechanisms, edge cases, trade-offs and the formal view. Let them drive the knobs to discover.',
-  professional: 'Practitioner who teaches or builds with this. Precise, technical, current. Real numbers, limits, failure modes, what the field argues about.',
+  novice: 'Never met this. No jargon: every term gets an everyday picture first. Concrete before abstract. Lots of guidance; tasks are easy wins that build confidence.',
+  beginner: 'Knows the everyday basics. Introduce one real term per lesson, defined by the picture. Guided tasks with a small stretch.',
+  intermediate: 'Studied it before. Standard terms and simple notation are fine. Focus on why it works and how the parts connect. Let them try before telling (predict first).',
+  expert: 'Uses it regularly. Skip the basics and go to mechanisms, edge cases and trade-offs, but still ONE idea per step in plain sentences. Harder predictions, fewer hints. Depth, not density.',
+  professional: 'Works in this field. Precise vocabulary, real numbers, limits and failure modes, what practitioners argue about. Still ONE idea per step and short sentences: a professional wants clarity, not clutter.',
 };
 
 export const TONES = ['primary', 'accent', 'warm', 'cool', 'green', 'red', 'neutral'] as const;
@@ -151,32 +153,46 @@ export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Ch
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 
-export const Beat = z.object({
-  text: Short(420),
+// A step is one screen of the lesson: a short line in the scene, labels pinned to the parts it talks about, and
+// usually something to DO (learn by doing: drag to a goal, tap a part, or predict before the reveal).
+export const Task = z.discriminatedUnion('kind', [
+  // Move a knob (or drag the point tied to it) until `goal` (an expression over the params) is true.
+  z.object({ kind: z.literal('slide'), param: z.string(), goal: z.string().min(1).max(200), hint: Short(120) }),
+  // Tap the right thing in the scene.
+  z.object({ kind: z.literal('tap'), target: z.string(), hint: Short(120) }),
+  // Pick an answer before seeing it; then the scene plays the reveal.
+  z.object({
+    kind: z.literal('predict'),
+    question: Short(140),
+    choices: Many(Short(60), 2, 4),
+    answer: z.number().int().min(0),
+    reveal: z.object({ set: z.record(z.string(), z.number()).optional(), play: z.boolean().optional() }).optional(),
+  }),
+]);
+export type Task = z.infer<typeof Task>;
+
+export const Step = z.object({
+  say: Short(200),
+  callouts: Many(z.object({ at: z.string(), text: Short(48) }), 0, 3).optional(),
   set: z.record(z.string(), z.number()).optional(),
   focus: Many(z.string(), 0, 8).optional(),
   play: z.boolean().optional(),
+  task: Task.optional(),
+  after: Short(200).optional(),
 });
-export type Beat = z.infer<typeof Beat>;
-
-export const Check = z.object({
-  question: Short(200),
-  choices: Many(Short(90), 2, 4),
-  answer: z.number().int().min(0),
-  why: Short(300),
-});
+export type Step = z.infer<typeof Step>;
 
 export const Lesson = z.object({
   title: Short(70),
   scene: Scene,
   params: Many(Param, 0, 4).default([]),
-  beats: Many(Beat, 2, 7),
-  check: Check.optional(),
+  steps: Many(Step, 2, 8),
 });
 export type Lesson = z.infer<typeof Lesson>;
 
 export const PlanLesson = z.object({
   title: Short(70),
+  pattern: z.string().max(40).default('drag-to-discover'),
   goal: Short(300),
   aha: Short(300),
   visual: Short(600),

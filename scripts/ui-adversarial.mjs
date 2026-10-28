@@ -45,7 +45,7 @@ await check('failed lesson shows a retry that works', {}, async (page) => {
   await page.getByRole('button', { name: 'Try again' }).waitFor({ timeout: 20000 });
   fail = false;
   await page.getByRole('button', { name: 'Try again' }).click();
-  await page.getByRole('button', { name: 'Next', exact: true }).waitFor({ timeout: 90000 });
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
   return true;
 });
 
@@ -76,14 +76,14 @@ await check('phone back button returns to home', {}, async (page) => {
 
 await check('reduced motion starts paused', { reducedMotion: 'reduce' }, async (page) => {
   await startCourse(page, 'how a wave moves on a string', 'Beginner');
-  await page.getByRole('button', { name: 'Next', exact: true }).waitFor({ timeout: 90000 });
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
   const pause = await page.getByRole('button', { name: 'Pause' }).count();
   return pause === 0;
 });
 
 await check('dark mode renders a full course', { colorScheme: 'dark' }, async (page) => {
   await startCourse(page, 'trigonometry', 'Beginner');
-  await page.getByRole('button', { name: 'Next', exact: true }).waitFor({ timeout: 90000 });
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
   await page.waitForTimeout(1200);
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   return bg !== 'rgb(247, 246, 242)' && (await noHorizontalScroll(page));
@@ -91,20 +91,20 @@ await check('dark mode renders a full course', { colorScheme: 'dark' }, async (p
 
 await check('landscape phone has no horizontal scroll', { viewport: { width: 844, height: 390 } }, async (page) => {
   await startCourse(page);
-  await page.getByRole('button', { name: 'Next', exact: true }).waitFor({ timeout: 90000 });
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
   return noHorizontalScroll(page);
 });
 
 await check('laptop 1366x768 course layout', { viewport: { width: 1366, height: 768 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 }, async (page) => {
   await startCourse(page, 'how does wifi work', 'Novice');
-  await page.getByRole('button', { name: 'Next', exact: true }).waitFor({ timeout: 90000 });
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
   await page.waitForTimeout(1000);
   return noHorizontalScroll(page);
 });
 
 await check('Tamil course renders in Tamil', {}, async (page) => {
   await startCourse(page, 'ஒளிச்சேர்க்கை எப்படி நடக்கிறது', 'Novice');
-  await page.getByRole('button', { name: 'Next', exact: true }).waitFor({ timeout: 90000 });
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
   await page.waitForTimeout(800);
   return /[஀-௿]/.test(await page.locator('main').innerText());
 });
@@ -128,15 +128,46 @@ await check('clarify options start a course when tapped', {}, async (page) => {
 
 await check('walk every step and lesson 2 loads', {}, async (page) => {
   await startCourse(page);
-  await page.getByRole('button', { name: 'Next', exact: true }).waitFor({ timeout: 90000 });
-  for (let i = 0; i < 8 && (await page.getByRole('button', { name: 'Next', exact: true }).count()); i++) {
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
+  for (let i = 0; i < 10; i++) {
+    if (await page.getByRole('button', { name: 'Next lesson' }).count()) break;
+    const show = page.getByRole('button', { name: 'Show me' });
+    if (await show.count()) await show.click();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await page.waitForTimeout(250);
   }
+  const show = page.getByRole('button', { name: 'Show me' });
+  if (await show.count()) await show.click();
   await page.getByRole('button', { name: 'Next lesson' }).click();
   await page.getByText(/Lesson 2 of/).waitFor();
-  await page.getByRole('button', { name: 'Next', exact: true }).waitFor({ timeout: 90000 });
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
   return true;
+});
+
+await check('a task blocks Continue until done, and Show me completes it', {}, async (page) => {
+  await startCourse(page, 'trigonometry', 'Novice');
+  const cont = page.getByRole('button', { name: /^(Continue|Next lesson)$/ });
+  await cont.waitFor({ timeout: 90000 });
+  for (let i = 0; i < 6; i++) {
+    if (await page.getByRole('button', { name: 'Show me' }).count()) break;
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForTimeout(250);
+  }
+  if (!(await page.getByRole('button', { name: 'Show me' }).count())) return false;
+  const blocked = await cont.isDisabled();
+  await page.getByRole('button', { name: 'Show me' }).click();
+  await page.waitForTimeout(900);
+  return blocked && !(await cont.isDisabled());
+});
+
+await check('asking mid-lesson answers inside the scene and returns', {}, async (page) => {
+  await startCourse(page, 'trigonometry', 'Novice');
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
+  await page.locator('#prompt').fill('why is it called sine?');
+  await page.keyboard.press('Enter');
+  await page.getByText('Back to the lesson').waitFor({ timeout: 45000 });
+  await page.getByText('Back to the lesson').click();
+  return (await page.getByText('Back to the lesson').count()) === 0;
 });
 
 await browser.close();
