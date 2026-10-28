@@ -53,6 +53,12 @@ last_updated: 2026-10-29
   - Tests 26/26 + 15/15; overnight spend $0.07.
   - Remaining #46 work: 3D labels and diagram nodes; richer illustration fills; callouts crowding small shapes.
 
+- 02:xx round 2, deployed:
+  - The picture gets about 40% more height on phones: the ask bar folds into a button, and knobs show only when the step needs them.
+  - Icons never overlap (they shrink together when crowded); the validator rejects icon pile-ups.
+  - Tighter framing and softer dimming. Tests 26/26 + 15/15; spend $0.11.
+  - Remaining: crowded model-made icon scenes; washed-out unfocused items; 3D framing on phones.
+
 ## Next (Frank's plan)
 
 0. TOP PRIORITY (Logan, 2026-10-29, verbatim): "Every lesson is still so one dimensional and ugly. the font and everything is still so hard unintuitive. make everything bigger and way more obvious as to how it can be more visually friendly". This means:
