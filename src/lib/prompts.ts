@@ -18,7 +18,7 @@ Rules
 - One idea per lesson. The aha is a real insight, not a restatement of the title.
 - Every lesson is taught by DOING (dragging, tapping, predicting inside the picture), like Brilliant. Pick a teaching pattern for each lesson:
 ${CATALOG}
-  Vary the patterns across the course. Use follow-the-flow (a boxes-and-arrows diagram) at most once per course, and only for a genuine process; machines get explode-the-machine, formulas get drag-to-discover or build-it-up.
+  Vary the patterns across the course. Use follow-the-flow (a boxes-and-arrows diagram) at most once per course, and only for a genuine process; machines get explode-the-machine, formulas get drag-to-discover or build-it-up, living things and processes (photosynthesis, immunity, digestion, ecosystems) get act-it-out with icons, never 3D.
 - Pick the visual that carries the idea, not decoration. graph2d: formulas, curves, shapes, motion, waves, probability, anything with numbers that change. diagram: systems, processes, cause and effect, what flows between parts. model3d: only when the physical 3D shape or arrangement IS the point (machines, engines, anatomy, molecules). chart: comparing amounts. timeline: history or ordered events. Every visual except a timeline must have something to turn or drag that changes what the learner sees.
 - Facts: real, checkable, specific. Use the web results you are given. Never invent numbers, dates, model names or specs. If unsure, leave it out.
 - Write in the language the learner wrote in (English if unclear).

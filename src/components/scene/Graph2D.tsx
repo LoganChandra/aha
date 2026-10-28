@@ -435,7 +435,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
               </g>
             </g>
           ))}
-          {onTap && Object.entries(anchors).filter(([id]) => scene.items.find((i) => i.id === id)?.type !== 'text').map(([id, [x, y]]) => (
+          {/* Rings mark the things you would tap (icons, points, shapes), not every line and arrow. */}
+          {onTap && Object.entries(anchors).filter(([id]) => ['icon', 'point', 'polygon', 'circle'].includes(scene.items.find((i) => i.id === id)?.type ?? '')).map(([id, [x, y]]) => (
             <circle key={`tp-${id}`} className="pulse-ring" cx={x} cy={y} r={20} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />
           ))}
           {tapTargets}

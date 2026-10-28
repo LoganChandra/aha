@@ -177,6 +177,8 @@ function g2Errors(it: G2Item, scene: Extract<Scene, { type: 'graph2d' }>, env: E
   } else if (it.type === 'text') {
     it.at.forEach((v) => checkExpr(w, v, withT, errors));
     checkTemplate(w, it.text, withT, errors);
+    // One readout, one value: "buy: 5 sell: 5" on one line reads as noise.
+    if ((it.text.match(/\{[^}]+\}/g) ?? []).length >= 2 && (it.text.match(/:/g) ?? []).length >= 2) errors.push(`${w}: "${it.text}" packs several values into one line; make one text item per value (e.g. "buy: {qd}" and "sell: {qs}"), stacked.`);
   } else if (it.type === 'icon') {
     if (!ICONS[it.name]) errors.push(`${w}: there is no icon "${it.name}". Use one of the listed icon names.`);
     [...it.at, it.size].forEach((v) => checkExpr(w, v, withT, errors));

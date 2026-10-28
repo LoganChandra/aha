@@ -38,9 +38,9 @@ const deg = (v: number) => (v * Math.PI) / 180;
 /** Tappable parts breathe a soft outline (the same shape, slightly larger, inside out), so the learner can see what to tap. */
 function TapHalo({ geo, color }: { geo: THREE.BufferGeometry; color: string }) {
   const mat = useRef<THREE.MeshBasicMaterial>(null);
-  useFrame(({ clock }) => { if (mat.current) mat.current.opacity = 0.18 + 0.22 * (0.5 + 0.5 * Math.sin(clock.elapsedTime * 3.4)); });
+  useFrame(({ clock }) => { if (mat.current) mat.current.opacity = 0.25 + 0.4 * (0.5 + 0.5 * Math.sin(clock.elapsedTime * 3.4)); });
   return (
-    <mesh geometry={geo} scale={1.07}>
+    <mesh geometry={geo} scale={1.12}>
       <meshBasicMaterial ref={mat} color={color} side={THREE.BackSide} transparent opacity={0.3} depthWrite={false} />
     </mesh>
   );
