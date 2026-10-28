@@ -62,6 +62,16 @@ export function checkLesson(raw: unknown): Checked {
   if (scene.type === 'graph2d') {
     if (!(scene.x[1] > scene.x[0]) || !(scene.y[1] > scene.y[0])) errors.push('graph2d: x and y ranges must be [min, max] with max > min.');
     for (const it of scene.items) errors.push(...g2Errors(it, scene, env, params));
+    // Icons must have room: two visible icons closer than their sizes collide on screen.
+    const icons = scene.items.filter((i) => i.type === 'icon' && !(i.show !== undefined && !(evaluate(i.show, env, 1) > 0))) as Extract<G2Item, { type: 'icon' }>[];
+    const shown = icons.length;
+    if (shown > 9) errors.push(`graph2d: ${shown} icons are visible at once; use at most 8 big ones (show counts as a number or a bar instead of many small icons).`);
+    for (let i = 0; i < icons.length; i++) for (let j = i + 1; j < icons.length; j++) {
+      const a = icons[i], b = icons[j];
+      const sa = a.size !== undefined ? Math.abs(evaluate(a.size, env, 1)) : 1, sb = b.size !== undefined ? Math.abs(evaluate(b.size, env, 1)) : 1;
+      const d = Math.hypot(evaluate(a.at[0], env, 0) - evaluate(b.at[0], env, 0), evaluate(a.at[1], env, 0) - evaluate(b.at[1], env, 0));
+      if (d < (sa + sb) * 0.65) errors.push(`icons "${a.id}" and "${b.id}" overlap (centres ${d.toFixed(2)} apart, sizes ${sa} and ${sb}); place them at least ${((sa + sb) * 0.75).toFixed(1)} apart.`);
+    }
   } else if (scene.type === 'diagram') {
     const nodes = new Set(scene.nodes.map((n) => n.id));
     for (const e of scene.edges) {

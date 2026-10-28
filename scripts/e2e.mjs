@@ -27,6 +27,7 @@ await shot('3-lesson');
 await page.getByRole('button', { name: 'Next', exact: true }).click();
 await page.waitForTimeout(1200);
 await shot('4-beat2');
+if (await page.getByRole('button', { name: 'Ask a question' }).count()) await page.getByRole('button', { name: 'Ask a question' }).click();
 await page.locator('#prompt').fill('wait, why does that happen?');
 await page.keyboard.press('Enter');
 await page.getByText('Back to the lesson').waitFor({ timeout: 45000 });

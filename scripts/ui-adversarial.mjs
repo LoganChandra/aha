@@ -163,6 +163,8 @@ await check('a task blocks Continue until done, and Show me completes it', {}, a
 await check('asking mid-lesson answers inside the scene and returns', {}, async (page) => {
   await startCourse(page, 'trigonometry', 'Novice');
   await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
+  const askBtn = page.getByRole('button', { name: 'Ask a question' });
+  if (await askBtn.count()) await askBtn.click();
   await page.locator('#prompt').fill('why is it called sine?');
   await page.keyboard.press('Enter');
   await page.getByText('Back to the lesson').waitFor({ timeout: 45000 });

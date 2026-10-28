@@ -106,7 +106,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
 
   const { X, Y, x0, x1, y0, y1 } = view;
   const ev = (v: Num | undefined, fb = 0, extra?: Env) => evaluate(v, extra ? { ...env, ...extra } : env, fb);
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   const hot = (id: string) => focus.includes(id);
 
   // ---- grid and axes
@@ -140,6 +140,22 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   }
 
   const n = Math.min(600, Math.max(120, Math.round(view.iw / 1.5)));
+
+  // Icons never overlap: if any two would touch (with room for a label), every icon shrinks together until they clear.
+  const iconItems = scene.items.filter((i): i is Extract<G2Item, { type: 'icon' }> => i.type === 'icon' && !(i.show !== undefined && !(ev(i.show, 1) > 0)));
+  const iconRaw = (it: Extract<G2Item, { type: 'icon' }>) => {
+    const unit = it.size !== undefined ? Math.abs(X(ev(it.size, 1)) - X(0)) : Math.min(view.iw, view.ih) * 0.18;
+    return Math.max(40, Math.min(170, unit));
+  };
+  let iconScale = 1;
+  for (let i = 0; i < iconItems.length; i++) for (let j = i + 1; j < iconItems.length; j++) {
+    const a = iconItems[i], b = iconItems[j];
+    const d = Math.hypot(X(ev(a.at[0])) - X(ev(b.at[0])), Y(ev(a.at[1])) - Y(ev(b.at[1])));
+    const need = (iconRaw(a) + iconRaw(b)) * 0.56 + 6;
+    if (d > 1 && d < need) iconScale = Math.min(iconScale, d / need);
+  }
+  iconScale = Math.max(0.55, iconScale);
+  const iconDiscs: Box[] = [];
   const labels: Label[] = [];
   // Where each item sits on screen: callouts pin here and tap targets centre here.
   const anchors: Record<string, [number, number]> = {};
@@ -266,10 +282,10 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         const node = ICONS[it.name];
         if (!node) return null;
         const cx = X(ev(it.at[0])), cy = Y(ev(it.at[1]));
-        const unit = it.size !== undefined ? Math.abs(X(ev(it.size, 1)) - X(0)) : Math.min(view.iw, view.ih) * 0.18;
-        const px = Math.max(40, Math.min(170, unit));
+        const px = iconRaw(it) * iconScale;
+        iconDiscs.push({ x0: cx - px * 0.56, x1: cx + px * 0.56, y0: cy - px * 0.56, y1: cy + px * 0.56 });
         const draggable = !!(it.dragX || it.dragY);
-        anchors[it.id] = [cx, cy - px * 0.62];
+        anchors[it.id] = [cx, cy];
         if (it.label) labels.push({ x: cx, y: cy + px * 0.62 + 18, text: fillTemplate(it.label, env), color: 'var(--ink)', id: it.id, anchor: 'middle' });
         const k = (px * 0.62) / 24;
         return (
@@ -361,7 +377,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   if (showAxes && scene.xLabel) { const w = textWidth(scene.xLabel) + 20; reserved.push({ x0: PAD.l + view.iw - w, x1: PAD.l + view.iw, y0: view.h - 22, y1: view.h }); }
   if (showAxes && scene.yLabel) { const w = textWidth(scene.yLabel) + 20; reserved.push({ x0: PAD.l, x1: PAD.l + w, y0: 0, y1: 20 }); }
   // A part with a callout this step shows the callout, not its everyday label as well.
-  const placed = placeLabels(labels.filter((l) => !callouts[l.id] || scene.items.find((i) => i.id === l.id)?.type === 'text'), view.w, view.h, reserved);
+  const placed = placeLabels(labels.filter((l) => !callouts[l.id] || scene.items.find((i) => i.id === l.id)?.type === 'text'), view.w, view.h, [...reserved, ...iconDiscs]);
 
   return (
     <div ref={box} className="absolute inset-0 select-none">
@@ -433,7 +449,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
               </text>
             ))}
           </g>
-          {pins.length > 0 && <Pins pins={pins} w={view.w} h={view.h} avoid={placed.map((l) => ({ x0: l.x, x1: l.x + textWidth(l.text), y0: l.y - 16, y1: l.y + 5 }))} />}
+          {pins.length > 0 && <Pins pins={pins} w={view.w} h={view.h} avoid={[...iconDiscs, ...placed.map((l) => ({ x0: l.x, x1: l.x + textWidth(l.text), y0: l.y - 16, y1: l.y + 5 }))]} />}
         </svg>
       )}
     </div>
@@ -513,7 +529,7 @@ function contentBounds(items: Item[], params: { id: string; min: number; max: nu
   const minW = (xr[1] - xr[0]) * 0.2, minH = (yr[1] - yr[0]) * 0.2;
   if (x1 - x0 < minW) { const c = (x0 + x1) / 2; x0 = c - minW / 2; x1 = c + minW / 2; }
   if (y1 - y0 < minH) { const c = (y0 + y1) / 2; y0 = c - minH / 2; y1 = c + minH / 2; }
-  const mx = (x1 - x0) * 0.16, my = (y1 - y0) * 0.2;
+  const mx = (x1 - x0) * 0.09, my = (y1 - y0) * 0.12;
   return [x0 - mx, x1 + mx, y0 - my, y1 + my];
 }
 

@@ -261,6 +261,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   // Bumped whenever the learner moves; an answer that arrives after a move is dropped.
   const askSeq = useRef(0);
   const [sheet, setSheet] = useState(false);
+  const [asking, setAsking] = useState(false);
   // What happened on each step: done, the predict choice, a wrong tap (for the nudge).
   const [progress, setProgress] = useState<Record<string, { done?: boolean; pick?: number; miss?: number; shown?: boolean }>>({});
   const [instant, setInstant] = useState(false);
@@ -419,7 +420,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     const target = goalTarget(task.goal, slideKnob, env);
     return target === null ? undefined : { param: slideKnob.id, target };
   }, [slideKnob, task, done, env]);
-  const freeKnobs = lesson && (!task || task.kind === 'tap' || done) && task?.kind !== 'predict' ? lesson.params.filter((p) => p.id !== slideKnob?.id && !dragged.has(p.id)) : [];
+  // Knobs only appear when the step is about them: during a tap or a prediction they would steal the picture's space.
+  const freeKnobs = lesson && (!task || done) ? lesson.params.filter((p) => p.id !== slideKnob?.id && !dragged.has(p.id)) : [];
   const stepsDone = lesson ? lesson.steps.filter((_, i) => i < si || (i === si && done)).length : 0;
 
   return (
@@ -580,22 +582,31 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
           {lesson && (
             <div className="mb-3 flex items-center gap-2">
               <button onClick={() => goStep(si - 1)} disabled={si === 0} aria-label="Previous step" className="flex h-12 w-12 items-center justify-center rounded-full text-ink-2 disabled:opacity-25"><Icon name="back" size={20} /></button>
+              {!asking && (
+                <button onClick={() => setAsking(true)} className="flex h-12 shrink-0 items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-[16px] font-medium text-ink-2 hover:text-ink sm:px-4" aria-label="Ask a question">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></svg>
+                  <span className="hidden sm:inline">Ask</span>
+                </button>
+              )}
               <div className="flex-1" />
               {!done && task && (
-                <button onClick={showMe} className="h-12 rounded-full px-4 text-[16px] font-medium text-ink-2 hover:text-ink">Show me</button>
+                <button onClick={showMe} className="h-12 shrink-0 whitespace-nowrap rounded-full px-3 text-[16px] font-medium text-ink-2 hover:text-ink sm:px-4">Show me</button>
               )}
               <motion.button
                 key={`${key}-${done}`}
                 initial={reduced || !done || !task ? false : { scale: 1 }} animate={reduced || !done || !task ? undefined : { scale: [1, 1.05, 1] }} transition={{ duration: 0.28 }}
                 onClick={() => (!lastStep ? goStep(si + 1) : li < total - 1 ? goLesson(li + 1) : setSheet(true))}
                 disabled={!done}
-                className="h-12 min-w-[150px] rounded-full bg-ink px-7 text-[17px] font-semibold text-paper transition-colors disabled:bg-sunk disabled:text-ink-3"
+                className="h-12 min-w-[132px] shrink-0 whitespace-nowrap rounded-full bg-ink px-6 text-[17px] font-semibold text-paper transition-colors disabled:bg-sunk disabled:text-ink-3"
               >
                 {!lastStep ? 'Continue' : li < total - 1 ? 'Next lesson' : 'Finish'}
               </motion.button>
             </div>
           )}
-          <PromptBar value={askText} onChange={setAskText} onSubmit={ask} placeholder="Ask anything about this" busy={answer?.pending} />
+          {/* Asking is one tap away but folded, so the picture keeps the room; it opens wide while you type or wait. */}
+          {asking || answer?.pending || !lesson ? (
+            <PromptBar value={askText} onChange={setAskText} onSubmit={() => { ask(); setAsking(false); }} placeholder="Ask anything about this" busy={answer?.pending} autoFocus={asking} />
+          ) : null}
         </div>
       </footer>
 

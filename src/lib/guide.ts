@@ -46,6 +46,8 @@ PART 3. COMPOSITION: HOW A GOOD SCENE LOOKS
 - Live numbers. If a number changes as they drag, show it with a text item using {expr}, near the thing it measures, in plain words: "height = {sin(a)}", "you pay {price} $".
 - No debug-looking text. Text items read like a sentence a teacher would write, never "state: 0.4 mode: 1". Round numbers: {round(x)} or {round(10*x)/10}.
 - Hidden things are hidden with show, never by parking them off-screen.
+- Icon scenes: at most 6-8 icons on screen, each size 1.5 to 3 units, centres at least 1.5x their size apart. One hero icon (the main character) bigger than the rest. To show "how many" (germs, coins, fighters), draw 1 to 3 icons and a big live number next to them ("× {germs}"), not a crowd of tiny icons.
+- Readouts are for people: one short phrase per text item ("fighters: {f}"), never several values crammed in one line.
 - Live values {…} are numbers only. To show a word that changes (a colour name, "solid"/"liquid"), make one text item per word, each with a show expression.
 - Most learners are on a phone held upright. Design drawings that are roughly square (between 3:4 and 4:3), stacking things vertically rather than spreading them in a long thin row, so the picture fills the screen.
 
