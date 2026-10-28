@@ -1,5 +1,6 @@
 import { makeLesson } from '@/lib/engine';
 import { Plan, LEVELS, type Lesson, type Level, type Source } from '@/lib/recipe';
+import { findCourse } from '@/lib/library';
 import { RESTING, addSpend, cacheGet, cacheSet, json, limited, overBudget, readJson, verifyPlan } from '@/lib/server';
 
 export const maxDuration = 200;
@@ -20,6 +21,9 @@ export async function POST(req: Request) {
   const key = `lesson:${planId}:${index}`;
   const hit = await cacheGet<Lesson>(key);
   if (hit) return json({ lesson: hit, cached: true });
+  // A curated course whose cached lessons were evicted: serve straight from the library file.
+  const lib = findCourse(plan.topic, level);
+  if (lib && lib.plan.topic === plan.topic && lib.lessons[index]) return json({ lesson: lib.lessons[index], cached: true });
 
   if (limited(req, 'lesson')) return json({ error: 'Too many lessons in the last hour. Try again a little later.' }, 429);
   if (await overBudget()) return json({ error: RESTING }, 503);

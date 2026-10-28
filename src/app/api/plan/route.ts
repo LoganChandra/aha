@@ -1,5 +1,6 @@
 import { makePlan } from '@/lib/engine';
 import { preCheck } from '@/lib/intent';
+import { findCourse } from '@/lib/library';
 import { LEVELS, type Level, type Plan, type Source } from '@/lib/recipe';
 import { RESTING, addSpend, askToken, cacheGet, cacheSet, json, limited, normalisePrompt, overBudget, readJson, signPlan } from '@/lib/server';
 
@@ -15,6 +16,15 @@ export async function POST(req: Request) {
 
   const early = preCheck(prompt);
   if (early) return json({ plan: early, sources: [], level, planId: '', cached: false });
+
+  // Curated courses first: built with the best models, inspected, free to serve.
+  const lib = findCourse(prompt, level);
+  if (lib) {
+    const out = { plan: lib.plan, sources: lib.sources };
+    const planId = signPlan({ ...out, level });
+    await Promise.all(lib.lessons.map((l, i) => cacheSet(`lesson:${planId}:${i}`, l)));
+    return json({ ...out, level, planId, askToken: askToken(planId), cached: true, curated: true });
+  }
 
   const key = `plan:${level}:${normalisePrompt(prompt)}`;
   const hit = await cacheGet<Cached>(key);
