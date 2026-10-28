@@ -79,6 +79,12 @@ His words are quoted from the voice notes; transcription is machine-made. The st
 - Terse Discord updates. Only ping when something is deployed or needs him (2026-10-28, 12:47).
 - He tests on desktop in dark mode, and on his phone.
 
+## 2026-10-29 review (for the overnight loop)
+
+| # | Logan said | Status |
+|---|---|---|
+| 46 | "Every lesson is still so one dimensional and ugly. the font and everything is still so hard unintuitive. make everything bigger and way more obvious as to how it can be more visually friendly" | TOP PRIORITY overnight |
+
 ## Model settings (Logan 2026-10-28: "have thinking on when necessary all running on medium", "make the inspector run on high", "keep testing and tweaking")
 
 - Measured on prod: thinking made plans 14-34 s and lessons 21-71 s, against about 6 s and 4-8 s without. The inspector scored medium 4.12 against off 3.94.

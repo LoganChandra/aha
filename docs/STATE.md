@@ -47,6 +47,13 @@ last_updated: 2026-10-29
 
 ## Next (Frank's plan)
 
+0. TOP PRIORITY (Logan, 2026-10-29, verbatim): "Every lesson is still so one dimensional and ugly. the font and everything is still so hard unintuitive. make everything bigger and way more obvious as to how it can be more visually friendly". This means:
+   - Bigger type everywhere, in the scene and the controls.
+   - Bigger, bolder shapes, handles and labels.
+   - More depth and richness, so lessons stop feeling flat.
+   - What to do is obvious at a glance.
+   Review every change by reading the screenshots yourself.
+
 1. Drawing quality for how-machines-work topics: more playbook patterns (cutaway, cross-section, before/after, zoom levels) and more 3D parts (piston, valve, pipe, propeller, gear train).
 2. Faster first open: stream the plan, and start lesson 1 while the plan's web grounding finishes.
 3. A cheap automatic inspector gate using Qwen 3.8 Flash on rendered screenshots before caching. A server render path is needed.
