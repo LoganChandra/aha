@@ -176,6 +176,7 @@ function g2Errors(it: G2Item, scene: Extract<Scene, { type: 'graph2d' }>, env: E
 }
 
 function checkTemplate(where: string, text: string, allowed: Set<string>, errors: string[]) {
+  if (/'[^']*'|"[^"]*"/.test(text.match(/\{[^}]*\}/g)?.join('') ?? '')) errors.push(`${where}: live values {…} are numbers only; text like 'violet' cannot go inside braces. Use several text items with show: expressions instead.`);
   for (const m of text.matchAll(/\{([^{}]+)\}/g)) {
     // A brace pair inside $...$ is LaTeX (\frac{a}{b}), not a live value.
     const before = text.slice(0, m.index);

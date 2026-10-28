@@ -345,7 +345,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   const reserved: Box[] = [];
   if (showAxes && scene.xLabel) { const w = textWidth(scene.xLabel) + 20; reserved.push({ x0: PAD.l + view.iw - w, x1: PAD.l + view.iw, y0: view.h - 22, y1: view.h }); }
   if (showAxes && scene.yLabel) { const w = textWidth(scene.yLabel) + 20; reserved.push({ x0: PAD.l, x1: PAD.l + w, y0: 0, y1: 20 }); }
-  const placed = placeLabels(labels, view.w, view.h, reserved);
+  // A part with a callout this step shows the callout, not its everyday label as well.
+  const placed = placeLabels(labels.filter((l) => !callouts[l.id] || scene.items.find((i) => i.id === l.id)?.type === 'text'), view.w, view.h, reserved);
 
   return (
     <div ref={box} className="absolute inset-0 select-none">

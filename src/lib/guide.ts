@@ -46,6 +46,8 @@ PART 3. COMPOSITION: HOW A GOOD SCENE LOOKS
 - Live numbers. If a number changes as they drag, show it with a text item using {expr}, near the thing it measures, in plain words: "height = {sin(a)}", "you pay {price} $".
 - No debug-looking text. Text items read like a sentence a teacher would write, never "state: 0.4 mode: 1". Round numbers: {round(x)} or {round(10*x)/10}.
 - Hidden things are hidden with show, never by parking them off-screen.
+- Live values {…} are numbers only. To show a word that changes (a colour name, "solid"/"liquid"), make one text item per word, each with a show expression.
+- Most learners are on a phone held upright. Design drawings that are roughly square (between 3:4 and 4:3), stacking things vertically rather than spreading them in a long thin row, so the picture fills the screen.
 
 PART 4. WRITING THE WORDS
 

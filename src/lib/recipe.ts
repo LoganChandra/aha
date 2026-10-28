@@ -38,6 +38,9 @@ const Many = <T extends z.ZodTypeAny>(item: T, min: number, max: number) => z.ar
 const Short = (n: number) => z.string().transform((s) => clip(s.trim(), n));
 export function clip(s: string, n: number): string {
   if (s.length <= n) return s;
+  // Never cut a live value or a formula in half: drop the unfinished {…} or $…$ instead.
+  const cutAt = (t: string) => { let r = t; const ob = r.lastIndexOf('{'); if (ob > r.lastIndexOf('}')) r = r.slice(0, ob); if ((r.match(/\$/g) ?? []).length % 2) r = r.slice(0, r.lastIndexOf('$')); return r.trimEnd(); };
+  if (/[{$]/.test(s)) return cutAt(s.slice(0, n));
   const cut = s.slice(0, n);
   const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('? '), cut.lastIndexOf('! '), cut.lastIndexOf('。'));
   return end > n * 0.5 ? cut.slice(0, end + 1) : cut.replace(/\s+\S*$/, '') + '…';

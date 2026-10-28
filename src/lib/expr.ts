@@ -284,9 +284,9 @@ export function fillTemplate(text: string, env: Env): string {
         const v = compile(inner).fn(env);
         return Number.isFinite(v) ? formatNumber(v) : '-';
       } catch {
-        return m;
+        return ''; // never show a broken formula to a learner
       }
-    })))
+    }).replace(/\{[^}]*$/, '')))  // a hole cut off by trimming is dropped too
     .join('');
 }
 
