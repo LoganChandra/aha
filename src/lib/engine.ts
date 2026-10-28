@@ -24,9 +24,13 @@ const tiers = (maxTokens: number, think: boolean): Route[] => [
   { model: BACKUP, reasoning: think ? MEDIUM : { effort: 'low' }, maxTokens: maxTokens + 4000 }, // GLM cannot turn thinking off
   { model: LAST, reasoning: think ? MEDIUM : { enabled: false }, maxTokens },
 ];
-export const PLAN_ROUTES: Route[] = tiers(10_000, true).map((r) => (r.model === PRIMARY || r.model === LAST ? { ...r, reasoning: { effort: 'low' } } : r)); // planner thinks lightly: it was 18/18 without thinking, and the first wait matters
-// LESSON_THINK=off is only for A/B runs (scripts); production uses the default.
+// Measured 2026-10-28 on prod: planner with thinking took 14-34 s against about 6 s without, and it was already
+// 18/18 without; lessons with medium thinking took 21-71 s against 4-8 s, for a small inspector gain (4.12 vs 3.94).
+// So: the planner and lesson 1 run without thinking (the first screen must be quick); lessons 2+ think at medium,
+// built in the background while the learner works through lesson 1.
+export const PLAN_ROUTES: Route[] = tiers(4000, false);
 export const LESSON_ROUTES: Route[] = tiers(20_000, process.env.LESSON_THINK !== 'off');
+export const FIRST_LESSON_ROUTES: Route[] = tiers(8000, false);
 export const ASK_ROUTES: Route[] = tiers(800, false);
 
 export type Meter = { costUsd: number; ms: number; calls: { model: string; ok: boolean; costUsd: number; ms: number; note?: string }[] };
@@ -65,9 +69,9 @@ async function hedge<T>(routes: Route[], delayMs: number, run: (route: Route) =>
 export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTES, web = true): Promise<{ plan: Plan; sources: Source[]; meter: Meter }> {
   const m = meter();
   const t0 = Date.now();
-  const res = await hedge(routes, 20_000, async (route) => {
+  const res = await hedge(routes, 12_000, async (route) => {
     try {
-      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 40_000, temperature: 0.3 });
+      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 30_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       const parsed = Plan.safeParse(r.data);
       if (!parsed.success) throw new AiError(`plan shape: ${parsed.error.issues[0]?.message}`);
@@ -113,14 +117,14 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number)
   throw new AiError(`${route.model} produced no lesson`);
 }
 
-export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = LESSON_ROUTES, deadline = Date.now() + 170_000): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[] }> {
+export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = index === 0 ? FIRST_LESSON_ROUTES : LESSON_ROUTES, deadline = Date.now() + 170_000): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[] }> {
   const m = meter();
   const t0 = Date.now();
   const user = lessonUser(plan, index, level, sources);
   // Imperfect drafts from every route are kept; if no route writes a clean lesson, the least broken one is repaired.
   const drafts: Written[] = [];
   try {
-    const { lesson } = await hedge(routes, 35_000, (route) => writeWith(route, user, m, deadline).catch((e) => {
+    const { lesson } = await hedge(routes, routes === FIRST_LESSON_ROUTES ? 14_000 : 35_000, (route) => writeWith(route, user, m, deadline).catch((e) => {
       if ((e as { best?: Written }).best) drafts.push((e as { best: Written }).best);
       throw e;
     }));
