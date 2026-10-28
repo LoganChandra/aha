@@ -59,6 +59,13 @@ last_updated: 2026-10-29
   - Tighter framing and softer dimming. Tests 26/26 + 15/15; spend $0.11.
   - Remaining: crowded model-made icon scenes; washed-out unfocused items; 3D framing on phones.
 
+- ~02:20 round 3, deployed:
+  - 3D labels are laid out in screen space: no collisions, leader lines, placed outward.
+  - Tappable 3D parts glow.
+  - New engine parts: piston, valve, spark plug.
+  - Tests 26/26 + 15/15; spend $0.32.
+  - Remaining: diagram-node polish; richer 2D fills; model-made icon scenes still busy.
+
 ## Next (Frank's plan)
 
 0. TOP PRIORITY (Logan, 2026-10-29, verbatim): "Every lesson is still so one dimensional and ugly. the font and everything is still so hard unintuitive. make everything bigger and way more obvious as to how it can be more visually friendly". This means:
