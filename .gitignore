@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# bake-off outputs and screenshots (regenerable)
+/scripts/out/
+/scripts/shots/

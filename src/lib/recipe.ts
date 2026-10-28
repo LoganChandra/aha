@@ -1,0 +1,190 @@
+// The recipe format: what the planner and the lesson writer return, and what the renderer draws.
+// Models write data, never code. Every number may instead be an expression string over the lesson's params and t
+// (seconds since the scene started), checked by expr.ts.
+import { z } from 'zod';
+
+export const LEVELS = ['novice', 'beginner', 'intermediate', 'expert', 'professional'] as const;
+export type Level = (typeof LEVELS)[number];
+export const LEVEL_LABEL: Record<Level, string> = {
+  novice: 'Novice',
+  beginner: 'Beginner',
+  intermediate: 'Intermediate',
+  expert: 'Expert',
+  professional: 'Professional',
+};
+/** What each level means to the writer. Built on the expertise-reversal effect: full guidance for novices,
+ * less scaffolding and more doing as expertise grows (Kalyuga; Salden et al. 2010). */
+export const LEVEL_BRIEF: Record<Level, string> = {
+  novice: 'Never studied this. No jargon at all; every term gets an everyday picture first. One idea per step, guided all the way. Analogies from daily life.',
+  beginner: 'Knows the everyday basics and a few terms. Short definitions, then the idea. Mostly guided, with an occasional "try it" moment.',
+  intermediate: 'Studied this before (school or work). Uses standard terms and notation. Focus on why it works and how the parts connect, not just what.',
+  expert: 'Uses this regularly. Skip basics. Go straight to mechanisms, edge cases, trade-offs and the formal view. Let them drive the knobs to discover.',
+  professional: 'Practitioner who teaches or builds with this. Precise, technical, current. Real numbers, limits, failure modes, what the field argues about.',
+};
+
+export const TONES = ['primary', 'accent', 'warm', 'cool', 'green', 'red', 'neutral'] as const;
+const Tone = z.enum(TONES).catch('primary');
+
+const Num = z.union([z.number(), z.string().min(1).max(400)]);
+const Vec2 = z.tuple([Num, Num]);
+const Vec3 = z.tuple([Num, Num, Num]);
+const Id = z.string().min(1).max(40);
+/** An array that keeps its first `max` entries instead of failing when a model writes too many. */
+const Many = <T extends z.ZodTypeAny>(item: T, min: number, max: number) => z.array(item).min(min).transform((a) => a.slice(0, max));
+// Over-long text is trimmed, not rejected: a cheap model writing one sentence too many should not cost a retry.
+// Trimming stops at the last sentence end that fits, so the learner never sees half a sentence.
+const Short = (n: number) => z.string().transform((s) => clip(s.trim(), n));
+export function clip(s: string, n: number): string {
+  if (s.length <= n) return s;
+  const cut = s.slice(0, n);
+  const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('? '), cut.lastIndexOf('! '), cut.lastIndexOf('。'));
+  return end > n * 0.5 ? cut.slice(0, end + 1) : cut.replace(/\s+\S*$/, '') + '…';
+}
+
+export const Param = z.object({
+  id: z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/).max(24),
+  label: Short(40),
+  min: z.number(),
+  max: z.number(),
+  step: z.number().positive().optional(),
+  value: z.number(),
+  unit: Short(12).optional(),
+  toggle: z.boolean().optional(),
+});
+export type Param = z.infer<typeof Param>;
+
+// ---- 2D graph: functions, curves, points, shapes. Covers maths, physics, signals, geometry.
+const G2Base = { id: Id, label: Short(60).optional(), tone: Tone.optional() };
+export const G2Item = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('function'), ...G2Base, expr: Num, dashed: z.boolean().optional(), domain: Vec2.optional() }),
+  z.object({ type: z.literal('parametric'), ...G2Base, x: Num, y: Num, s: Vec2, dashed: z.boolean().optional() }),
+  z.object({ type: z.literal('point'), ...G2Base, x: Num, y: Num, dragX: z.string().optional(), dragY: z.string().optional() }),
+  z.object({ type: z.literal('segment'), ...G2Base, from: Vec2, to: Vec2, dashed: z.boolean().optional(), arrow: z.boolean().optional() }),
+  z.object({ type: z.literal('circle'), ...G2Base, center: Vec2, r: Num, fill: z.boolean().optional() }),
+  z.object({ type: z.literal('polygon'), ...G2Base, points: z.array(Vec2).min(3).max(24) }),
+  z.object({ type: z.literal('area'), ...G2Base, expr: Num, from: Num, to: Num, base: Num.optional() }),
+  z.object({ type: z.literal('angle'), ...G2Base, at: Vec2, from: Num, to: Num, r: Num.optional() }),
+  z.object({ type: z.literal('text'), ...G2Base, at: Vec2, text: Short(80) }),
+]);
+export type G2Item = z.infer<typeof G2Item>;
+
+export const Graph2D = z.object({
+  type: z.literal('graph2d'),
+  x: z.tuple([z.number(), z.number()]),
+  y: z.tuple([z.number(), z.number()]),
+  xLabel: Short(30).optional(),
+  yLabel: Short(30).optional(),
+  equal: z.boolean().optional(),
+  axes: z.boolean().optional(),
+  piTicks: z.boolean().optional(),
+  items: Many(G2Item, 1, 30),
+});
+
+// ---- Diagram: parts of a system and what flows between them.
+export const Diagram = z.object({
+  type: z.literal('diagram'),
+  direction: z.enum(['LR', 'TB']).catch('LR').optional(),
+  nodes: Many(z.object({
+    id: Id,
+    label: Short(40),
+    detail: Short(90).optional(),
+    tone: Tone.optional(),
+    value: Num.optional(),
+    unit: Short(12).optional(),
+  }), 2, 14),
+  edges: Many(z.object({
+    id: Id.optional(),
+    from: Id,
+    to: Id,
+    label: Short(40).optional(),
+    flow: Num.optional(),
+  }), 0, 24),
+});
+
+// ---- 3D model: a machine or structure built from simple solids, with an exploded view.
+export const Part = z.object({
+  id: Id,
+  label: Short(40).optional(),
+  shape: z.enum(['box', 'cylinder', 'sphere', 'cone', 'torus', 'capsule', 'tube']),
+  size: Many(Num, 1, 3),
+  position: Vec3.optional(),
+  rotation: Vec3.optional(),
+  tone: Tone.optional(),
+  opacity: z.number().min(0.1).max(1).optional(),
+  explode: Vec3.optional(),
+  spin: z.object({ axis: z.enum(['x', 'y', 'z']), speed: Num }).optional(),
+});
+export const Model3D = z.object({
+  type: z.literal('model3d'),
+  parts: Many(Part, 1, 48),
+  explodeParam: z.string().optional(),
+  camera: z.tuple([z.number(), z.number(), z.number()]).optional(),
+});
+
+// ---- Chart: compare quantities.
+export const Chart = z.object({
+  type: z.literal('chart'),
+  kind: z.enum(['bar', 'line']).catch('bar'),
+  xLabel: Short(30).optional(),
+  yLabel: Short(30).optional(),
+  unit: Short(12).optional(),
+  bars: Many(z.object({ id: Id, label: Short(30), value: Num, tone: Tone.optional() }), 0, 16).optional(),
+  series: z.array(z.object({
+    id: Id, label: Short(30), tone: Tone.optional(),
+    points: Many(Vec2, 2, 60),
+  })).max(5).optional(),
+});
+
+// ---- Timeline: what happened in what order.
+export const Timeline = z.object({
+  type: z.literal('timeline'),
+  events: Many(z.object({ id: Id, when: Short(24), label: Short(50), detail: Short(140).optional(), tone: Tone.optional() }), 2, 14),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline]);
+export type Scene = z.infer<typeof Scene>;
+export type SceneType = Scene['type'];
+
+export const Beat = z.object({
+  text: Short(420),
+  set: z.record(z.string(), z.number()).optional(),
+  focus: Many(z.string(), 0, 8).optional(),
+  play: z.boolean().optional(),
+});
+export type Beat = z.infer<typeof Beat>;
+
+export const Check = z.object({
+  question: Short(200),
+  choices: Many(Short(90), 2, 4),
+  answer: z.number().int().min(0),
+  why: Short(300),
+});
+
+export const Lesson = z.object({
+  title: Short(70),
+  scene: Scene,
+  params: Many(Param, 0, 4).default([]),
+  beats: Many(Beat, 2, 7),
+  check: Check.optional(),
+});
+export type Lesson = z.infer<typeof Lesson>;
+
+export const PlanLesson = z.object({
+  title: Short(70),
+  goal: Short(300),
+  aha: Short(300),
+  visual: Short(600),
+  facts: z.array(Short(300)).default([]).transform((f) => f.slice(0, 8)),
+});
+export const Plan = z.object({
+  status: z.enum(['ok', 'clarify', 'refuse']).catch('ok'),
+  topic: Short(80).default(''),
+  summary: Short(240).default(''),
+  question: Short(200).optional(),
+  options: z.array(Short(60)).optional().transform((o) => o?.slice(0, 4)),
+  reason: Short(240).optional(),
+  lessons: z.array(PlanLesson).default([]).transform((l) => l.slice(0, 6)),
+});
+export type Plan = z.infer<typeof Plan>;
+
+export type Source = { title: string; url: string };

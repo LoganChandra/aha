@@ -1,26 +1,172 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
+/* ProfAI: paper and ink. One calm surface; colour is kept for meaning inside the visuals. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --paper: #f7f6f2;
+  --surface: #ffffff;
+  --sunk: #efede7;
+  --ink: #17171a;
+  --ink-2: #4a4a52;
+  --ink-3: #85858e;
+  --line: #e3e1da;
+  --line-2: #d2cfc6;
+  --focus: #1d5fd1;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Scene tones. Chosen to stay distinct for common colour-vision deficiencies and readable on both themes. */
+  --t-primary: #1d5fd1;
+  --t-accent: #e0731a;
+  --t-warm: #c2410c;
+  --t-cool: #0e8f8f;
+  --t-green: #2f8a3b;
+  --t-red: #c8323c;
+  --t-neutral: #6b6b73;
+
+  --grid: #ecebe5;
+  --axis: #b9b6ad;
+  --shadow: 0 1px 2px rgb(20 20 30 / 0.06), 0 8px 24px rgb(20 20 30 / 0.06);
+  --radius: 14px;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --paper: #121214;
+    --surface: #1b1b1f;
+    --sunk: #232328;
+    --ink: #f1f0ec;
+    --ink-2: #b9b8b3;
+    --ink-3: #85848a;
+    --line: #2c2c32;
+    --line-2: #3a3a42;
+    --focus: #6aa0ff;
+
+    --t-primary: #6aa0ff;
+    --t-accent: #f59a45;
+    --t-warm: #f07a4a;
+    --t-cool: #3cc4c0;
+    --t-green: #5cc26b;
+    --t-red: #f2626c;
+    --t-neutral: #a1a1a9;
+
+    --grid: #222227;
+    --axis: #4a4a52;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.3);
+    color-scheme: dark;
   }
 }
 
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunk: var(--sunk);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-focus: var(--focus);
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif), ui-serif, Georgia, serif;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  height: 100%;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  font-style: normal !important; /* house rule: no italics, anywhere (KaTeX variables included) */
+}
+
+button,
+a,
+summary,
+select,
+label[for],
+[role='button'],
+[role='tab'],
+[role='switch'],
+[role='slider'],
+input[type='range'] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.katex {
+  font-size: 1.02em;
+}
+
+/* Range slider: a thin track, a solid thumb, a large invisible touch target. */
+input[type='range'].knob {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 32px;
+  background: transparent;
+  touch-action: pan-y;
+}
+input[type='range'].knob::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--knob-color, var(--t-primary)) var(--fill, 50%), var(--line-2) var(--fill, 50%));
+}
+input[type='range'].knob::-moz-range-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line-2);
+}
+input[type='range'].knob::-moz-range-progress {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--knob-color, var(--t-primary));
+}
+input[type='range'].knob::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--knob-color, var(--t-primary));
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+}
+input[type='range'].knob::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--knob-color, var(--t-primary));
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--sunk) 25%, var(--line) 37%, var(--sunk) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer { animation: none; }
 }

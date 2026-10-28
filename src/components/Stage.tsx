@@ -1,0 +1,37 @@
+'use client';
+// Hosts one lesson scene: picks the renderer, owns the clock, shows the play control when the scene moves.
+import dynamic from 'next/dynamic';
+import { memo } from 'react';
+import type { Env } from '@/lib/expr';
+import type { Lesson } from '@/lib/recipe';
+import Chart from './scene/Chart';
+import Diagram from './scene/Diagram';
+import Graph2D from './scene/Graph2D';
+import { useClock } from './scene/runtime';
+import Timeline from './scene/Timeline';
+
+// three.js is only downloaded when a lesson actually has a 3D model.
+const Model3D = dynamic(() => import('./scene/Model3D'), { ssr: false, loading: () => <div className="shimmer absolute inset-6 rounded-[var(--radius)]" /> });
+
+type Props = {
+  lesson: Lesson;
+  env: Env;
+  focus: string[];
+  playing: boolean;
+  onDrag: (v: Record<string, number>) => void;
+};
+
+function StageInner({ lesson, env, focus, playing, onDrag }: Props) {
+  const t = useClock(playing);
+  const e = { ...env, t };
+  const s = lesson.scene;
+  switch (s.type) {
+    case 'graph2d': return <Graph2D scene={s} env={e} focus={focus} params={lesson.params} onDrag={onDrag} />;
+    case 'diagram': return <Diagram scene={s} env={e} focus={focus} t={t} playing={playing} />;
+    case 'model3d': return <Model3D scene={s} env={e} focus={focus} t={t} playing={playing} />;
+    case 'chart': return <Chart scene={s} env={e} focus={focus} />;
+    case 'timeline': return <Timeline scene={s} focus={focus} />;
+  }
+}
+
+export default memo(StageInner);
