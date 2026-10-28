@@ -356,20 +356,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     if (!lesson || !task) return;
     if (task.kind === 'slide') {
       const p = lesson.params.find((q) => q.id === task.param);
-      if (p) {
-        // Land in the middle of the nearest stretch of values where the goal holds, not on its edge.
-        const N = 600, ok: boolean[] = [];
-        for (let k = 0; k <= N; k++) ok.push(!!evaluate(task.goal, { ...env, t: 0, [p.id]: p.min + ((p.max - p.min) * k) / N }, 0));
-        let best: number | null = null;
-        for (let k = 0; k <= N; k++) {
-          if (!ok[k] || (k > 0 && ok[k - 1])) continue;
-          let e = k;
-          while (e < N && ok[e + 1]) e++;
-          const mid = p.min + ((p.max - p.min) * (k + e)) / 2 / N;
-          if (best === null || Math.abs(mid - env[p.id]) < Math.abs(best - env[p.id])) best = mid;
-        }
-        if (best !== null) { const b = best; setInstant(false); setValues((all) => ({ ...all, [li]: { ...env, ...all[li], [p.id]: b } })); }
-      }
+      const b = p ? goalTarget(task.goal, p, env) : null;
+      if (p && b !== null) { setInstant(false); setValues((all) => ({ ...all, [li]: { ...env, ...all[li], [p.id]: b } })); }
       mark(key, { done: true, shown: true });
     } else if (task.kind === 'tap') mark(key, { done: true, shown: true });
     else pick(task.answer);
@@ -425,6 +413,12 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const dragged = useMemo(() => new Set(lesson?.scene.type === 'graph2d' ? lesson.scene.items.flatMap((it) => (it.type === 'point' || it.type === 'icon' ? [it.dragX, it.dragY].filter(Boolean) as string[] : [])) : []), [lesson]);
   const slideKnob = task?.kind === 'slide' ? lesson?.params.find((p) => p.id === task.param) : undefined;
   const taskKnob = slideKnob && !dragged.has(slideKnob.id) ? slideKnob : undefined;
+  // Where the active slide task wants the knob: drives the glowing handle and the direction arrows.
+  const guide = useMemo(() => {
+    if (!slideKnob || task?.kind !== 'slide' || done) return undefined;
+    const target = goalTarget(task.goal, slideKnob, env);
+    return target === null ? undefined : { param: slideKnob.id, target };
+  }, [slideKnob, task, done, env]);
   const freeKnobs = lesson && (!task || task.kind === 'tap' || done) && task?.kind !== 'predict' ? lesson.params.filter((p) => p.id !== slideKnob?.id && !dragged.has(p.id)) : [];
   const stepsDone = lesson ? lesson.steps.filter((_, i) => i < si || (i === si && done)).length : 0;
 
@@ -458,7 +452,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
           <>
             <div className="absolute inset-x-0" style={{ top: topSize.h ? topSize.h + 16 : 0, bottom: botSize.h ? botSize.h + 16 : 0, transition: reduced ? undefined : 'top 220ms ease, bottom 220ms ease' }}>
               <SceneBoundary key={`${course.planId}-${li}`}>
-                <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} callouts={callouts} onTap={task?.kind === 'tap' && !sp.done ? onTap : undefined} />
+                <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} callouts={callouts} onTap={task?.kind === 'tap' && !sp.done ? onTap : undefined} guide={guide} />
               </SceneBoundary>
               {moving && (
                 <button
@@ -557,7 +551,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   {taskKnob && task?.kind === 'slide' && (
                     <>
                       {!done && <p className="pt-1.5 text-[13px] font-medium text-ink-2">{task.hint}</p>}
-                      <Knob p={taskKnob} value={env[taskKnob.id] ?? taskKnob.value} onChange={(v) => setKnob(taskKnob.id, v)} />
+                      <Knob p={taskKnob} value={env[taskKnob.id] ?? taskKnob.value} onChange={(v) => setKnob(taskKnob.id, v)} toward={guide?.target} />
                     </>
                   )}
                   {freeKnobs.map((p) => <Knob key={p.id} p={p} value={env[p.id] ?? p.value} onChange={(v) => setKnob(p.id, v)} />)}
@@ -641,6 +635,21 @@ function Drawing({ title, aha, lessonNo, reduced }: { title: string; aha: string
       {aha && <p className="mt-2 text-[14px] leading-snug text-ink-2">{aha}</p>}
     </div>
   );
+}
+
+/** The value of a knob that completes a slide goal: the middle of the nearest stretch where the goal holds. */
+function goalTarget(goal: string, p: { id: string; min: number; max: number }, env: Env): number | null {
+  const N = 600, ok: boolean[] = [];
+  for (let k = 0; k <= N; k++) ok.push(!!evaluate(goal, { ...env, t: 0, [p.id]: p.min + ((p.max - p.min) * k) / N }, 0));
+  let best: number | null = null;
+  for (let k = 0; k <= N; k++) {
+    if (!ok[k] || (k > 0 && ok[k - 1])) continue;
+    let e = k;
+    while (e < N && ok[e + 1]) e++;
+    const mid = p.min + ((p.max - p.min) * (k + e)) / 2 / N;
+    if (best === null || Math.abs(mid - env[p.id]) < Math.abs(best - env[p.id])) best = mid;
+  }
+  return best;
 }
 
 function startValues(lesson: Lesson): Env {

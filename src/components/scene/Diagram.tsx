@@ -120,7 +120,7 @@ export default function Diagram({ scene, env, focus, t, playing, callouts = {}, 
               const v = n.value !== undefined ? evaluate(n.value, env, NaN) : NaN;
               return (
                 <g key={n.id} opacity={dim(n.id)} onClick={onTap ? () => onTap(n.id) : undefined} style={onTap ? { cursor: 'pointer' } : undefined} role={onTap ? 'button' : undefined} aria-label={onTap ? `Tap ${n.label}` : undefined}>
-                  <rect x={x} y={y} width={n.width} height={n.height} rx={12} fill="var(--surface)" stroke={hot ? color : 'var(--line-2)'} strokeWidth={hot ? 2.4 : 1.2} />
+                  <rect x={x} y={y} width={n.width} height={n.height} rx={12} fill="var(--surface)" stroke={hot ? color : onTap ? 'var(--t-primary)' : 'var(--line-2)'} strokeWidth={hot ? 2.4 : onTap ? 1.8 : 1.2} strokeDasharray={onTap && !hot ? '5 4' : undefined} />
                   <rect x={x} y={y + 12} width={4} height={n.height - 24} rx={2} fill={color} />
                   {n.title.map((l, i) => <text key={`t${i}`} x={x + 16} y={y + 26 + i * 18} fontSize={14.5} fontWeight={650} fill="var(--ink)">{l}</text>)}
                   {n.lines.map((l, i) => <text key={i} x={x + 16} y={y + 26 + n.title.length * 18 + i * 16} fontSize={12.5} fill="var(--ink-2)">{l}</text>)}

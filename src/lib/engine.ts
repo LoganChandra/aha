@@ -10,19 +10,21 @@ import { checkLesson, repair } from './validate';
 //   lessons: DeepSeek V4.1 Flash 20/24 first try, 24/24 after one repair, 3.8s median, $0.0012.
 // Backup: GLM 5.3 Flash, Logan's pick (2026-10-28). Bake-off: lessons 18/24 then 23/24, 13.5s median; plans 13/18.
 //   It cannot run with thinking off, so it gets the lightest thinking and a bigger token budget.
-// Last resort: Gemini 3.1 Flash Lite (18/18 plans, 24/24 lessons, 3.6s), only when both others fail.
+// Last resort: MiniMax M3.1 Flash (18/18 plans, 17/24 then 20/24 lessons), only when both others fail.
 // Each tier is a different company, so one provider's outage never stops a lesson.
 // Thinking: Logan, 2026-10-28: "have thinking on when necessary all running on medium". Planner and lesson writer
 // think at medium (built once, then cached, so the extra seconds are paid once per topic). The tutor answers live
 // mid-lesson, so it stays fast with thinking off. Token budgets include the thinking.
 const PRIMARY = 'deepseek/deepseek-v4.1-flash';
 const BACKUP = 'z-ai/glm-5.3-flash';
-const LAST = 'google/gemini-3.1-flash-lite';
+// Logan, 2026-10-28: "only use chinese models, when you can". Last resort is MiniMax M3.1 Flash (bake-off: plans 18/18,
+// lessons 17/24 first try, 20/24 after repair). It cannot run with thinking off either.
+const LAST = 'minimax/minimax-m3.1-flash';
 const MEDIUM = { effort: 'medium' } as const;
 const tiers = (maxTokens: number, think: boolean): Route[] => [
   { model: PRIMARY, reasoning: think ? MEDIUM : { enabled: false }, maxTokens },
   { model: BACKUP, reasoning: think ? MEDIUM : { effort: 'low' }, maxTokens: maxTokens + 4000 }, // GLM cannot turn thinking off
-  { model: LAST, reasoning: think ? MEDIUM : { enabled: false }, maxTokens },
+  { model: LAST, reasoning: think ? MEDIUM : { effort: 'low' }, maxTokens: maxTokens + 4000 },
 ];
 // Measured 2026-10-28 on prod: planner with thinking took 14-34 s against about 6 s without, and it was already
 // 18/18 without; lessons with medium thinking took 21-71 s against 4-8 s, for a small inspector gain (4.12 vs 3.94).

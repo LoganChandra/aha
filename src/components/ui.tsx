@@ -57,7 +57,7 @@ export function PromptBar({ value, onChange, onSubmit, placeholder, busy, autoFo
   );
 }
 
-export function Knob({ p, value, onChange }: { p: Param; value: number; onChange: (v: number) => void }) {
+export function Knob({ p, value, onChange, toward }: { p: Param; value: number; onChange: (v: number) => void; toward?: number }) {
   const fill = ((value - p.min) / (p.max - p.min)) * 100;
   if (p.toggle) {
     const on = value >= (p.min + p.max) / 2;
@@ -78,11 +78,17 @@ export function Knob({ p, value, onChange }: { p: Param; value: number; onChange
   const value_ = <span className="min-w-[44px] shrink-0 whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>;
   const input = (
     <input
-      id={`k-${p.id}`} type="range" className="knob" min={p.min} max={p.max} step={step} value={value}
+      id={`k-${p.id}`} type="range" className={`knob ${toward !== undefined ? 'guide' : ''}`} min={p.min} max={p.max} step={step} value={value}
       style={{ ['--fill' as string]: `${fill}%` }}
       onChange={(e) => onChange(Number(e.target.value))}
     />
   );
+  // A slide task points the way: a chevron on the side the thumb should travel.
+  const arrow = toward !== undefined && Math.abs(toward - value) > (p.max - p.min) * 0.01 ? (
+    <span className="nudge flex text-[var(--t-primary)]" style={{ ['--nx' as string]: toward > value ? '4px' : '-4px' }} aria-hidden>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d={toward > value ? 'M9 6l6 6-6 6' : 'M15 6l-6 6 6 6'} /></svg>
+    </span>
+  ) : null;
   // A long name gets its own line rather than being cut off.
   if (p.label.length > 16 || (p.unit?.length ?? 0) > 6) {
     return (
@@ -91,14 +97,14 @@ export function Knob({ p, value, onChange }: { p: Param; value: number; onChange
           <label htmlFor={`k-${p.id}`} className="text-[13px] font-medium leading-tight text-ink-2">{p.label}</label>
           {value_}
         </div>
-        {input}
+        <div className="flex items-center gap-1.5">{arrow && toward! < value && arrow}<div className="flex-1">{input}</div>{arrow && toward! > value && arrow}</div>
       </div>
     );
   }
   return (
     <div className="grid min-h-[38px] grid-cols-[minmax(0,34%)_1fr_auto] items-center gap-3">
       <label htmlFor={`k-${p.id}`} className="text-[13px] font-medium leading-tight text-ink-2">{p.label}</label>
-      {input}
+      <div className="flex items-center gap-1.5">{arrow && toward! < value && arrow}<div className="flex-1">{input}</div>{arrow && toward! > value && arrow}</div>
       {value_}
     </div>
   );

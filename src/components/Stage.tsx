@@ -21,14 +21,15 @@ type Props = {
   onDrag: (v: Record<string, number>) => void;
   callouts?: Record<string, string>;
   onTap?: (id: string) => void;
+  guide?: { param: string; target: number };
 };
 
-function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap }: Props) {
+function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guide }: Props) {
   const t = useClock(playing);
   const e = { ...env, t };
   const s = lesson.scene;
   switch (s.type) {
-    case 'graph2d': return <Graph2D scene={s} env={e} focus={focus} params={lesson.params} onDrag={onDrag} callouts={callouts} onTap={onTap} />;
+    case 'graph2d': return <Graph2D scene={s} env={e} focus={focus} params={lesson.params} onDrag={onDrag} callouts={callouts} onTap={onTap} guide={guide} />;
     case 'diagram': return <Diagram scene={s} env={e} focus={focus} t={t} playing={playing} callouts={callouts} onTap={onTap} />;
     case 'model3d': return <Model3D scene={s} env={e} focus={focus} t={t} playing={playing} callouts={callouts} onTap={onTap} />;
     case 'chart': return <Chart scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;

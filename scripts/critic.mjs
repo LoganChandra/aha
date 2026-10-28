@@ -1,7 +1,8 @@
 // Vision critic: a second model looks at lesson screenshots and reports what a picky designer would.
 // node scripts/critic.mjs <png> [<png> ...]   (uses OPENROUTER_API_KEY; model via CRITIC_MODEL)
 import { readFileSync } from 'node:fs';
-const MODEL = process.env.CRITIC_MODEL ?? 'google/gemini-3.5-flash';
+// Frank inspects screenshots himself; this is the cheap automatic pass (Qwen 3.8 Flash: about $0.0001 for 3 screens).
+const MODEL = process.env.CRITIC_MODEL ?? 'qwen/qwen3.8-flash';
 const RUBRIC = `You are the harshest product designer at Apple, reviewing one screen of an interactive learning app (like Brilliant). Judge ONLY what you see.
 Score 1-10 and list concrete defects. Check:
 1. Overlap: any text on top of other text, lines through labels, labels covering the thing they name, callouts covering the action.

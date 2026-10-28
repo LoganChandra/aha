@@ -20,6 +20,8 @@ type Props = {
   onDrag: (values: Record<string, number>) => void;
   callouts?: Record<string, string>;
   onTap?: (id: string) => void;
+  /** The knob a slide task wants moved, and the value that completes it: the handle glows and an arrow points the way. */
+  guide?: { param: string; target: number };
 };
 
 
@@ -48,7 +50,7 @@ function reduce(a: number, b: number): [number, number] {
   return [a / k, b / k];
 }
 
-export default function Graph2D({ scene, env, focus, params, onDrag, callouts = {}, onTap }: Props) {
+export default function Graph2D({ scene, env, focus, params, onDrag, callouts = {}, onTap, guide }: Props) {
   const [box, size] = useSize<HTMLDivElement>();
   const svg = useRef<SVGSVGElement>(null);
   const dragging = useRef<{ x?: string; y?: string; at: [Num, Num] } | null>(null);
@@ -306,7 +308,21 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   const tapTargets = onTap ? Object.entries(anchors).map(([id, [x, y]]) => (
     <circle key={`hit-${id}`} cx={x} cy={y} r={22} fill="transparent" style={{ cursor: 'pointer' }} onClick={() => onTap(id)} role="button" aria-label={`Tap ${scene.items.find((i) => i.id === id)?.label ?? id}`} />
   )) : null;
-  const pins = Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }));
+  // Slide task on a draggable handle: a breathing ring, an arrow toward the goal, and a "drag" tag.
+  const handles = guide ? scene.items.filter((it) => (it.type === 'point' || it.type === 'icon') && (it.dragX === guide.param || it.dragY === guide.param)) as Extract<G2Item, { type: 'point' | 'icon' }>[] : [];
+  const guides = handles.map((it) => {
+    const at = it.type === 'point' ? [it.x, it.y] as [Num, Num] : it.at;
+    const p = params.find((q) => q.id === guide!.param);
+    const now = env[guide!.param] ?? 0;
+    const step = p ? (p.max - p.min) * 0.06 * Math.sign(guide!.target - now || 1) : 0;
+    const x0 = X(ev(at[0])), y0 = Y(ev(at[1]));
+    const x1 = X(evaluate(at[0], { ...env, [guide!.param]: now + step }, 0)), y1 = Y(evaluate(at[1], { ...env, [guide!.param]: now + step }, 0));
+    const len = Math.hypot(x1 - x0, y1 - y0) || 1;
+    return { id: it.id, x: x0, y: y0, dx: (x1 - x0) / len, dy: (y1 - y0) / len };
+  });
+  const autoCallouts = { ...callouts };
+  for (const g of guides) if (!Object.values(callouts).length) autoCallouts[g.id] = 'drag';
+  const pins = Object.entries(autoCallouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }));
   const textIds = new Set(scene.items.filter((i) => i.type === 'text').map((i) => i.id));
   // Axis titles are fixed; seed them as taken space so item labels move around them.
   const reserved: Box[] = [];
@@ -342,6 +358,21 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
             </g>
           )}
           <g clipPath="url(#plot)">{drawn}</g>
+          {guides.map((g) => (
+            <g key={`guide-${g.id}`} style={{ pointerEvents: 'none' }}>
+              <circle className="pulse-ring" cx={g.x} cy={g.y} r={16} fill="none" stroke="var(--t-primary)" strokeWidth={3} />
+              <g className="nudge" style={{ ['--nx' as string]: `${g.dx * 7}px`, ['--ny' as string]: `${g.dy * 7}px` }}>
+                <path
+                  d={`M${g.x + g.dx * 24},${g.y + g.dy * 24} L${g.x + g.dx * 46},${g.y + g.dy * 46}`}
+                  stroke="var(--t-primary)" strokeWidth={3} strokeLinecap="round"
+                />
+                <Arrow x={g.x + g.dx * 50} y={g.y + g.dy * 50} angle={Math.atan2(g.dy, g.dx)} color="var(--t-primary)" />
+              </g>
+            </g>
+          ))}
+          {onTap && Object.entries(anchors).filter(([id]) => scene.items.find((i) => i.id === id)?.type !== 'text').map(([id, [x, y]]) => (
+            <circle key={`tp-${id}`} className="pulse-ring" cx={x} cy={y} r={14} fill="none" stroke="var(--t-primary)" strokeWidth={2.5} style={{ pointerEvents: 'none' }} />
+          ))}
           {tapTargets}
           <g fontFamily="var(--font-sans)" fontSize={13} fontWeight={600}>
             {placed.map((l, i) => (
