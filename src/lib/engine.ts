@@ -32,7 +32,10 @@ const tiers = (maxTokens: number, think: boolean): Route[] => [
 // So: the planner and lesson 1 run without thinking (the first screen must be quick); lessons 2+ think at medium,
 // built in the background while the learner works through lesson 1.
 export const PLAN_ROUTES: Route[] = tiers(4000, false);
-export const LESSON_ROUTES: Route[] = tiers(20_000, process.env.LESSON_THINK !== 'off');
+// Re-measured after the visual guide grew the prompt to ~18k tokens: DeepSeek with thinking (low or medium) did
+// not finish within 80 s and prod fell through to GLM after 50-90 s. Without thinking it writes a lesson in 8-10 s.
+// The A/B gain from thinking was small (4.12 vs 3.94); the quality now comes from the guide and the playbook.
+export const LESSON_ROUTES: Route[] = tiers(12_000, process.env.LESSON_THINK === 'on');
 export const FIRST_LESSON_ROUTES: Route[] = tiers(8000, false);
 export const ASK_ROUTES: Route[] = tiers(800, false);
 
@@ -135,7 +138,7 @@ export async function makeLesson(plan: Plan, index: number, level: Level, source
   // Imperfect drafts from every route are kept; if no route writes a clean lesson, the least broken one is repaired.
   const drafts: Written[] = [];
   try {
-    const { lesson } = await hedge(routes, routes === FIRST_LESSON_ROUTES ? 14_000 : 35_000, (route) => writeWith(route, user, m, deadline).catch((e) => {
+    const { lesson } = await hedge(routes, 16_000, (route) => writeWith(route, user, m, deadline).catch((e) => {
       if ((e as { best?: Written }).best) drafts.push((e as { best: Written }).best);
       throw e;
     }));
