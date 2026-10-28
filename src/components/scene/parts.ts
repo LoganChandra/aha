@@ -3,7 +3,7 @@
 // Every part stands along y (like a cylinder): axles, spin axes and arrows all point up unless rotated.
 import * as THREE from 'three';
 
-export type Material = 'main' | 'dark' | 'metal' | 'glass' | 'south' | 'copper';
+export type Material = 'main' | 'dark' | 'metal' | 'glass' | 'south' | 'copper' | 'ceramic';
 export type Piece = { geo: THREE.BufferGeometry; mat: Material; edges: boolean };
 
 const one = (geo: THREE.BufferGeometry, mat: Material = 'main', edges = true): Piece[] => [{ geo, mat, edges }];
@@ -126,6 +126,34 @@ export function buildPart(shape: string, s: number[]): Piece[] {
       }
       return pieces;
     }
+    case 'piston': {
+      // [radius, height]: crown with ring grooves, skirt, and the wrist pin; stands along y with the crown up.
+      const r = a, h = b;
+      const crown = new THREE.CylinderGeometry(r, r, h * 0.62, 48); crown.translate(0, h * 0.19, 0);
+      const pieces: Piece[] = [{ geo: crown, mat: 'metal', edges: true }];
+      for (const k of [0, 1, 2]) { const g = ring(r * 1.01, r * 0.9, h * 0.04, 48); g.translate(0, h * 0.42 - k * h * 0.09, 0); pieces.push({ geo: g, mat: 'dark', edges: false }); }
+      const skirt = new THREE.CylinderGeometry(r * 0.96, r * 0.96, h * 0.38, 48, 1, true); skirt.translate(0, -h * 0.31, 0);
+      pieces.push({ geo: skirt, mat: 'metal', edges: false });
+      const pin = new THREE.CylinderGeometry(r * 0.18, r * 0.18, r * 2.06, 20); pin.rotateZ(Math.PI / 2); pin.translate(0, -h * 0.2, 0);
+      pieces.push({ geo: pin, mat: 'main', edges: false });
+      return pieces;
+    }
+    case 'valve': {
+      // [headRadius, length]: a poppet valve, head at the bottom, stem up.
+      const r = a, L = b;
+      const head = new THREE.CylinderGeometry(r * 0.55, r, r * 0.35, 36); head.translate(0, -L / 2 + r * 0.17, 0);
+      const stem = new THREE.CylinderGeometry(r * 0.14, r * 0.14, L, 16);
+      return [{ geo: head, mat: 'main', edges: true }, { geo: stem, mat: 'metal', edges: false }];
+    }
+    case 'sparkplug': {
+      // [length]: ceramic body, hex nut, threaded tip and electrode, firing end down.
+      const L = a, r = L * 0.11;
+      const ceramic = new THREE.CylinderGeometry(r * 0.75, r * 0.9, L * 0.45, 24); ceramic.translate(0, L * 0.25, 0);
+      const hex = new THREE.CylinderGeometry(r * 1.25, r * 1.25, L * 0.12, 6); hex.translate(0, -L * 0.03, 0);
+      const thread = new THREE.CylinderGeometry(r * 0.75, r * 0.75, L * 0.3, 20); thread.translate(0, -L * 0.24, 0);
+      const tip = new THREE.CylinderGeometry(r * 0.15, r * 0.15, L * 0.1, 8); tip.translate(0, -L * 0.44, 0);
+      return [{ geo: ceramic, mat: 'ceramic', edges: false }, { geo: hex, mat: 'metal', edges: true }, { geo: thread, mat: 'metal', edges: false }, { geo: tip, mat: 'main', edges: false }];
+    }
   }
   return one(new THREE.BoxGeometry(a, b, c));
 }
@@ -139,6 +167,8 @@ export function halfExtent(shape: string, s: number[]): number {
     case 'chip': return Math.max(a, b) / 2;
     case 'tube': return Math.max(a, (s[2] ?? a) / 2);
     case 'sphere': case 'arrow': case 'fan': case 'lens': return a;
+    case 'sparkplug': return a / 2;
+    case 'valve': return Math.max(a, b / 2);
     case 'magnet': return Math.max(a / 2, b);
     case 'torus': return a + b;
     default: return Math.max(a, b / 2); // cylinder, cone, capsule, gear, wheel, spring, coil, cell

@@ -113,7 +113,7 @@ export const Diagram = z.object({
 /** How many size numbers each shape needs (extra ones are optional, e.g. a gear's tooth count). */
 export const SIZE_ARITY = {
   box: 3, cylinder: 2, sphere: 1, cone: 2, torus: 2, capsule: 2, tube: 3,
-  gear: 2, wheel: 2, spring: 2, coil: 2, arrow: 1, fan: 1, magnet: 2, cell: 2, lens: 2, chip: 2,
+  gear: 2, wheel: 2, spring: 2, coil: 2, arrow: 1, fan: 1, magnet: 2, cell: 2, lens: 2, chip: 2, piston: 2, valve: 2, sparkplug: 1,
 } as const;
 export const SHAPES = Object.keys(SIZE_ARITY) as [keyof typeof SIZE_ARITY, ...(keyof typeof SIZE_ARITY)[]];
 export const Part = z.object({
