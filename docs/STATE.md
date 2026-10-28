@@ -66,6 +66,12 @@ last_updated: 2026-10-29
   - Tests 26/26 + 15/15; spend $0.32.
   - Remaining: diagram-node polish; richer 2D fills; model-made icon scenes still busy.
 
+- ~02:50 round 4, deployed:
+  - Tap rings only on objects (they were on every line).
+  - The validator enforces one value per readout.
+  - No 3D for processes (photosynthesis came out as floating balls); stronger 3D tap glow.
+  - Tests 26/26 + 15/15; spend $0.48.
+
 ## Next (Frank's plan)
 
 0. TOP PRIORITY (Logan, 2026-10-29, verbatim): "Every lesson is still so one dimensional and ugly. the font and everything is still so hard unintuitive. make everything bigger and way more obvious as to how it can be more visually friendly". This means:
