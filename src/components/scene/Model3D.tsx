@@ -1,7 +1,7 @@
 'use client';
 // 3D model: a machine or structure assembled from simple solids, styled like a clean technical illustration
 // (matte surfaces, crisp edges, soft contact shadow). Exploded view, spinning parts, labels on what matters.
-import { ContactShadows, Edges, Html, OrbitControls } from '@react-three/drei';
+import { ContactShadows, Edges, Environment, Html, Lightformer, OrbitControls } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
@@ -75,7 +75,11 @@ function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel, callout,
           const o = piece.mat === 'glass' ? Math.min(opacity, 0.45) : opacity;
           return (
             <mesh key={k} geometry={piece.geo} castShadow>
-              <meshStandardMaterial color={c} roughness={m.roughness} metalness={m.metalness} transparent={o < 1} opacity={o} depthWrite={o >= 1} emissive={hot ? c : '#000'} emissiveIntensity={hot ? 0.18 : 0} />
+              <meshPhysicalMaterial
+                color={c} roughness={m.roughness} metalness={m.metalness} clearcoat={piece.mat === 'main' ? 0.4 : 0} clearcoatRoughness={0.35}
+                transmission={piece.mat === 'glass' ? 0.6 : 0} thickness={piece.mat === 'glass' ? 0.4 : 0}
+                transparent={o < 1} opacity={o} depthWrite={o >= 1} emissive={hot ? c : '#000'} emissiveIntensity={hot ? 0.16 : 0}
+              />
               {piece.edges && <Edges threshold={24} color={hot ? colors.ink : colors.line} />}
             </mesh>
           );
@@ -167,10 +171,15 @@ export default function Model3D({ scene, env, focus, t, playing, callouts = {}, 
   return (
     <div className="absolute inset-0" style={{ touchAction: 'none' }}>
       <Canvas dpr={[1, 2]} frameloop={playing ? 'always' : 'demand'} camera={{ fov: 35 }} gl={{ antialias: true, alpha: true }} shadows>
-        <ambientLight intensity={0.75} />
-        <hemisphereLight args={['#ffffff', '#bdb8ad', 0.5]} />
-        <directionalLight position={[4, 7, 5]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} />
-        <directionalLight position={[-5, 2, -3]} intensity={0.45} />
+        {/* A small studio built from light panels (no downloaded HDR): soft key, rim and fill, product-shot style. */}
+        <Environment resolution={256}>
+          <Lightformer intensity={2.2} position={[0, 5, -6]} scale={[10, 3, 1]} />
+          <Lightformer intensity={1.2} position={[-6, 2, 0]} rotation-y={Math.PI / 2} scale={[8, 3, 1]} />
+          <Lightformer intensity={1.2} position={[6, 2, 1]} rotation-y={-Math.PI / 2} scale={[8, 3, 1]} />
+          <Lightformer intensity={0.8} position={[0, -4, 4]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} color="#f2efe8" />
+        </Environment>
+        <ambientLight intensity={0.25} />
+        <directionalLight position={[4, 7, 5]} intensity={1.1} castShadow shadow-mapSize={[1024, 1024]} />
         <group position={[-center.x, -center.y, -center.z]}>
           {scene.parts.map((p) => (
             <PartMesh

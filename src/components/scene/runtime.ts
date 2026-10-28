@@ -33,29 +33,38 @@ export function useClock(playing: boolean): number {
   return t;
 }
 
-/** Knob values that glide to their targets (ease-out, about 0.7s) so the learner sees the change happen.
- * With `instant` (a finger on a knob, or reduced motion) they follow at once. */
+/** Knob values follow their targets with a spring (slightly under-damped, ~0.6 s), so every change moves like a
+ * physical thing settling, not a tween. With `instant` (a finger on a knob, or reduced motion) they follow at once. */
 export function useGlide(target: Env, instant: boolean): Env {
   const [shown, setShown] = useState<Env>(target);
-  const shownRef = useRef<Env>(target);
+  const pos = useRef<Env>(target);
+  const vel = useRef<Env>({});
   useEffect(() => {
-    const from = shownRef.current;
-    const changed = Object.keys(target).some((k) => target[k] !== from[k]) || Object.keys(from).length !== Object.keys(target).length;
-    if (!changed) return;
-    const start = performance.now();
-    const dur = instant ? 0 : 700;
+    if (instant) {
+      pos.current = { ...target };
+      vel.current = {};
+      setShown(pos.current);
+      return;
+    }
+    const K = 170, C = 2 * Math.sqrt(K) * 0.82; // stiffness and damping: a hint of overshoot, then still
     let raf = 0;
+    let last = performance.now();
     const step = (now: number) => {
-      const p = dur ? Math.min(1, (now - start) / dur) : 1;
-      const e = 1 - Math.pow(1 - p, 3);
+      const dt = Math.min(0.032, (now - last) / 1000);
+      last = now;
       const next: Env = {};
+      let moving = false;
       for (const k of Object.keys(target)) {
-        const a = from[k] ?? target[k];
-        next[k] = a + (target[k] - a) * e;
+        const x = pos.current[k] ?? target[k], v = vel.current[k] ?? 0;
+        const span = Math.max(1e-6, Math.abs(target[k]) * 0.001 + 1e-4);
+        const a = -K * (x - target[k]) - C * v;
+        const nv = v + a * dt, nx = x + nv * dt;
+        if (Math.abs(nx - target[k]) < span && Math.abs(nv) < span * 10) { next[k] = target[k]; vel.current[k] = 0; }
+        else { next[k] = nx; vel.current[k] = nv; moving = true; }
       }
-      shownRef.current = next;
+      pos.current = next;
       setShown(next);
-      if (p < 1) raf = requestAnimationFrame(step);
+      if (moving) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);

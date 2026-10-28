@@ -205,3 +205,15 @@ input[type='range'].knob.guide::-webkit-slider-thumb {
 @media (prefers-reduced-motion: reduce) {
   .pulse-ring, .nudge, input[type='range'].knob.guide::-webkit-slider-thumb { animation: none; }
 }
+
+/* Curves draw themselves in when a lesson opens (pathLength=1), then stay put. */
+@keyframes draw-in {
+  from { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  to { stroke-dasharray: 1; stroke-dashoffset: 0; }
+}
+.draw-in {
+  animation: draw-in 0.9s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .draw-in { animation: none; }
+}

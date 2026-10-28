@@ -1,5 +1,6 @@
 // Prompts for the two stages (Score plans the path, Stage writes each lesson's scene) and for questions asked
 // mid-lesson. They are written for small, cheap models: short rules, one exact format, one worked example.
+import { VISUAL_GUIDE } from './guide';
 import { ICON_NAMES } from './icons';
 import { PLAYBOOK, playbookPrompt } from './playbook';
 import { LEVEL_BRIEF, type Level, type Plan } from './recipe';
@@ -105,6 +106,8 @@ RULES
 - Keep everything visible: choose x/y ranges that frame the interesting part at the default knob values and when beats move them.
 - Write in the language of the lesson plan.
 - Return JSON only. No markdown fences, no comments.
+
+${VISUAL_GUIDE}
 
 THE PLAYBOOK: proven teaching patterns, each with a complete example lesson. The plan names the pattern for this lesson. Copy that pattern's craft (its step choreography, the kinds of tasks, how callouts sit on the picture, how short the words are), never its topic. The examples also show the exact JSON shape.
 

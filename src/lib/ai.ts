@@ -46,7 +46,7 @@ export async function chatJson<T = unknown>(
         temperature: opts.temperature ?? 0.4,
         max_tokens: route.maxTokens ?? 6000,
         ...(route.reasoning ? { reasoning: route.reasoning } : {}),
-        ...(opts.web ? { plugins: [{ id: 'web', engine: 'exa', mode: 'fast', max_results: 5 }] } : {}),
+        ...(opts.web ? { plugins: [{ id: 'web', engine: 'parallel', mode: 'fast', max_results: 5 }] } : {}),
         usage: { include: true },
       }),
     });

@@ -1,6 +1,6 @@
 'use client';
 // 2D graph renderer: curves, points you can drag, shapes, shaded areas, angles and live labels, in SVG.
-import { useMemo, useRef } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { evaluate, fillTemplate, type Env } from '@/lib/expr';
 import { ICONS } from '@/lib/icons';
 import type { G2Item, Scene } from '@/lib/recipe';
@@ -51,6 +51,8 @@ function reduce(a: number, b: number): [number, number] {
 }
 
 export default function Graph2D({ scene, env, focus, params, onDrag, callouts = {}, onTap, guide }: Props) {
+  const uid = useId().replace(/:/g, '');
+  const fx = (name: string) => `url(#${name}-${uid})`;
   const [box, size] = useSize<HTMLDivElement>();
   const svg = useRef<SVGSVGElement>(null);
   const dragging = useRef<{ x?: string; y?: string; at: [Num, Num] } | null>(null);
@@ -89,7 +91,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
 
   const { X, Y, x0, x1, y0, y1 } = view;
   const ev = (v: Num | undefined, fb = 0, extra?: Env) => evaluate(v, extra ? { ...env, ...extra } : env, fb);
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.35 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
   const hot = (id: string) => focus.includes(id);
 
   // ---- grid and axes
@@ -130,7 +132,11 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   function render(it: Item) {
     if ('show' in it && it.show !== undefined && !(ev(it.show, 1) > 0)) return null;
     const color = tone(it.tone);
-    const width = hot(it.id) ? 3.2 : 2.2;
+    const width = hot(it.id) ? 3.6 : 2.6;
+    // The hero curve (primary tone or in focus) gets a soft glow underneath, like light on paper.
+    const glow = (d: string) => (it.tone === undefined || it.tone === 'primary' || hot(it.id)) && !('dashed' in it && it.dashed)
+      ? <path d={d} fill="none" stroke={color} strokeWidth={width + 7} strokeLinecap="round" strokeLinejoin="round" opacity={0.13} />
+      : null;
     const op = dim(it.id);
     switch (it.type) {
       case 'function': {
@@ -141,13 +147,23 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           const lx = Math.min(x1, db) - (x1 - x0) * 0.02, ly = ev(it.expr, NaN, { x: lx });
           if (Number.isFinite(ly) && ly > y0 && ly < y1) labels.push({ x: X(lx) - 4, y: Y(ly) - 8, text: it.label, color, id: it.id, anchor: 'end' });
         }
-        return <path key={it.id} d={d} fill="none" stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" strokeLinejoin="round" opacity={op} />;
+        return (
+          <g key={it.id} opacity={op}>
+            {glow(d)}
+            <path d={d} fill="none" stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" strokeLinejoin="round" className={it.dashed ? undefined : 'draw-in'} pathLength={it.dashed ? undefined : 1} />
+          </g>
+        );
       }
       case 'parametric': {
         const a = ev(it.s[0], 0), b = ev(it.s[1], 1);
         const d = curve((s) => [ev(it.x, NaN, { s }), ev(it.y, NaN, { s })], a, b, n);
         { const sm = (a + b) / 2; anchors[it.id] = [X(ev(it.x, 0, { s: sm })), Y(ev(it.y, 0, { s: sm }))]; }
-        return <path key={it.id} d={d} fill="none" stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" strokeLinejoin="round" opacity={op} />;
+        return (
+          <g key={it.id} opacity={op}>
+            {glow(d)}
+            <path d={d} fill="none" stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" strokeLinejoin="round" className={it.dashed ? undefined : 'draw-in'} pathLength={it.dashed ? undefined : 1} />
+          </g>
+        );
       }
       case 'polyline': {
         const pts = it.points.map(([a, b]) => `${X(ev(a)).toFixed(1)},${Y(ev(b)).toFixed(1)}`).join(' ');
@@ -170,7 +186,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         for (let i = 0; i <= m; i++) { const x = a + ((b - a) * i) / m; d += `${i ? 'L' : 'M'}${X(x).toFixed(1)},${Y(clampY(ev(it.expr, 0, { x }))).toFixed(1)}`; }
         for (let i = m; i >= 0; i--) { const x = a + ((b - a) * i) / m; d += `L${X(x).toFixed(1)},${Y(clampY(ev(it.base ?? 0, 0, { x }))).toFixed(1)}`; }
         if (it.label) labels.push({ x: X((a + b) / 2), y: Y(clampY(ev(it.expr, 0, { x: (a + b) / 2 }) / 2)), text: fillTemplate(it.label, env), color, id: it.id, anchor: 'middle' });
-        return <path key={it.id} d={d + 'Z'} fill={color} fillOpacity={hot(it.id) ? 0.3 : 0.18} stroke="none" opacity={op} />;
+        return <path key={it.id} d={d + 'Z'} fill={fx(`grad-${it.tone ?? 'primary'}`)} fillOpacity={hot(it.id) ? 1 : 0.85} stroke="none" opacity={op} />;
       }
       case 'segment': {
         const ax_ = X(ev(it.from[0])), ay_ = Y(ev(it.from[1])), bx = X(ev(it.to[0])), by = Y(ev(it.to[1]));
@@ -178,8 +194,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         if (it.label) labels.push({ x: (ax_ + bx) / 2 + 6, y: (ay_ + by) / 2 - 6, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'start' });
         return (
           <g key={it.id} opacity={op}>
-            <line x1={ax_} y1={ay_} x2={bx} y2={by} stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" />
-            {it.arrow && <Arrow x={bx} y={by} angle={Math.atan2(by - ay_, bx - ax_)} color={color} />}
+            <line x1={ax_} y1={ay_} x2={it.arrow ? bx - 7 * Math.cos(Math.atan2(by - ay_, bx - ax_)) : bx} y2={it.arrow ? by - 7 * Math.sin(Math.atan2(by - ay_, bx - ax_)) : by} stroke={color} strokeWidth={it.arrow ? width + 0.6 : width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" />
+            {it.arrow && <Arrow x={bx} y={by} angle={Math.atan2(by - ay_, bx - ax_)} color={color} size={11} />}
           </g>
         );
       }
@@ -189,7 +205,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         const ry = Math.abs(Y(ev(it.center[1]) + ev(it.r, 1)) - cy);
         anchors[it.id] = [cx, cy - ry];
         if (it.label) labels.push({ x: cx, y: cy - ry - 8, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'middle' });
-        return <ellipse key={it.id} cx={cx} cy={cy} rx={r} ry={ry} fill={it.fill ? color : 'none'} fillOpacity={0.12} stroke={color} strokeWidth={width * 0.8} opacity={op} />;
+        return <ellipse key={it.id} cx={cx} cy={cy} rx={r} ry={ry} fill={it.fill ? fx(`ball-${it.tone ?? 'primary'}`) : 'none'} stroke={color} strokeWidth={width * 0.75} opacity={op} filter={it.fill ? fx('shadow') : undefined} />;
       }
       case 'polygon': {
         const pts = it.points.map(([a, b]) => [X(ev(a)), Y(ev(b))]);
@@ -198,7 +214,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           const c = pts.reduce((s, p) => [s[0] + p[0] / pts.length, s[1] + p[1] / pts.length], [0, 0]);
           labels.push({ x: c[0], y: c[1] + 4, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'middle' });
         }
-        return <polygon key={it.id} points={pts.map((p) => p.join(',')).join(' ')} fill={color} fillOpacity={hot(it.id) ? 0.22 : 0.12} stroke={color} strokeWidth={width * 0.8} strokeLinejoin="round" opacity={op} />;
+        return <polygon key={it.id} points={pts.map((p) => p.join(',')).join(' ')} fill={color} fillOpacity={hot(it.id) ? 0.26 : 0.15} stroke={color} strokeWidth={width * 0.75} strokeLinejoin="round" opacity={op} filter={fx('shadow')} />;
       }
       case 'angle': {
         const cx = ev(it.at[0]), cy = ev(it.at[1]);
@@ -219,8 +235,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         if (it.label) labels.push({ x: px + 10, y: py - 10, text: fillTemplate(it.label, env), color, id: it.id, anchor: 'start' });
         return (
           <g key={it.id} opacity={op}>
-            {draggable && <circle cx={px} cy={py} r={13} fill={color} fillOpacity={0.14} />}
-            <circle cx={px} cy={py} r={draggable ? 7 : 5} fill={draggable ? 'var(--surface)' : color} stroke={color} strokeWidth={draggable ? 3 : 0} />
+            {draggable && <circle cx={px} cy={py} r={15} fill={color} fillOpacity={0.14} />}
+            <circle cx={px} cy={py} r={draggable ? 9 : 6} fill={draggable ? color : fx(`ball-${it.tone ?? 'primary'}`)} stroke="var(--surface)" strokeWidth={draggable ? 3 : 2} filter={fx('shadow')} />
             {draggable && (
               <circle
                 cx={px} cy={py} r={24} fill="transparent" style={{ cursor: 'grab', touchAction: 'none' }}
@@ -243,7 +259,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         const k = (px * 0.62) / 24;
         return (
           <g key={it.id} opacity={op}>
-            <circle cx={cx} cy={cy} r={px * 0.56} fill={color} fillOpacity={hot(it.id) ? 0.2 : 0.11} stroke={hot(it.id) ? color : 'none'} strokeWidth={1.5} />
+            <circle cx={cx} cy={cy} r={px * 0.56} fill="var(--surface)" stroke="none" filter={fx('shadow')} />
+            <circle cx={cx} cy={cy} r={px * 0.56} fill={color} fillOpacity={hot(it.id) ? 0.22 : 0.12} stroke={hot(it.id) ? color : 'none'} strokeWidth={1.5} />
             <g transform={`translate(${cx - 12 * k},${cy - 12 * k}) scale(${k})`} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               {node.map(([tag, attrs], i) => {
                 const El = tag as 'path';
@@ -339,12 +356,28 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           role="img" aria-label="Interactive graph"
         >
           <defs>
-            <clipPath id="plot"><rect x={PAD.l} y={PAD.t} width={view.iw} height={view.ih} /></clipPath>
+            <clipPath id={`plot-${uid}`}><rect x={PAD.l} y={PAD.t} width={view.iw} height={view.ih} /></clipPath>
+            <filter id={`shadow-${uid}`} x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="1.5" stdDeviation="2.2" floodColor="#000" floodOpacity="0.16" />
+            </filter>
+            {(['primary', 'accent', 'warm', 'cool', 'green', 'red', 'neutral'] as const).map((t) => (
+              <g key={t}>
+                <linearGradient id={`grad-${t}-${uid}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={tone(t)} stopOpacity={0.55} />
+                  <stop offset="100%" stopColor={tone(t)} stopOpacity={0.06} />
+                </linearGradient>
+                <radialGradient id={`ball-${t}-${uid}`} cx="35%" cy="30%" r="75%">
+                  <stop offset="0%" stopColor="#fff" stopOpacity={0.55} />
+                  <stop offset="35%" stopColor={tone(t)} stopOpacity={0.9} />
+                  <stop offset="100%" stopColor={tone(t)} stopOpacity={1} />
+                </radialGradient>
+              </g>
+            ))}
           </defs>
-          {showAxes && xTicks.map((v) => <line key={`gx${v}`} x1={X(v)} x2={X(v)} y1={PAD.t} y2={PAD.t + view.ih} stroke="var(--grid)" />)}
-          {showAxes && yTicks.map((v) => <line key={`gy${v}`} y1={Y(v)} y2={Y(v)} x1={PAD.l} x2={PAD.l + view.iw} stroke="var(--grid)" />)}
+          {/* A quiet dot grid: enough to read values, never louder than the content. */}
+          {showAxes && xTicks.flatMap((vx) => yTicks.map((vy) => <circle key={`d${vx}-${vy}`} cx={X(vx)} cy={Y(vy)} r={1.3} fill="var(--axis)" opacity={0.55} />))}
           {showAxes && (
-            <g stroke="var(--axis)" strokeWidth={1.2}>
+            <g stroke="var(--axis)" strokeWidth={1.4} strokeLinecap="round">
               <line x1={PAD.l} x2={PAD.l + view.iw} y1={Y(ay)} y2={Y(ay)} />
               <line y1={PAD.t} y2={PAD.t + view.ih} x1={X(ax)} x2={X(ax)} />
             </g>
@@ -357,7 +390,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
               {scene.yLabel && <text x={PAD.l} y={15} fill="var(--ink-2)" fontWeight={600}>↑ {scene.yLabel}</text>}
             </g>
           )}
-          <g clipPath="url(#plot)">{drawn}</g>
+          <g clipPath={`url(#plot-${uid})`}>{drawn}</g>
           {guides.map((g) => (
             <g key={`guide-${g.id}`} style={{ pointerEvents: 'none' }}>
               <circle className="pulse-ring" cx={g.x} cy={g.y} r={16} fill="none" stroke="var(--t-primary)" strokeWidth={3} />
@@ -497,8 +530,8 @@ function placeLabels(labels: Label[], w: number, h: number, reserved: Box[] = []
   return out;
 }
 
-function Arrow({ x, y, angle, color }: { x: number; y: number; angle: number; color: string }) {
-  const s = 9;
+function Arrow({ x, y, angle, color, size = 9 }: { x: number; y: number; angle: number; color: string; size?: number }) {
+  const s = size;
   const a = angle + Math.PI - 0.45, b = angle + Math.PI + 0.45;
   return <path d={`M${x},${y}L${x + s * Math.cos(a)},${y + s * Math.sin(a)}L${x + s * Math.cos(b)},${y + s * Math.sin(b)}Z`} fill={color} />;
 }
