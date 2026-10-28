@@ -37,7 +37,7 @@ export async function chatJson<T = unknown>(
       headers: {
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://profai.vercel.app',
+        'HTTP-Referer': 'https://profai-two.vercel.app',
         'X-Title': 'ProfAI',
       },
       body: JSON.stringify({
@@ -46,7 +46,7 @@ export async function chatJson<T = unknown>(
         temperature: opts.temperature ?? 0.4,
         max_tokens: route.maxTokens ?? 6000,
         ...(route.reasoning ? { reasoning: route.reasoning } : {}),
-        ...(opts.web ? { plugins: [{ id: 'web', engine: 'exa', max_results: 5 }] } : {}),
+        ...(opts.web ? { plugins: [{ id: 'web', engine: 'exa', mode: 'fast', max_results: 5 }] } : {}),
         usage: { include: true },
       }),
     });

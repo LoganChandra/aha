@@ -108,6 +108,12 @@ button:disabled {
 .katex {
   font-size: 1.02em;
 }
+/* KaTeX draws variables in a slanted face; the house rule is no italics anywhere, so letters stay upright. */
+.katex .mathnormal,
+.katex .mathit,
+.katex .boldsymbol {
+  font-family: KaTeX_Main, var(--font-serif), serif !important;
+}
 
 /* Range slider: a thin track, a solid thumb, a large invisible touch target. */
 input[type='range'].knob {

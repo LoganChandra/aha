@@ -182,7 +182,7 @@ export const Plan = z.object({
   summary: Short(240).default(''),
   question: Short(200).optional(),
   options: z.array(Short(60)).optional().transform((o) => o?.slice(0, 4)),
-  reason: Short(240).optional(),
+  reason: Short(420).optional(),
   lessons: z.array(PlanLesson).default([]).transform((l) => l.slice(0, 6)),
 });
 export type Plan = z.infer<typeof Plan>;

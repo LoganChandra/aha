@@ -73,9 +73,14 @@ function PartMesh({ p, env, t, explode, colors, dimmed, hot, showLabel }: { p: P
         <meshStandardMaterial color={color} roughness={0.62} metalness={0.08} transparent={opacity < 1} opacity={opacity} depthWrite={opacity >= 1} emissive={hot ? color : '#000'} emissiveIntensity={hot ? 0.18 : 0} />
         <Edges threshold={24} color={hot ? colors.ink : colors.line} />
       </mesh>
-      {showLabel && p.label && (
+      {/* Labels stay mounted and fade in and out: mounting and unmounting drei's Html portals mid-render breaks React 19. */}
+      {p.label && (
         <Html center position={[0, 0, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-          <div className="whitespace-nowrap rounded-full border border-line bg-surface/95 px-2.5 py-1 text-[12px] font-semibold text-ink shadow-sm" style={{ transform: 'translateY(-26px)' }}>
+          <div
+            className="whitespace-nowrap rounded-full border border-line bg-surface/95 px-2.5 py-1 text-[12px] font-semibold text-ink shadow-sm"
+            style={{ transform: 'translateY(-26px)', opacity: showLabel ? 1 : 0, transition: 'opacity 200ms' }}
+            aria-hidden={!showLabel}
+          >
             {p.label}
           </div>
         </Html>
@@ -141,7 +146,9 @@ export default function Model3D({ scene, env, focus, t, playing }: { scene: M; e
   const seen = new Set<string>();
   const order = [...scene.parts.filter((p) => focus.includes(p.id)), ...scene.parts];
   for (const p of order) if (p.label && !seen.has(p.label)) { seen.add(p.label); firstOfLabel.add(p.id); }
-  const labelAll = !focus.length && seen.size <= 7;
+  const labelAll = !focus.length && seen.size <= 5;
+  // At most three tags while a beat points at parts, so they never pile up.
+  const focusedLabels = new Set([...firstOfLabel].filter((id) => focus.includes(id)).slice(0, 3));
 
   if (!colors.primary) return null;
   return (
@@ -156,7 +163,7 @@ export default function Model3D({ scene, env, focus, t, playing }: { scene: M; e
             <PartMesh
               key={p.id} p={p} env={env} t={t} explode={explode} colors={colors}
               dimmed={focus.length > 0 && !focus.includes(p.id)} hot={focus.includes(p.id)}
-              showLabel={firstOfLabel.has(p.id) && (focus.includes(p.id) || labelAll)}
+              showLabel={firstOfLabel.has(p.id) && (focusedLabels.has(p.id) || labelAll)}
             />
           ))}
         </group>

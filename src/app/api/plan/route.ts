@@ -1,4 +1,5 @@
 import { makePlan } from '@/lib/engine';
+import { preCheck } from '@/lib/intent';
 import { LEVELS, type Level, type Plan, type Source } from '@/lib/recipe';
 import { cacheGet, cacheSet, json, limited, normalisePrompt, readJson, signPlan } from '@/lib/server';
 
@@ -11,6 +12,9 @@ export async function POST(req: Request) {
   const prompt = typeof body?.prompt === 'string' ? body.prompt.trim().slice(0, 600) : '';
   const level = (LEVELS as readonly string[]).includes(body?.level as string) ? (body!.level as Level) : 'beginner';
   if (!prompt) return json({ error: 'Type what you want to understand.' }, 400);
+
+  const early = preCheck(prompt);
+  if (early) return json({ plan: early, sources: [], level, planId: '', cached: false });
 
   const key = `plan:${level}:${normalisePrompt(prompt)}`;
   const hit = await cacheGet<Cached>(key);

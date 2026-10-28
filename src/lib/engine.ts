@@ -6,82 +6,124 @@ import { Plan, type Lesson, type Level, type Source } from './recipe';
 import { checkLesson, repair } from './validate';
 
 // Chosen by the 2026-10-28 bake-off (scripts/bakeoff.ts, docs/bakeoff.md):
-//   plans:   DeepSeek V4.1 Flash 18/18, 6s, $0.0006, best teaching; Gemini 3.1 Flash Lite 18/18, 3s.
+//   plans:   DeepSeek V4.1 Flash 18/18, 6s, $0.0006, best teaching.
 //   lessons: DeepSeek V4.1 Flash 20/24 first try, 24/24 after one repair, 3.8s median, $0.0012.
-//            Gemini 3.1 Flash Lite 17/24 then 24/24, 3.6s, $0.0024. Ling 3.0 Flash: 8/24 then 17/24.
-// The fallback is a different model family so one provider's outage never stops a lesson.
+// Backup: GLM 5.3 Flash, Logan's pick (2026-10-28). Bake-off: lessons 18/24 then 23/24, 13.5s median; plans 13/18.
+//   It cannot run with thinking off, so it gets the lightest thinking and a bigger token budget.
+// Last resort: Gemini 3.1 Flash Lite (18/18 plans, 24/24 lessons, 3.6s), only when both others fail.
+// Each tier is a different company, so one provider's outage never stops a lesson.
 const PRIMARY = 'deepseek/deepseek-v4.1-flash';
-const FALLBACK = 'google/gemini-3.1-flash-lite';
-export const PLAN_ROUTES: Route[] = [
-  { model: PRIMARY, reasoning: { enabled: false }, maxTokens: 3000 },
-  { model: FALLBACK, reasoning: { enabled: false }, maxTokens: 3000 },
+const BACKUP: Route = { model: 'z-ai/glm-5.3-flash', reasoning: { effort: 'low' } };
+const LAST = 'google/gemini-3.1-flash-lite';
+const tiers = (maxTokens: number): Route[] => [
+  { model: PRIMARY, reasoning: { enabled: false }, maxTokens },
+  { ...BACKUP, maxTokens: maxTokens + 4000 },
+  { model: LAST, reasoning: { enabled: false }, maxTokens },
 ];
-export const LESSON_ROUTES: Route[] = [
-  { model: PRIMARY, reasoning: { enabled: false }, maxTokens: 7000 },
-  { model: FALLBACK, reasoning: { enabled: false }, maxTokens: 7000 },
-];
-export const ASK_ROUTES: Route[] = [
-  { model: PRIMARY, reasoning: { enabled: false }, maxTokens: 800 },
-  { model: FALLBACK, reasoning: { enabled: false }, maxTokens: 800 },
-];
+export const PLAN_ROUTES: Route[] = tiers(3000);
+export const LESSON_ROUTES: Route[] = tiers(7000);
+export const ASK_ROUTES: Route[] = tiers(800);
 
 export type Meter = { costUsd: number; ms: number; calls: { model: string; ok: boolean; costUsd: number; ms: number; note?: string }[] };
 const meter = (): Meter => ({ costUsd: 0, ms: 0, calls: [] });
 
+/**
+ * Hedged call: start the first route; if it has not succeeded within `delayMs`, start the next as well. The first
+ * accepted result wins. A slow provider then costs the learner a few seconds, not a minute.
+ */
+async function hedge<T>(routes: Route[], delayMs: number, run: (route: Route) => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let done = false;
+    let failed = 0;
+    let started = 0;
+    let lastErr: unknown;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const launch = (i: number) => {
+      if (done || i >= routes.length || i < started) return;
+      started = i + 1;
+      run(routes[i]).then(
+        (v) => { if (!done) { done = true; timers.forEach(clearTimeout); resolve(v); } },
+        (e) => {
+          lastErr = e;
+          failed++;
+          if (done) return;
+          if (failed >= routes.length) { done = true; reject(lastErr); return; }
+          launch(started); // a failure starts the next route at once instead of waiting for the timer
+        },
+      );
+      if (i + 1 < routes.length) timers.push(setTimeout(() => launch(i + 1), delayMs));
+    };
+    launch(0);
+  });
+}
+
 export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTES, web = true): Promise<{ plan: Plan; sources: Source[]; meter: Meter }> {
   const m = meter();
   const t0 = Date.now();
-  let lastErr: unknown;
-  for (const route of routes) {
+  const res = await hedge(routes, 9000, async (route) => {
     try {
-      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 60_000, temperature: 0.3 });
+      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 45_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       const parsed = Plan.safeParse(r.data);
       if (!parsed.success) throw new AiError(`plan shape: ${parsed.error.issues[0]?.message}`);
       const plan = parsed.data;
       if (plan.status === 'ok' && plan.lessons.length < 2) throw new AiError('plan has fewer than 2 lessons');
       if (plan.status === 'clarify' && !plan.question) plan.question = 'What would you like to understand?';
-      plan.lessons = plan.lessons.slice(0, 6);
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });
-      m.ms = Date.now() - t0;
-      return { plan, sources: r.sources.slice(0, 6), meter: m };
+      return { plan, sources: r.sources.slice(0, 6) };
     } catch (e) {
-      lastErr = e;
       m.calls.push({ model: route.model, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
+      throw e;
     }
+  });
+  m.ms = Date.now() - t0;
+  return { ...res, meter: m };
+}
+
+type Written = { lesson: Lesson; errors: string[] };
+
+/** One model writes the lesson, with one repair turn if the checker finds problems. */
+async function writeWith(route: Route, user: string, m: Meter): Promise<Written> {
+  const messages: Msg[] = [{ role: 'system', content: LESSON_SYSTEM }, { role: 'user', content: user }];
+  let best: Written | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let r;
+    try {
+      r = await chatJson(route, messages, { timeoutMs: 60_000, temperature: 0.4 });
+    } catch (e) {
+      m.calls.push({ model: route.model, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
+      break; // a dead or garbled model gets no repair turn
+    }
+    m.costUsd += r.costUsd;
+    const checked = checkLesson(r.data);
+    m.calls.push({ model: route.model, ok: checked.errors.length === 0 && !!checked.lesson, costUsd: r.costUsd, ms: r.ms, note: checked.errors.slice(0, 3).join(' | ') || undefined });
+    if (checked.lesson && checked.errors.length === 0) return { lesson: checked.lesson, errors: [] };
+    if (checked.lesson && (!best || checked.errors.length < best.errors.length)) best = { lesson: checked.lesson, errors: checked.errors };
+    messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(checked.errors) });
   }
-  throw lastErr instanceof Error ? lastErr : new AiError('planning failed');
+  if (best) throw Object.assign(new AiError('lesson still had problems after a repair'), { best });
+  throw new AiError(`${route.model} produced no lesson`);
 }
 
 export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = LESSON_ROUTES): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[] }> {
   const m = meter();
   const t0 = Date.now();
   const user = lessonUser(plan, index, level, sources);
-  let best: { lesson: Lesson; errors: string[] } | null = null;
-  for (const route of routes) {
-    const messages: Msg[] = [{ role: 'system', content: LESSON_SYSTEM }, { role: 'user', content: user }];
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const r = await chatJson(route, messages, { timeoutMs: 75_000, temperature: 0.4 });
-        m.costUsd += r.costUsd;
-        const checked = checkLesson(r.data);
-        m.calls.push({ model: route.model, ok: checked.errors.length === 0 && !!checked.lesson, costUsd: r.costUsd, ms: r.ms, note: checked.errors.slice(0, 3).join(' | ') || undefined });
-        if (checked.lesson && checked.errors.length === 0) {
-          m.ms = Date.now() - t0;
-          return { lesson: checked.lesson, meter: m, repaired: false, errors: [] };
-        }
-        if (checked.lesson && (!best || checked.errors.length < best.errors.length)) best = { lesson: checked.lesson, errors: checked.errors };
-        // One repair turn with the same model, showing it exactly what to fix.
-        messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(checked.errors) });
-      } catch (e) {
-        m.calls.push({ model: route.model, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
-        break; // a dead or garbled model gets no repair turn; go to the next one
-      }
-    }
+  // Imperfect drafts from every route are kept; if no route writes a clean lesson, the least broken one is repaired.
+  const drafts: Written[] = [];
+  try {
+    const { lesson } = await hedge(routes, 12_000, (route) => writeWith(route, user, m).catch((e) => {
+      if ((e as { best?: Written }).best) drafts.push((e as { best: Written }).best);
+      throw e;
+    }));
+    m.ms = Date.now() - t0;
+    return { lesson, meter: m, repaired: false, errors: [] };
+  } catch (e) {
+    m.ms = Date.now() - t0;
+    const best = drafts.sort((a, b) => a.errors.length - b.errors.length)[0];
+    if (best) return { lesson: repair(best.lesson), meter: m, repaired: true, errors: best.errors };
+    throw e instanceof Error ? e : new AiError('no model produced a usable lesson');
   }
-  m.ms = Date.now() - t0;
-  if (best) return { lesson: repair(best.lesson), meter: m, repaired: true, errors: best.errors };
-  throw new AiError('no model produced a usable lesson');
 }
 
 export type AskContext = {
@@ -108,10 +150,9 @@ Knobs (param ids): ${ctx.params.map((p) => `${p.id} "${p.label}" = ${p.value} (r
 Scene ids you may focus: ${ctx.sceneIds.slice(0, 40).join(', ') || 'none'}
 ${history.length ? `Earlier in this lesson:\n${history.slice(-3).map((h) => `Q: ${h.q}\nA: ${h.a}`).join('\n')}\n` : ''}
 Their question: """${question.slice(0, 500)}"""`;
-  let lastErr: unknown;
-  for (const route of routes) {
+  const answer = await hedge(routes, 6000, async (route) => {
     try {
-      const r = await chatJson<Answer>(route, [{ role: 'system', content: ASK_SYSTEM }, { role: 'user', content: user }], { timeoutMs: 30_000, temperature: 0.3 });
+      const r = await chatJson<Answer>(route, [{ role: 'system', content: ASK_SYSTEM }, { role: 'user', content: user }], { timeoutMs: 25_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });
       const a = r.data;
@@ -125,12 +166,12 @@ Their question: """${question.slice(0, 500)}"""`;
         : undefined;
       const scene = new Set(ctx.sceneIds);
       const focus = Array.isArray(a.focus) ? a.focus.filter((f) => typeof f === 'string' && scene.has(f)) : undefined;
-      m.ms = Date.now() - t0;
-      return { answer: { answer: a.answer.slice(0, 1200), set, focus }, meter: m };
+      return { answer: a.answer.slice(0, 1200), set, focus };
     } catch (e) {
-      lastErr = e;
       m.calls.push({ model: route.model, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
+      throw e;
     }
-  }
-  throw lastErr instanceof Error ? lastErr : new AiError('could not answer');
+  });
+  m.ms = Date.now() - t0;
+  return { answer, meter: m };
 }
