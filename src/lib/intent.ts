@@ -25,5 +25,22 @@ export function preCheck(prompt: string): Plan | null {
     question: 'Hi! What would you like to understand? Type any topic, or pick one to start.',
     options: SUGGESTIONS,
     lessons: [],
+    lang: 'English',
   };
+}
+
+// The learner's language, decided in code from the prompt itself (a prompt rule alone was ignored: Chinese prompts
+// came back as English courses). Covers Malaysia's languages first, as Logan asked; anything else gets a hint for
+// the model to match the learner.
+const MALAY = /\b(apa|apakah|bagaimana|kenapa|mengapa|yang|dan|ialah|adalah|cara|untuk|dengan|tentang|belajar|terbentuk|berfungsi|ini|itu)\b/i;
+export function detectLanguage(prompt: string): string {
+  if (/[\u0B80-\u0BFF]/.test(prompt)) return 'Tamil';
+  if (/[\u3040-\u30FF]/.test(prompt)) return 'Japanese';
+  if (/[\uAC00-\uD7AF]/.test(prompt)) return 'Korean';
+  if (/[\u4E00-\u9FFF]/.test(prompt)) return 'Chinese (Simplified)';
+  if (/[\u0E00-\u0E7F]/.test(prompt)) return 'Thai';
+  if (/[\u0600-\u06FF]/.test(prompt)) return 'Arabic';
+  if (/[\u0900-\u097F]/.test(prompt)) return 'Hindi';
+  if ((prompt.match(new RegExp(MALAY.source, 'gi')) ?? []).length >= 1 && !/\b(the|what|how|why|is|are|does)\b/i.test(prompt)) return 'Malay';
+  return 'English';
 }

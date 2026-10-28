@@ -2,6 +2,7 @@
 // Each stage walks a chain of models: the cheap strong one first, a different family as the fallback.
 import { AiError, chatJson, type Msg, type Route } from './ai';
 import { ASK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, lessonUser, planUser, repairUser } from './prompts';
+import { detectLanguage } from './intent';
 import { PATTERN_IDS } from './playbook';
 import { Plan, type Lesson, type Level, type Source } from './recipe';
 import { checkLesson, repair } from './validate';
@@ -75,13 +76,14 @@ async function hedge<T>(routes: Route[], delayMs: number, run: (route: Route) =>
 export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTES, web = true): Promise<{ plan: Plan; sources: Source[]; meter: Meter }> {
   const m = meter();
   const t0 = Date.now();
+  const lang = detectLanguage(prompt);
   const res = await hedge(routes, 12_000, async (route) => {
     try {
-      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level) }], { web, timeoutMs: 30_000, temperature: 0.3 });
+      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level, lang) }], { web, timeoutMs: 30_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       const parsed = Plan.safeParse(r.data);
       if (!parsed.success) throw new AiError(`plan shape: ${parsed.error.issues[0]?.message}`);
-      const plan = parsed.data;
+      const plan = { ...parsed.data, lang };
       if (plan.status === 'ok' && plan.lessons.length < 2) throw new AiError('plan has fewer than 2 lessons');
       if (plan.status === 'clarify' && !plan.question) plan.question = 'What would you like to understand?';
       // Decided in code, not left to the prompt: the first lesson is never a boxes-and-arrows diagram (it is the

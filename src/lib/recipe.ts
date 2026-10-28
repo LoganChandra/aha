@@ -212,6 +212,7 @@ export const Plan = z.object({
   options: z.array(Short(60)).optional().transform((o) => o?.slice(0, 4)),
   reason: Short(420).optional(),
   lessons: z.array(PlanLesson).default([]).transform((l) => l.slice(0, 6)),
+  lang: z.string().max(40).default('English'),
 });
 export type Plan = z.infer<typeof Plan>;
 
