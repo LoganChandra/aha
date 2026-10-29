@@ -80,7 +80,7 @@ export default function Attention({ scene, env, focus, callouts = {}, onTap }: {
               );
             })}
           </g>
-          <Pins w={w} h={h} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
+          <Pins w={w} h={h} avoid={[{ x0: gx, x1: gx + cell * n, y0: gy, y1: gy + cell * n }]} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
         </svg>
       )}
       </div>

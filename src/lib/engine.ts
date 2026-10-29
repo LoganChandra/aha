@@ -138,7 +138,9 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
       plan.lessons = plan.lessons.map((l, i) => {
         let pattern = PATTERN_IDS.includes(l.pattern) ? l.pattern : 'act-it-out';
         if (pattern === 'follow-the-flow' && (i === 0 || flows++ > 0)) pattern = 'act-it-out';
-        const routed = templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
+        // In an attention course, softmax, scaling and masking lessons belong on the attention grid, not next-word odds.
+        const attentionCourse = /\b(attention|transformers?|queries|keys? and values?)\b/i.test(plan.topic);
+        const routed = attentionCourse && /\b(softmax|scal\w*|d_k|√d|temperature|mask\w*|heads?)\b/i.test(`${l.title} ${l.goal}`) ? 'who-looks-at-whom' : templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
         if (routed !== pattern && (used[routed] ?? 0) < 2) pattern = routed;
         if ((used[pattern] ?? 0) >= 2) pattern = 'act-it-out';
         used[pattern] = (used[pattern] ?? 0) + 1;
@@ -205,7 +207,7 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
       if (inspected || attempt === 2 || Date.now() - started > inspectWithin) return { lesson: checked.lesson, errors: [] };
       inspected = true;
       // A copy of a playbook example is not a lesson about this topic (walk: "Unbelievable cats love boxes" again).
-      const copied = PLAYBOOK.some((p) => JSON.stringify(p.example.scene) === JSON.stringify(checked.lesson!.scene) || (p.example.scene.type === 'tokens' && checked.lesson!.scene.type === 'tokens' && JSON.stringify(p.example.scene.pieces.map((x) => x.text)) === JSON.stringify(checked.lesson!.scene.pieces.slice(0, p.example.scene.pieces.length).map((x) => x.text))))
+      const copied = PLAYBOOK.some((p) => JSON.stringify(p.example.scene) === JSON.stringify(checked.lesson!.scene) || (p.example.scene.type === 'nextWord' && checked.lesson!.scene.type === 'nextWord' && p.example.scene.context === checked.lesson!.scene.context) || (p.example.scene.type === 'tokens' && checked.lesson!.scene.type === 'tokens' && JSON.stringify(p.example.scene.pieces.map((x) => x.text)) === JSON.stringify(checked.lesson!.scene.pieces.slice(0, p.example.scene.pieces.length).map((x) => x.text))))
         ? ['The scene copies the playbook example. Write your own content from this lesson\'s topic and fact sheet.'] : [];
       // A lesson that ignores its fact sheet is generic; the inspector's repair turn also asks for the facts.
       const anchors = ctx.anchors ?? [];
