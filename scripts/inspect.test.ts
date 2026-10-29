@@ -55,3 +55,17 @@ describe('AI template maths', () => {
     expect(Math.abs(big[4] - 2)).toBeGreaterThan(Math.abs(big[0] - 2)); // and got worse
   });
 });
+
+import { rewardPolicy } from '../src/components/scene/AiTemplates';
+describe('reward template maths', () => {
+  test('no feedback is uniform; feedback finds the best; no exploring commits harder', () => {
+    const r = [0.9, 0.4, 0.1];
+    const start = rewardPolicy(r, 0, 0.15).pick;
+    expect(Math.max(...start) - Math.min(...start)).toBeLessThan(1e-9);
+    const late = rewardPolicy(r, 30, 0.15);
+    expect(late.pick[0]).toBeGreaterThan(0.6);
+    expect(Math.abs(late.est[0] - 0.9)).toBeLessThan(0.05);
+    expect(rewardPolicy(r, 30, 0).pick[0]).toBeGreaterThan(late.pick[0]);
+    expect(Math.abs(late.pick.reduce((a, b) => a + b, 0) - 1)).toBeLessThan(1e-9);
+  });
+});

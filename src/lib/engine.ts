@@ -83,18 +83,23 @@ const JUNK_SOURCE = /SKILL\.md|\bMCP\b|Model ?Context ?Protocol|Modellkontextpro
 const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(self-?attention|attention|attends?|query|queries|keys? and values?|causal mask)\b|\bperhatian\b/i, 'who-looks-at-whom'],
   [/\b(neuron|perceptron|neural net|weights? and bias|activation|hidden layer)\b|\bneuron\b/i, 'weigh-the-inputs'],
+  [/\b(reinforcement|rewards?|RLHF|human feedback|explor(e|ation) (vs|versus|and) exploit|exploit|thumbs[- ]up)\b/i, 'learn-from-reward'],
   [/\b(next[- ]word|temperature|sampling|softmax|predicts? the next)\b/i, 'odds-and-temperature'],
+  [/\b(embeddings?|word vectors?|vector space|semantic search|similar meanings?|meaning)\b/i, 'map-of-meaning'],
   [/\b(tokens?|tokeni[sz](er|ation)|subwords?)\b/i, 'chop-into-tokens'],
-  [/\b(embeddings?|word vectors?|vector space|semantic search|similar meanings?)\b/i, 'map-of-meaning'],
   [/\b(gradient descent|learning rate|loss (curve|function)|minimi[sz]e the (error|loss)|overshoot)\b/i, 'find-the-minimum'],
   [/\b(wavelengths?|spectrum|rainbow|colou?rs? of light|visible light|(short|long)(er)? waves?|pH scale|acidity|panjang gelombang|pelangi)\b/i, 'slide-the-scale'],
 ];
-const FREE_PATTERNS = new Set(['drag-to-discover', 'act-it-out', 'tipping-point', 'predict-reveal', 'map-of-meaning', 'add-the-pieces']);
-export function templateFor(text: string, pattern: string): string {
-  if (!FREE_PATTERNS.has(pattern)) return pattern;
-  for (const [re, id] of TEMPLATE_ROUTES) if (re.test(text) && PATTERN_IDS.includes(id)) return id;
+const FREE_PATTERNS = new Set(['drag-to-discover', 'act-it-out', 'tipping-point', 'predict-reveal', 'map-of-meaning', 'add-the-pieces', 'find-the-minimum', 'trace-the-path']);
+export function templateFor(text: string, pattern: string, title = ''): string {
+  // The title is the strongest signal ("Tokens become meaning (embeddings)" is about embeddings); then everything.
+  for (const t of [title, text]) {
+    if (!t) continue;
+    for (const [re, id] of TEMPLATE_ROUTES) if (re.test(t) && PATTERN_IDS.includes(id)) return FREE_PATTERNS.has(pattern) || TEMPLATE_IDS.has(pattern) ? id : pattern;
+  }
   return pattern;
 }
+const TEMPLATE_IDS = new Set(TEMPLATE_ROUTES.map(([, id]) => id));
 
 export function usefulSources(list: Source[]): Source[] {
   const seen = new Set<string>();
@@ -129,7 +134,7 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
       plan.lessons = plan.lessons.map((l, i) => {
         let pattern = PATTERN_IDS.includes(l.pattern) ? l.pattern : 'act-it-out';
         if (pattern === 'follow-the-flow' && (i === 0 || flows++ > 0)) pattern = 'act-it-out';
-        pattern = templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern);
+        pattern = templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
         return { ...l, pattern };
       });
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });

@@ -123,6 +123,13 @@ function screen(l: Lesson, env: Env): string {
       body = `Loss curve ${s.loss} over ${s.range[0]}..${s.range[1]} (lowest near ${r2(best)}). Ball at ${r2(wv)}, loss ${r2(L(wv))}. Learning rate ${r2(lr)}. Next steps drawn (computed): ${path.slice(1).map(r2).join(' → ') || 'none'}.`;
       break;
     }
+    case 'reward': {
+      const rw = s.options.map((x) => n(x.reward, 0.5)), rounds = Math.round(n(s.rounds, 0)), ex = s.explore !== undefined ? n(s.explore, 0.1) : 0.1;
+      const k = 1 - Math.exp(-Math.max(0, rounds) / 6), est = rw.map((r) => 0.5 + (Math.max(0, Math.min(1, r)) - 0.5) * k);
+      const e = est.map((v) => Math.exp(8 * v)), sm = e.reduce((a, b) => a + b, 0), pk = e.map((v) => (1 - ex) * (v / sm) + ex / rw.length);
+      body = `Learning from reward after ${rounds} rounds (explore ${r2(ex)}). For each option: true reward, learned estimate, chance of picking it now (computed): ${s.options.map((x, i) => `${x.label}: ${r2(rw[i])} / ${r2(est[i])} / ${Math.round(pk[i] * 100)}%`).join('; ')}.`;
+      break;
+    }
     case 'balance': body = `Balance: left ${s.left.id} "${s.left.label}" weight ${n(s.left.weight)} vs right ${s.right.id} "${s.right.label}" weight ${n(s.right.weight)}`; break;
   }
   return `Knobs: ${knobs || 'none'}\n${body}`;

@@ -265,7 +265,22 @@ export const Descent = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent]);
+/**
+ * Learning from reward (reinforcement learning, RLHF): options with a true reward rate; after "rounds" of trying, the
+ * learner's estimates and its chance of picking each option are computed here (a simple bandit, not the model's guess).
+ */
+export const Reward = z.object({
+  type: z.literal('reward'),
+  options: Many(z.object({ id: Id, label: Short(28), reward: Num, icon: IconName.optional() }), 2, 5),
+  rounds: Num,
+  explore: Num.optional(),
+  // The two bars' names, in the lesson's language: "chance it picks this", "what it has learned (tick = truth)".
+  pickLabel: Short(30).optional(),
+  learnedLabel: Short(40).optional(),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

@@ -629,6 +629,34 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'learn-from-reward',
+    name: 'Learn from reward',
+    use: 'Reinforcement learning, RLHF (learning from human feedback), reward, explore versus exploit, how a chatbot learned to be helpful. Use the REWARD template (the learning is computed for you).',
+    moves: 'Show the options with no experience yet (all equal) → add rounds of feedback and watch the favourite emerge → turn exploring off and see it stop trying others → state the rule.',
+    example: {
+      title: 'How a chatbot learned to be helpful',
+      params: [
+        { id: 'r', label: 'Rounds of feedback', min: 0, max: 30, step: 1, value: 0 },
+        { id: 'ex', label: 'Exploring', min: 0, max: 0.6, step: 0.05, value: 0.15 },
+      ],
+      scene: {
+        type: 'reward', rounds: 'r', explore: 'ex', caption: 'People rate answers; the model shifts toward the liked style',
+        pickLabel: 'chance it answers this way', learnedLabel: 'what it has learned people like (| = truth)',
+        options: [
+          { id: 'clear', label: 'Clear and correct', reward: 0.9 },
+          { id: 'long', label: 'Long and rambling', reward: 0.4 },
+          { id: 'rude', label: 'Short and rude', reward: 0.1 },
+        ],
+      },
+      steps: [
+        { say: 'A fresh model has no idea which kind of answer people like. Every style is equally likely.', task: { kind: 'tap', target: 'clear', hint: 'Tap the style you would rate highest.' }, after: 'People agree with you: the tick marks how much they like each style.' },
+        { say: 'Each round, people rate answers and the model nudges toward what got good ratings. Give it feedback.', task: { kind: 'slide', param: 'r', goal: 'r>=20', hint: 'Add 20 rounds of feedback.' }, after: 'After {r} rounds its picture of what people like matches the ticks, and "clear and correct" dominates.' },
+        { say: 'It still tries other styles now and then: exploring.', task: { kind: 'predict', question: 'With exploring at zero, the model…', choices: ['only gives its favourite style', 'picks styles at random', 'stops answering'], answer: 0, reveal: { set: { ex: 0 } } }, after: 'No exploring: it never tries anything new, so it cannot discover something better.' },
+        { say: 'Learning from reward: try, get rated, lean toward what worked, keep exploring a little.', set: { ex: 0.15 } },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */

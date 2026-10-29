@@ -880,6 +880,7 @@ function sceneIds(l: Lesson): string[] {
     case 'tokens': return s.pieces.map((_, i) => `t${i}`);
     case 'embedding': return [...s.points.map((x) => x.id), ...(s.query ? ['query'] : [])];
     case 'descent': return ['ball', ...Array.from({ length: 12 }, (_, i) => `step${i + 1}`)];
+    case 'reward': return s.options.map((o) => o.id);
   }
 }
 
@@ -901,6 +902,7 @@ function summarise(l: Lesson): string {
     case 'tokens': return `Tokens: ${s.pieces.map((p) => `[${p.text}]`).join('')}`.slice(0, 780);
     case 'embedding': return `Map of meaning: ${s.points.map((p) => `${p.label} (${p.x}, ${p.y})`).join(', ')}${s.query ? `; draggable "${s.query.label}"` : ''}`.slice(0, 780);
     case 'descent': return `Gradient descent on loss ${s.loss}, w = ${s.w}, learning rate ${s.lr}`.slice(0, 780);
+    case 'reward': return `Learning from reward: ${s.options.map((o) => `${o.label} (true reward ${o.reward})`).join(', ')}; rounds ${s.rounds}`.slice(0, 780);
   }
 }
 

@@ -266,3 +266,53 @@ export function Descent({ scene, env, params, onDrag, focus, callouts = {}, onTa
     </div>
   );
 }
+
+type RW = Extract<Scene, { type: 'reward' }>;
+/**
+ * A simple bandit, exported for tests: estimates start at 0.5 and approach each option's true reward as rounds grow;
+ * the chance of picking an option is a softmax over the estimates, mixed with some exploring.
+ */
+export function rewardPolicy(rewards: number[], rounds: number, explore: number): { est: number[]; pick: number[] } {
+  const k = 1 - Math.exp(-Math.max(0, rounds) / 6);
+  const est = rewards.map((r) => 0.5 + (Math.max(0, Math.min(1, r)) - 0.5) * k);
+  const e = est.map((v) => Math.exp(8 * v)), sum = e.reduce((a, b) => a + b, 0);
+  const x = Math.max(0, Math.min(1, explore));
+  const pick = e.map((v) => (1 - x) * (v / sum) + x / rewards.length);
+  return { est, pick };
+}
+
+export function Reward({ scene, env, focus, callouts = {}, onTap }: { scene: RW } & Common) {
+  const rewards = scene.options.map((o) => evaluate(o.reward, env, 0.5));
+  const rounds = Math.round(evaluate(scene.rounds, env, 0)), explore = scene.explore !== undefined ? evaluate(scene.explore, env, 0.1) : 0.1;
+  const { est, pick } = rewardPolicy(rewards, rounds, explore);
+  const best = pick.indexOf(Math.max(...pick));
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  return (
+    <div className="absolute inset-0 flex select-none flex-col overflow-y-auto px-3 pb-2">
+      <Caption text={scene.caption} />
+      <p className="mt-1 flex flex-wrap justify-center gap-x-4 text-[13.5px] font-medium text-ink-2">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-5 rounded-full bg-[var(--t-primary)]" />{scene.pickLabel ?? 'chance it picks this'}</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-5 rounded-full bg-[var(--t-green)]/70" />{scene.learnedLabel ?? 'what it has learned (| = truth)'}</span>
+      </p>
+      <ul className="mx-auto mt-2 w-full max-w-[540px] space-y-3">
+        {scene.options.map((o, i) => (
+          <li key={o.id} style={{ opacity: dim(o.id) }}>
+            <button type="button" disabled={!onTap} onClick={onTap ? () => onTap(o.id) : undefined} className={`w-full rounded-2xl border-2 p-3 text-left ${i === best && rounds > 0 ? 'border-[var(--t-primary)]' : 'border-line'} ${onTap ? 'cursor-pointer' : ''} bg-surface`}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[17px] font-semibold text-ink">{o.label}{callouts[o.id] ? <span className="ml-1.5 text-[13px] font-medium text-ink-2">· {callouts[o.id]}</span> : null}</span>
+                <span className="text-[16px] font-bold tabular-nums text-[var(--t-primary)]">{Math.round(pick[i] * 100)}%</span>
+              </div>
+              {/* the chance it picks this option now */}
+              <div className="mt-2 h-3 overflow-hidden rounded-full bg-sunk"><div className="h-full rounded-full bg-[var(--t-primary)] transition-[width] duration-300" style={{ width: `${pick[i] * 100}%` }} /></div>
+              {/* what it has learned the reward is, against the true reward (the tick) */}
+              <div className="relative mt-2 h-2.5 rounded-full bg-sunk">
+                <div className="absolute inset-y-0 left-0 rounded-full bg-[var(--t-green)]/70 transition-[width] duration-300" style={{ width: `${est[i] * 100}%` }} />
+                <div className="absolute -top-1 h-[18px] w-[3px] rounded bg-ink" style={{ left: `calc(${Math.max(0, Math.min(1, rewards[i])) * 100}% - 1px)` }} />
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

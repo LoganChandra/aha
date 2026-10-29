@@ -45,6 +45,7 @@ function sceneIds(scene: Scene): string[] {
     case 'tokens': return scene.pieces.map((_, i) => `t${i}`);
     case 'embedding': return [...scene.points.map((x) => x.id), ...(scene.query ? ['query'] : [])];
     case 'descent': return ['ball', ...Array.from({ length: 12 }, (_, i) => `step${i + 1}`)];
+    case 'reward': return scene.options.map((o) => o.id);
   }
 }
 
@@ -137,6 +138,9 @@ export function checkLesson(raw: unknown): Checked {
     checkExpr('descent loss', scene.loss, new Set([...withT, 'x', 'w']), errors);
     checkExpr('descent w', scene.w, withT, errors); checkExpr('descent lr', scene.lr, withT, errors); checkExpr('descent steps', scene.steps, withT, errors);
     if (!(scene.range[1] > scene.range[0])) errors.push('descent range must be [min, max] with max > min.');
+  } else if (scene.type === 'reward') {
+    scene.options.forEach((x) => { checkExpr(`option "${x.id}" reward`, x.reward, withT, errors); if (x.icon && !ICONS[x.icon]) errors.push(`option "${x.id}": no icon "${x.icon}".`); });
+    checkExpr('reward rounds', scene.rounds, withT, errors); checkExpr('reward explore', scene.explore, withT, errors);
   } else if (scene.type === 'chart') {
     if (!scene.bars?.length && !scene.series?.length) errors.push('chart: give bars or series.');
     for (const b of scene.bars ?? []) checkExpr(`bar "${b.id}"`, b.value, withT, errors);

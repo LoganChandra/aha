@@ -87,6 +87,10 @@ T10. DESCENT (gradient descent, loss, learning rate, overshoot):
    {"type":"descent","loss":"0.5*(x-2)^2+0.3","w":"w","lr":"lr","steps":"k","range":[-2,5],"xLabel":"weight","yLabel":"error"}
    loss is a formula in x; the ball sits at w (draggable), the slope and the next steps are computed, so a big lr really overshoots. Tap ids: ball, step1, step2...
 
+T11. REWARD (reinforcement learning, RLHF, explore vs exploit):
+   {"type":"reward","rounds":"r","explore":"ex","pickLabel":"chance it answers this way","learnedLabel":"what it has learned (| = truth)","options":[{"id":"clear","label":"Clear and correct","reward":0.9},{"id":"rude","label":"Short and rude","reward":0.1}]}
+   2-5 options with a true reward 0-1. As rounds grow, the learned estimates move to the truth and the chance of picking each option follows; explore mixes in random tries. Write pickLabel and learnedLabel in the lesson's language. Tap ids: option ids.
+
 FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.
