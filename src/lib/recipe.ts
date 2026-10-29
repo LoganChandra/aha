@@ -314,7 +314,16 @@ export const RightTriangle = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle]);
+/** How AI sees images: a small picture, a 3x3 filter sliding over it, and the feature map, all computed here. */
+export const Convolve = z.object({
+  type: z.literal('convolve'),
+  image: z.array(z.string().max(12)).min(4).max(10),
+  kernel: z.union([z.enum(['vertical-edge', 'horizontal-edge', 'blur', 'sharpen']), z.array(z.array(z.number()).length(3)).length(3)]).catch('vertical-edge'),
+  at: z.tuple([Num, Num]).optional(),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle, Convolve]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

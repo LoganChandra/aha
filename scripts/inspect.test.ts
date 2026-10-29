@@ -69,3 +69,13 @@ describe('reward template maths', () => {
     expect(Math.abs(late.pick.reduce((a, b) => a + b, 0) - 1)).toBeLessThan(1e-9);
   });
 });
+
+import { convolve } from '../src/components/scene/AiTemplates';
+describe('convolution template maths', () => {
+  test('an edge filter fires on the edge and is zero on flat areas', () => {
+    const { out } = convolve(['....####', '....####', '....####', '....####'], [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]]);
+    expect(out[0][0]).toBe(0);
+    expect(out[0][2]).toBe(3);
+    expect(out[0][5]).toBe(0);
+  });
+});

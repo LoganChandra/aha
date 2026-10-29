@@ -722,6 +722,29 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'slide-the-filter',
+    name: 'Slide the filter',
+    use: 'How AI sees images: convolution, filters, edge detection, convolutional neural networks (CNNs), feature maps. Use the CONVOLVE template (the maths is done for you).',
+    moves: 'Show a small picture as pixels → slide the 3x3 window and watch one output number → find where the output is strongest (an edge) → swap the filter → state "a CNN learns its own filters".',
+    example: {
+      title: 'How an AI finds edges in a picture',
+      params: [
+        { id: 'cx', label: 'Window across', min: 0, max: 5, step: 1, value: 0 },
+        { id: 'cy', label: 'Window down', min: 0, max: 5, step: 1, value: 2 },
+      ],
+      scene: {
+        type: 'convolve', kernel: 'vertical-edge', at: ['cx', 'cy'], caption: 'A 3x3 filter slides over the pixels',
+        image: ['....####', '....####', '....####', '....####', '....####', '....####', '....####', '....####'],
+      },
+      steps: [
+        { say: 'To a computer, a picture is a grid of numbers: dark pixels high, light pixels low.', task: { kind: 'tap', target: 'image', hint: 'Tap the picture.' }, after: 'Left half light, right half dark: the edge runs down the middle.' },
+        { say: 'A small filter, 3 by 3, multiplies the pixels under it and adds them up into one number.', task: { kind: 'slide', param: 'cx', goal: 'cx>=2 && cx<=3', hint: 'Slide the window right onto the edge.' }, after: 'On the edge the sum is large: {cx} columns in, the filter fires.' },
+        { say: 'Before you look: in the flat light area on the left, the output is…', task: { kind: 'predict', question: 'Over a flat area this edge filter gives…', choices: ['about 0', 'its biggest value', 'a negative maximum'], answer: 0, reveal: { set: { cx: 0 } } }, after: 'Flat means no change, so nothing to detect: about 0.' },
+        { say: 'A CNN learns thousands of filters like this from examples: edges first, then shapes, then whole objects.', focus: ['output'] },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */

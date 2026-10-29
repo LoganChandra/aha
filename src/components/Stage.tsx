@@ -16,7 +16,7 @@ import Spectrum from './scene/Spectrum';
 import Network from './scene/Network';
 import Attention from './scene/Attention';
 import RightTriangle from './scene/RightTriangle';
-import { Cycle, Denoise, Descent, Embedding, NextWord, Reward, Tokens, type TemplateWords } from './scene/AiTemplates';
+import { Convolve, Cycle, Denoise, Descent, Embedding, NextWord, Reward, Tokens, type TemplateWords } from './scene/AiTemplates';
 
 // three.js is only downloaded when a lesson actually has a 3D model.
 const Model3D = dynamic(() => import('./scene/Model3D'), { ssr: false, loading: () => <div className="shimmer absolute inset-6 rounded-[var(--radius)]" /> });
@@ -55,6 +55,7 @@ function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guid
     case 'tokens': return <Tokens scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
     case 'embedding': return <Embedding scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'reward': return <Reward scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
+    case 'convolve': return <Convolve scene={s} env={e} focus={focus} />;
     case 'cycle': return <Cycle scene={s} env={e} t={t} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
     case 'denoise': return <Denoise scene={s} env={e} focus={focus} words={words} />;
     case 'descent': return <Descent scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} words={words} />;

@@ -417,3 +417,65 @@ export function Denoise({ scene, env, focus, words = EN }: { scene: DN } & Commo
     </div>
   );
 }
+
+type CV = Extract<Scene, { type: 'convolve' }>;
+const KERNELS: Record<string, number[][]> = {
+  'vertical-edge': [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]],
+  'horizontal-edge': [[-1, -1, -1], [0, 0, 0], [1, 1, 1]],
+  blur: [[1, 1, 1], [1, 1, 1], [1, 1, 1]].map((r) => r.map((v) => v / 9)),
+  sharpen: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]],
+};
+/** The image as 0..1 numbers ("#" or digits), and its valid 3x3 convolution; exported for tests. */
+export function convolve(rows: string[], kernel: number[][]): { img: number[][]; out: number[][] } {
+  const W = Math.max(...rows.map((r) => r.length));
+  const img = rows.map((r) => Array.from({ length: W }, (_, i) => { const c = r[i] ?? '.'; return c === '#' ? 1 : /\d/.test(c) ? Number(c) / 9 : 0; }));
+  const out: number[][] = [];
+  for (let y = 0; y + 2 < img.length; y++) {
+    const row: number[] = [];
+    for (let x = 0; x + 2 < W; x++) { let sum = 0; for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) sum += img[y + j][x + i] * kernel[j][i]; row.push(sum); }
+    out.push(row);
+  }
+  return { img, out };
+}
+
+export function Convolve({ scene, env, focus }: { scene: CV } & Common) {
+  const [box, size] = useSize<HTMLDivElement>();
+  const { w, h } = size;
+  const kernel = Array.isArray(scene.kernel) ? scene.kernel : KERNELS[scene.kernel] ?? KERNELS['vertical-edge'];
+  const { img, out } = convolve(scene.image, kernel);
+  const H = img.length, W = img[0]?.length ?? 0, oh = out.length, ow = out[0]?.length ?? 0;
+  const px = scene.at ? Math.max(0, Math.min(ow - 1, Math.round(evaluate(scene.at[0], env, 0)))) : -1;
+  const py = scene.at ? Math.max(0, Math.min(oh - 1, Math.round(evaluate(scene.at[1], env, 0)))) : -1;
+  const max = Math.max(1e-9, ...out.flat().map(Math.abs));
+  // Two grids side by side when there is room, stacked on a narrow phone.
+  const side = w > h * 1.1;
+  const cell = side ? Math.min((w - 70) / (W + ow + 4), (h - 40) / (H + 3)) : Math.min((w - 40) / (W + 1), (h - 70) / (H + oh + 5));
+  const ix = side ? 20 : (w - W * cell) / 2, iy = side ? (h - H * cell) / 2 : 24;
+  const ox = side ? ix + (W + 3) * cell : (w - ow * cell) / 2, oy = side ? iy + cell : iy + (H + 3) * cell;
+  const dimO = focus.length && !focus.includes('output') ? 0.6 : 1, dimI = focus.length && !focus.includes('image') ? 0.6 : 1;
+  return (
+    <div className="absolute inset-0 flex select-none flex-col">
+      <Caption text={scene.caption} />
+      <div ref={box} className="relative min-h-0 flex-1">
+        {w > 0 && cell > 0 && (
+          <svg width={w} height={h} className="block" role="img" aria-label={scene.caption ?? 'Convolution'}>
+            <g opacity={dimI}>
+              {img.map((r, y) => r.map((v, x) => <rect key={`i${x}-${y}`} x={ix + x * cell} y={iy + y * cell} width={cell - 1} height={cell - 1} rx={2} fill={`rgb(${Math.round(250 - 215 * v)},${Math.round(248 - 213 * v)},${Math.round(242 - 207 * v)})`} />))}
+              {px >= 0 && <rect x={ix + px * cell - 2} y={iy + py * cell - 2} width={cell * 3 + 3} height={cell * 3 + 3} rx={4} fill="none" stroke="var(--t-accent)" strokeWidth={3.5} />}
+            </g>
+            <g opacity={dimO}>
+              {out.map((r, y) => r.map((v, x) => {
+                const t = v / max;
+                const fill = t >= 0 ? `color-mix(in oklab, var(--t-primary) ${Math.round(Math.abs(t) * 90)}%, var(--surface))` : `color-mix(in oklab, var(--t-red) ${Math.round(Math.abs(t) * 90)}%, var(--surface))`;
+                return <rect key={`o${x}-${y}`} x={ox + x * cell} y={oy + y * cell} width={cell - 1} height={cell - 1} rx={2} fill={fill} stroke={x === px && y === py ? 'var(--t-accent)' : 'none'} strokeWidth={3} />;
+              }))}
+            </g>
+            {px >= 0 && (
+              <text x={ox + (ow * cell) / 2} y={oy + oh * cell + 22} textAnchor="middle" fontSize={16} fontWeight={800} fill="var(--ink)" fontFamily="var(--font-sans)">{formatNumber(out[py][px])}</text>
+            )}
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+}

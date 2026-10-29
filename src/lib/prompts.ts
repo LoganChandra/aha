@@ -103,6 +103,10 @@ T14. RIGHT TRIANGLE (trigonometry: opposite, adjacent, hypotenuse, sin, cos, tan
    {"type":"rightTriangle","angle":"a","hyp":"hl","unit":"m","names":{"opp":"opposite","adj":"adjacent","hyp":"hypotenuse","angle":"θ"},"showNames":"nm","showLengths":1,"showRatios":"rt"}
    angle in degrees (a knob makes the top corner draggable), hyp the hypotenuse length. Names in the lesson's language; hide them (showNames 0) while asking the learner to find a side. Lengths and sin/cos/tan are computed. Tap ids: opp, adj, hyp, angle.
 
+T15. CONVOLVE (how AI sees images: convolution, filters, edges, CNNs):
+   {"type":"convolve","kernel":"vertical-edge","at":["cx","cy"],"image":["....####","....####","....####","....####","....####","....####"]}
+   image rows: "#" dark, "." light (4-10 rows, same length). kernel: vertical-edge, horizontal-edge, blur, sharpen, or a 3x3 number grid. at moves the 3x3 window (knobs); the output map and the number under the window are computed. Tap ids: image, output.
+
 FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.

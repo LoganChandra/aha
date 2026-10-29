@@ -130,6 +130,15 @@ function screen(l: Lesson, env: Env): string {
       body = `Learning from reward after ${rounds} rounds (explore ${r2(ex)}). For each option: true reward, learned estimate, chance of picking it now (computed): ${s.options.map((x, i) => `${x.label}: ${r2(rw[i])} / ${r2(est[i])} / ${Math.round(pk[i] * 100)}%`).join('; ')}.`;
       break;
     }
+    case 'convolve': {
+      const kernels: Record<string, number[][]> = { 'vertical-edge': [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], 'horizontal-edge': [[-1, -1, -1], [0, 0, 0], [1, 1, 1]], blur: [[1, 1, 1], [1, 1, 1], [1, 1, 1]].map((r) => r.map((v) => v / 9)), sharpen: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] };
+      const k = Array.isArray(s.kernel) ? s.kernel : kernels[s.kernel];
+      const img = s.image.map((r) => [...r].map((c) => (c === '#' ? 1 : /\d/.test(c) ? Number(c) / 9 : 0)));
+      const at = s.at ? [Math.round(n(s.at[0], 0)), Math.round(n(s.at[1], 0))] : null;
+      let v = 0; if (at && k) for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) v += (img[at[1] + j]?.[at[0] + i] ?? 0) * k[j][i];
+      body = `Convolution. Image (# = dark): ${s.image.join(' / ')}. Filter: ${Array.isArray(s.kernel) ? JSON.stringify(s.kernel) : s.kernel}. ${at ? `Window at column ${at[0]}, row ${at[1]}; output there (computed): ${r2(v)}.` : ''} The output map is drawn beside the image (blue positive, red negative).`;
+      break;
+    }
     case 'rightTriangle': {
       const d = Math.max(5, Math.min(85, n(s.angle, 35))), H = s.hyp !== undefined ? n(s.hyp, 10) : 10, t2 = (d * Math.PI) / 180;
       const vis = (v: unknown) => (v === undefined ? true : n(v as Num, 1) >= 0.5);

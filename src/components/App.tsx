@@ -893,6 +893,7 @@ function sceneIds(l: Lesson): string[] {
     case 'reward': return s.options.map((o) => o.id);
     case 'cycle': return s.stages.map((x) => x.id);
     case 'rightTriangle': return ['opp', 'adj', 'hyp', 'angle'];
+    case 'convolve': return ['image', 'output'];
     case 'denoise': return ['image'];
   }
 }
@@ -915,6 +916,7 @@ function summarise(l: Lesson): string {
     case 'tokens': return `Tokens: ${s.pieces.map((p) => `[${p.text}]`).join('')}`.slice(0, 780);
     case 'embedding': return `Map of meaning: ${s.points.map((p) => `${p.label} (${p.x}, ${p.y})`).join(', ')}${s.query ? `; draggable "${s.query.label}"` : ''}`.slice(0, 780);
     case 'descent': return `Gradient descent on loss ${s.loss}, w = ${s.w}, learning rate ${s.lr}`.slice(0, 780);
+    case 'convolve': return `Convolution: a ${s.image.length}-row image, a ${Array.isArray(s.kernel) ? 'custom' : s.kernel} filter${s.at ? `, window at (${s.at[0]}, ${s.at[1]})` : ''}`.slice(0, 780);
     case 'rightTriangle': return `Right triangle: angle ${s.angle}°, hypotenuse ${s.hyp ?? 10}; sides ${s.names.opp} (opposite), ${s.names.adj} (adjacent), ${s.names.hyp} (hypotenuse)`.slice(0, 780);
     case 'cycle': return `A loop: ${s.stages.map((x) => x.label).join(' → ')} → back to the start`.slice(0, 780);
     case 'denoise': return `Diffusion: "${s.prompt ?? ''}" emerging from noise over ${s.steps} steps (step ${s.step})`.slice(0, 780);

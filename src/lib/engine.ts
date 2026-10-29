@@ -85,6 +85,7 @@ const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(neuron|perceptron|neural net|weights? and bias|activation|hidden layer)\b|\bneuron\b/i, 'weigh-the-inputs'],
   [/\b(reinforcement|rewards?|RLHF|human feedback|explor(e|ation) (vs|versus|and) exploit|exploit|thumbs[- ]up)\b/i, 'learn-from-reward'],
   [/\b(trigonometr\w*|trigonometri|sines?|cosines?|tangents?|hypotenuse|hipotenus|SOH.?CAH.?TOA|sin, cos|sin cos|right[- ]angled? triangles?|segi tiga tegak)\b/i, 'name-the-sides'],
+  [/\b(convolution\w*|CNNs?|filters? (slide|over)|edge detection|feature maps?|how (an? )?AI sees|computer vision|image recognition)\b/i, 'slide-the-filter'],
   [/\b(diffusion|denois\w*|image generat\w*|stable diffusion|midjourney|dall-?e)\b/i, 'out-of-the-noise'],
   [/\b(training loop|one (word|token) at a time|loop|epochs?|iterat\w+)\b/i, 'go-round-the-loop'],
   [/\b(next[- ]word|temperature|sampling|softmax|predicts? the next)\b/i, 'odds-and-temperature'],
