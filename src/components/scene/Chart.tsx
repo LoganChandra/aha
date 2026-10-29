@@ -26,7 +26,7 @@ function Bars({ scene, env, focus, callouts = {}, onTap }: { scene: C; env: Env;
       {scene.yLabel && <div className="mb-4 text-[17px] font-semibold text-ink">{scene.yLabel}</div>}
       <div className="flex flex-col" style={{ gap: Math.max(6, rowH * 0.22) }}>
         {bars.map((b) => {
-          const op = focus.length && !focus.includes(b.id) ? 0.3 : 1;
+          const op = focus.length && !focus.includes(b.id) ? 0.55 : 1;
           return (
             <div
               key={b.id} className={`grid items-center gap-3 rounded-lg ${onTap ? 'cursor-pointer hover:bg-sunk' : ''}`}

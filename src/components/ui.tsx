@@ -40,7 +40,7 @@ export function PromptBar({ value, onChange, onSubmit, placeholder, busy, autoFo
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); if (can) onSubmit(); }}
-      className="flex items-end gap-2 rounded-[22px] border border-line bg-surface p-1.5 pl-4 shadow-[var(--shadow)] focus-within:border-line-2"
+      className="flex items-end gap-2 rounded-[22px] border border-line bg-surface p-1.5 pl-4 shadow-[var(--shadow)] focus-within:border-[var(--focus)] focus-within:ring-2 focus-within:ring-[var(--focus)]/25"
     >
       <label className="sr-only" htmlFor="prompt">{placeholder}</label>
       <textarea
@@ -48,7 +48,7 @@ export function PromptBar({ value, onChange, onSubmit, placeholder, busy, autoFo
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (can) onSubmit(); } }}
         placeholder={placeholder} enterKeyHint="send"
-        className="min-h-[40px] flex-1 resize-none bg-transparent py-[9px] text-[16px] leading-[22px] text-ink outline-none placeholder:text-ink-3"
+        className="min-h-[40px] flex-1 resize-none bg-transparent py-[9px] text-[16px] leading-[22px] text-ink outline-none focus-visible:outline-none placeholder:text-ink-3"
       />
       <button
         type="submit" disabled={!can} aria-label="Send"

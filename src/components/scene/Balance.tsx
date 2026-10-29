@@ -18,7 +18,7 @@ export default function Balance({ scene, env, focus, callouts = {}, onTap }: { s
   const half = Math.min(w * 0.36, 230);
   const ends = [-1, 1].map((sgn) => [cx + sgn * half * Math.cos(tilt), pivotY + sgn * half * Math.sin(tilt)]);
   const pan = Math.min(120, w * 0.26);
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   const anchors: Record<string, [number, number]> = {};
   const sides = [{ s: scene.left, v: L, e: ends[0] }, { s: scene.right, v: R, e: ends[1] }];
   return (

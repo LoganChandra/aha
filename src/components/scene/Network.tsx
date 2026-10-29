@@ -29,7 +29,7 @@ export default function Network({ scene, env, focus, callouts = {}, onTap }: { s
     const gap = (h - top - bottom) / layer.length;
     layer.forEach((n, ri) => { pos[n.id] = [x, top + gap * (ri + 0.5) - 8]; });
   });
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.4 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   const nodes = scene.layers.flat();
   return (
     <div ref={box} className="absolute inset-0 select-none">

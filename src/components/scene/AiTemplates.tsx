@@ -34,7 +34,7 @@ export function NextWord({ scene, env, focus, callouts = {}, onTap }: { scene: N
   const top = probs.indexOf(Math.max(...probs));
   // Phrases (not single words) get their own line above the bar instead of being cut to "using Mi...".
   const long = scene.words.some((w) => w.label.length > 10);
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   return (
     <div className="absolute inset-0 flex select-none flex-col overflow-y-auto px-3 pb-2">
       <Caption text={scene.caption} />
@@ -138,7 +138,7 @@ export function Embedding({ scene, env, params, onDrag, focus, callouts = {}, on
     taken.push({ x0: best[0] + best[3], x1: best[0] + best[3] + tw, y0: best[1] - 15, y1: best[1] + 4 });
   }
   if (q) anchors.query = [X(q.x), Y(q.y)];
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   return (
     <div className="absolute inset-0 flex select-none flex-col">
       <Caption text={scene.caption} />
@@ -291,7 +291,7 @@ export function Reward({ scene, env, focus, callouts = {}, onTap, words = EN }: 
   const rounds = Math.round(evaluate(scene.rounds, env, 0)), explore = scene.explore !== undefined ? evaluate(scene.explore, env, 0.1) : 0.1;
   const { est, pick } = rewardPolicy(rewards, rounds, explore);
   const best = pick.indexOf(Math.max(...pick));
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   return (
     <div className="absolute inset-0 flex select-none flex-col overflow-y-auto px-3 pb-2">
       <Caption text={scene.caption} />
@@ -340,7 +340,7 @@ export function Cycle({ scene, env, focus, callouts = {}, onTap, t = 0, words = 
   const node = Math.max(26, Math.min(40, R * 0.34));
   const anchors: Record<string, [number, number]> = {};
   scene.stages.forEach((st, k) => { anchors[st.id] = at(k); });
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   return (
     <div className="absolute inset-0 flex select-none flex-col">
       <Caption text={scene.caption} />

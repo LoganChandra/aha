@@ -28,7 +28,7 @@ export default function Pipeline({ scene, env, focus, t, playing, callouts = {},
   });
   void step;
   const flow = Math.max(0, Math.min(1, evaluate(scene.flow ?? 0.6, env, 0.6)));
-  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   const anchors: Record<string, [number, number]> = {};
   scene.stages.forEach((s, i) => { anchors[s.id] = [pos[i][0], pos[i][1]]; });
 

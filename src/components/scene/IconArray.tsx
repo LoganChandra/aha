@@ -33,7 +33,7 @@ export default function IconArray({ scene, env, focus, callouts = {}, onTap }: {
   const ox = (w - cols * cell) / 2, oy = 12 + (gridH - rows * cell) / 2;
   const node = ICONS[scene.icon] ?? ICONS['user'];
   const kk = (cell * 0.72) / 24;
-  const dimG = (id: string) => (focus.length && !focus.includes(id) ? 0.4 : 1);
+  const dimG = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
   return (
     <div ref={box} className="absolute inset-0 flex select-none flex-col">
       {w > 0 && (
