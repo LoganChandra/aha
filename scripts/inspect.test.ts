@@ -90,3 +90,15 @@ describe('sky template physics', () => {
     expect(lightLeft(2).red).toBeGreaterThan(lightLeft(2).blue);
   });
 });
+
+describe('words must match the picture', () => {
+  const base = { title: 't', params: [{ id: 'a', label: 'a', min: 0, max: 1, value: 0 }], scene: { type: 'graph2d', x: [0, 1], y: [0, 1], items: [{ id: 'dog', type: 'point', x: 0.5, y: 0.5, label: 'dog', tone: 'primary' }] } };
+  test('a colour nothing is drawn in is caught', () => {
+    const l = { ...base, steps: [{ say: 'The orange arrow points up.' }, { say: 'x', task: { kind: 'tap', target: 'dog', hint: 'Tap the dog.' } }, { say: 'y', task: { kind: 'tap', target: 'dog', hint: 'Tap the dog.' } }] };
+    expect(checkLesson(l).errors.some((e) => e.includes('"orange"'))).toBe(true);
+  });
+  test('a tap task naming something not drawn is caught', () => {
+    const l = { ...base, steps: [{ say: 'Tap the word closest to "cat".', task: { kind: 'tap', target: 'dog', hint: 'Tap it.' } }, { say: 'y', task: { kind: 'tap', target: 'dog', hint: 'Tap the dog.' } }, { say: 'z' }] };
+    expect(checkLesson(l).errors.some((e) => e.includes('"cat"'))).toBe(true);
+  });
+});

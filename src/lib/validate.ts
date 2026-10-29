@@ -232,6 +232,30 @@ export function checkLesson(raw: unknown): Checked {
       for (const [k, v] of Object.entries(t.reveal?.set ?? {})) { if (!params.has(k)) errors.push(`${w}: reveal sets "${k}", which is not a param.`); else vals[k] = v; }
     }
   });
+  // Colour words must name something drawn in that colour ("the orange arrows" with no orange arrow; panel: Kumar, Lim).
+  if (scene.type === 'graph2d') {
+    const COLOUR: Record<string, string[]> = { primary: ['blue', 'biru'], accent: ['orange', 'oren', 'jingga'], warm: ['rust', 'orange', 'oren'], cool: ['teal', 'turquoise', 'hijau kebiruan'], green: ['green', 'hijau'], red: ['red', 'merah'], neutral: ['grey', 'gray', 'kelabu'] };
+    const drawn = new Set(scene.items.filter((it) => it.type !== 'text').flatMap((it) => COLOUR[it.tone ?? 'primary'] ?? []));
+    const all = new Set(Object.values(COLOUR).flat());
+    lesson.steps.forEach((st, i) => {
+      const words = `${st.say} ${st.after ?? ''} ${st.task && 'hint' in st.task ? st.task.hint : ''}`.toLowerCase();
+      const missing = [...all].filter((c) => !drawn.has(c) && new RegExp(`\\b${c}\\b`).test(words) && !/\b(sky|light|langit|cahaya|wavelength|colou?r)\b/.test(words));
+      if (missing.length) errors.push(`step ${i + 1}: the words say "${missing[0]}" but nothing in the picture is drawn ${missing[0]}. Use the colour of the item you mean (tones: primary blue, accent orange, warm rust, cool teal, green, red, neutral grey) or name the item instead.`);
+    });
+  }
+  // A quoted name in the words must exist in the picture ("Tap the word closest to 'cat'" with no 'cat'; panel: Kumar).
+  {
+    const blob = JSON.stringify([scene, lesson.params]).toLowerCase();
+    lesson.steps.forEach((st, i) => {
+      if (st.task?.kind !== 'tap') return; // where a missing name makes the task impossible
+      const words = `${st.say} ${st.task.hint}`;
+      for (const m of words.matchAll(/["“'‘]([^"”'’]{2,24})["”'’]/g)) {
+        const q = m[1].trim().toLowerCase();
+        if (q.split(/\s+/).length > 3 || /\d/.test(q) || q.endsWith('s ')) continue;
+        if (!blob.includes(q)) errors.push(`step ${i + 1}: the words name "${m[1]}", but nothing in the picture is called that. Name something that is drawn (a label, word or token in the scene), or add it.`);
+      }
+    });
+  }
   if (tasks < 2) errors.push(`only ${tasks} step(s) give the learner something to do. At least 3 steps need a task (slide, tap or predict).`);
   return { lesson, errors };
 }
