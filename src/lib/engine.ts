@@ -91,7 +91,7 @@ const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(convolution\w*|CNNs?|filters? (slide|over)|edge detection|feature maps?|how (an? )?AI sees|computer vision|image recognition|pixels?|recognis\w* images|recogniz\w* images)\b/i, 'slide-the-filter'],
   [/\b(diffusion|denois\w*|image generat\w*|stable diffusion|midjourney|dall-?e)\b/i, 'out-of-the-noise'],
   [/\b(training loop|one (word|token) at a time|loop|epochs?|iterat\w+)\b/i, 'go-round-the-loop'],
-  [/\b(next[- ]word|temperature|sampling|softmax|predicts? the next)\b/i, 'odds-and-temperature'],
+  [/\b(next[- ](word|token)s?|temperature|sampling|softmax|predict\w* the next)\b/i, 'odds-and-temperature'],
   [/\b(embeddings?|word vectors?|vector space|semantic search|similar meanings?)\b/i, 'map-of-meaning'],
   [/\b(tokens?|tokeni[sz](er|ation)|subwords?)\b/i, 'chop-into-tokens'],
   [/\b(gradient descent|learning rate|loss (curve|function)|minimi[sz]e the (error|loss)|overshoot)\b/i, 'find-the-minimum'],
@@ -120,6 +120,15 @@ export function usefulSources(list: Source[]): Source[] {
   });
 }
 
+// AHA is an AI tutor: an ambiguous term means its AI sense unless the learner says otherwise. The web search runs on
+// the learner's words, so the AI sense is added to the query too (walk: "how does a transformer work" taught coils).
+const AI_TERMS = /\b(transformers?|attention|agents?|neurons?|tokens?|embeddings?|diffusion|temperature|prompts?|models?|training|hallucinat\w*|weights?|layers?)\b/i;
+const OTHER_SENSE = /\b(electric\w*|voltage|coil|power grid|substation|film|movie|toy|robot toy|brain cell|biology|crypto\w*|blockchain|fashion|3d model|clay|weather|cooking|gym|sports?|insurance)\b/i;
+const AI_SAID = /\b(ai|a\.i\.|artificial intelligence|machine learning|ml|llms?|chatgpt|gpt|neural|deep learning|chatbots?)\b/i;
+export function aiSense(prompt: string): string {
+  return AI_TERMS.test(prompt) && !OTHER_SENSE.test(prompt) && !AI_SAID.test(prompt) ? `${prompt} (in AI and machine learning)` : prompt;
+}
+
 export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTES, web = true, langPref?: string): Promise<{ plan: Plan; sources: Source[]; meter: Meter }> {
   const m = meter();
   const t0 = Date.now();
@@ -128,7 +137,7 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
   const lang = typed === 'English' && langPref ? langPref : typed;
   const res = await hedge(routes, 12_000, async (route) => {
     try {
-      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'system', content: planBrief(level, lang) }, { role: 'user', content: planUser(prompt) }], { web, timeoutMs: 30_000, temperature: 0.3 });
+      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'system', content: planBrief(level, lang) }, { role: 'user', content: planUser(aiSense(prompt)) }], { web, timeoutMs: 30_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       const parsed = Plan.safeParse(r.data);
       if (!parsed.success) throw new AiError(`plan shape: ${parsed.error.issues[0]?.message}`);
