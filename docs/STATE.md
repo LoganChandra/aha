@@ -22,7 +22,10 @@ last_updated: 2026-10-29
   - a diffusion template (noise to image steps);
   - a training-loop template (data, model, loss, update);
   - an end-to-end "how ChatGPT works" course check.
-- **Tests on prod.** Last full run: API 26/26, UI 19/19. Unit: 35 tests.
+- **Research step (df83fae).** Each lesson gets a web-grounded fact sheet (`research` in `engine.ts`, `RESEARCH_SYSTEM`). The writer must use at least 2 facts, enforced by a fact gate with one rewrite. A copy guard sends back scenes that copy the playbook. The sources show in the lesson list.
+- **Frank experiment.** `scripts/build-ai-bubble.ts` builds `src/content/library/ai-bubble.json`, a Claude-written Expert course. Prompt: "Tell me about the AI bubble".
+- **Money.** Write `\$` in lesson text. A bare `$` starts maths.
+- **Tests on prod.** Last full run (ed19bc7): API 26/26, UI 19/19. Unit: 37 tests.
 
 ## Resume prompt (paste into a fresh session)
 
