@@ -38,3 +38,20 @@ describe('attention template maths', () => {
     expect(attentionWeights([[0, 0], [0, 0]], 1, false)[0][0]).toBeCloseTo(0.5, 9);
   });
 });
+
+import { descentPath, nextWordProbs } from '../src/components/scene/AiTemplates';
+describe('AI template maths', () => {
+  test('next-word chances add to 1 and temperature flattens them', () => {
+    const p1 = nextWordProbs([2.2, 1.4, -1], 1), hot = nextWordProbs([2.2, 1.4, -1], 3), cold = nextWordProbs([2.2, 1.4, -1], 0.1);
+    expect(Math.abs(p1.reduce((a, b) => a + b, 0) - 1)).toBeLessThan(1e-9);
+    expect(hot[2]).toBeGreaterThan(p1[2]);
+    expect(cold[0]).toBeGreaterThan(0.99);
+  });
+  test('gradient descent converges with a small step and overshoots with a big one', () => {
+    const L = (w: number) => 0.5 * (w - 2) ** 2;
+    const small = descentPath(L, -1, 0.3, 8), big = descentPath(L, -1, 2.1, 4);
+    expect(Math.abs(small[8] - 2)).toBeLessThan(0.2);
+    expect(Math.sign(big[1] - 2)).toBe(-Math.sign(big[0] - 2)); // jumped past the bottom
+    expect(Math.abs(big[4] - 2)).toBeGreaterThan(Math.abs(big[0] - 2)); // and got worse
+  });
+});

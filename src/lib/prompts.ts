@@ -73,6 +73,20 @@ T6. ATTENTION (transformers, self-attention, masking: which words look at which)
    {"type":"attention","caption":"Row looks at column","tokens":["the","cat","sat"],"scores":[[2,1,0],[1,3,1],[0,3,1]],"scale":"sharp","mask":"causal","focusRow":2,"show":"weights"}
    You give raw scores (numbers or expressions); the app computes softmax per row with the scale and the causal mask, so rows always sum to 100% and masked cells are 0. show "scores" to show raw scores first. Tap ids: row0.. and cellI_J (row I, column J).
 
+AI TEMPLATES (the maths runs in the app; you give words and raw numbers):
+T7. NEXT WORD (how a chatbot picks the next word, softmax, temperature):
+   {"type":"nextWord","context":"The cat sat on the","temperature":"T","words":[{"id":"mat","label":"mat","score":2.2},{"id":"sofa","label":"sofa","score":1.4},{"id":"piano","label":"piano","score":-1}]}
+   Give raw scores; the app shows softmax(score/T) as % bars, so the chances always add to 100. pick (optional) fills the blank with word index pick. Tap ids: word ids.
+T8. TOKENS (tokenisers, why text becomes numbers):
+   {"type":"tokens","showIds":"ids","pieces":[{"text":"Un","id":1844},{"text":"believ","id":32924},{"text":"able","id":481},{"text":" cats","id":19987}]}
+   Pieces in order, with a leading space where the real token has one. showIds 1 shows the numbers. Tap ids: t0, t1, ...
+T9. EMBEDDING (word vectors, similarity, semantic search):
+   {"type":"embedding","points":[{"id":"king","label":"king","x":-1.6,"y":1.8,"group":"people"}],"query":{"label":"mango","x":"px","y":"py"},"arrows":[["man","woman"]],"nearest":2}
+   3-16 points; groups colour them. The query point is draggable by its knobs and its nearest words are found by real distance. Tap ids: point ids and "query".
+T10. DESCENT (gradient descent, loss, learning rate, overshoot):
+   {"type":"descent","loss":"0.5*(x-2)^2+0.3","w":"w","lr":"lr","steps":"k","range":[-2,5],"xLabel":"weight","yLabel":"error"}
+   loss is a formula in x; the ball sits at w (draggable), the slope and the next steps are computed, so a big lr really overshoots. Tap ids: ball, step1, step2...
+
 FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.

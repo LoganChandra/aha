@@ -41,6 +41,10 @@ function sceneIds(scene: Scene): string[] {
     case 'spectrum': return ['marker', ...(scene.marks ?? []).map((m) => m.id)];
     case 'network': return [...scene.layers.flat().map((x) => x.id), ...scene.links.map((l) => `${l.from}->${l.to}`)];
     case 'attention': return [...scene.tokens.map((_, i) => `row${i}`), ...scene.tokens.flatMap((_, i) => scene.tokens.map((__, j) => `cell${i}_${j}`))];
+    case 'nextWord': return scene.words.map((x) => x.id);
+    case 'tokens': return scene.pieces.map((_, i) => `t${i}`);
+    case 'embedding': return [...scene.points.map((x) => x.id), ...(scene.query ? ['query'] : [])];
+    case 'descent': return ['ball', ...Array.from({ length: 12 }, (_, i) => `step${i + 1}`)];
   }
 }
 
@@ -120,6 +124,19 @@ export function checkLesson(raw: unknown): Checked {
     if (scene.scores.length !== nT || scene.scores.some((r) => r.length !== nT)) errors.push(`attention: scores must be ${nT} rows of ${nT} numbers (one row per token).`);
     scene.scores.flat().forEach((v) => checkExpr('attention score', v, withT, errors));
     checkExpr('attention scale', scene.scale, withT, errors); checkExpr('attention mask', scene.mask, withT, errors); checkExpr('attention focusRow', scene.focusRow, withT, errors);
+  } else if (scene.type === 'nextWord') {
+    scene.words.forEach((x) => checkExpr(`word "${x.id}" score`, x.score, withT, errors));
+    checkExpr('nextWord temperature', scene.temperature, withT, errors); checkExpr('nextWord pick', scene.pick, withT, errors);
+  } else if (scene.type === 'tokens') {
+    checkExpr('tokens showIds', scene.showIds, withT, errors);
+  } else if (scene.type === 'embedding') {
+    if (scene.query) { checkExpr('query x', scene.query.x, withT, errors); checkExpr('query y', scene.query.y, withT, errors); }
+    const ids = new Set(scene.points.map((p) => p.id));
+    for (const [a, b] of scene.arrows ?? []) if (!ids.has(a) || !ids.has(b)) errors.push(`embedding arrow ${a}->${b}: both ends must be point ids.`);
+  } else if (scene.type === 'descent') {
+    checkExpr('descent loss', scene.loss, new Set([...withT, 'x', 'w']), errors);
+    checkExpr('descent w', scene.w, withT, errors); checkExpr('descent lr', scene.lr, withT, errors); checkExpr('descent steps', scene.steps, withT, errors);
+    if (!(scene.range[1] > scene.range[0])) errors.push('descent range must be [min, max] with max > min.');
   } else if (scene.type === 'chart') {
     if (!scene.bars?.length && !scene.series?.length) errors.push('chart: give bars or series.');
     for (const b of scene.bars ?? []) checkExpr(`bar "${b.id}"`, b.value, withT, errors);
@@ -149,7 +166,10 @@ export function checkLesson(raw: unknown): Checked {
       if (evaluate(t.goal, { ...vals, t: 0 }, 0)) errors.push(`${w}: the goal "${t.goal}" is already true when the step starts, so there is nothing to do. Set the knob elsewhere first or change the goal.`);
       // Reachable by moving this knob, or this knob and its partner on the same draggable point.
       const partner = scene.type === 'graph2d' ? scene.items.find((it) => (it.type === 'point' || it.type === 'icon') && (it.dragX === p.id || it.dragY === p.id)) : undefined;
-      const other = partner && (partner.type === 'point' || partner.type === 'icon') ? lesson.params.find((q) => q.id === (partner.dragX === p.id ? partner.dragY : partner.dragX)) : undefined;
+      // A two-knob drag: a graph2d point or icon, or the embedding map's query point.
+      const q2 = scene.type === 'embedding' && scene.query ? [String(scene.query.x).trim(), String(scene.query.y).trim()] : null;
+      const other = partner && (partner.type === 'point' || partner.type === 'icon') ? lesson.params.find((q) => q.id === (partner.dragX === p.id ? partner.dragY : partner.dragX))
+        : q2 && q2.includes(p.id) ? lesson.params.find((q) => q.id === (q2[0] === p.id ? q2[1] : q2[0])) : undefined;
       let hit: Env | null = null;
       let bestD = Infinity;
       const G = other ? 60 : 400;

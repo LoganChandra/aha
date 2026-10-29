@@ -226,7 +226,46 @@ export const Attention = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention]);
+// ---- AI templates (Logan, 2026-10-29: "rmb we're focusing on AI topics"). The maths runs in code, never in the model.
+/** Next-word odds: raw scores become probabilities by softmax at a temperature, computed here. */
+export const NextWord = z.object({
+  type: z.literal('nextWord'),
+  context: Short(90),
+  words: Many(z.object({ id: Id, label: Short(18), score: Num }), 2, 7),
+  temperature: Num.optional(),
+  pick: Num.optional(),
+  caption: Short(60).optional(),
+});
+/** Text chopped into tokens: coloured chips, optional ids, a live count. */
+export const Tokens = z.object({
+  type: z.literal('tokens'),
+  pieces: Many(z.object({ text: Short(20), id: z.number().int().optional() }), 1, 40),
+  showIds: Num.optional(),
+  caption: Short(60).optional(),
+});
+/** A map of meaning: words as points; the nearest words to a draggable query are found in code. */
+export const Embedding = z.object({
+  type: z.literal('embedding'),
+  points: Many(z.object({ id: Id, label: Short(18), x: z.number(), y: z.number(), group: Short(16).optional() }), 3, 16),
+  query: z.object({ label: Short(18), x: Num, y: Num }).optional(),
+  arrows: Many(z.tuple([Id, Id]), 0, 4).optional(),
+  nearest: z.number().int().min(0).max(4).optional(),
+  caption: Short(60).optional(),
+});
+/** Gradient descent on a loss curve: slope and the next steps are computed in code, so overshoot is real. */
+export const Descent = z.object({
+  type: z.literal('descent'),
+  loss: Short(200),
+  w: Num,
+  lr: Num,
+  steps: Num.optional(),
+  range: z.tuple([z.number(), z.number()]),
+  xLabel: Short(24).optional(),
+  yLabel: Short(24).optional(),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

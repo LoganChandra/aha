@@ -83,6 +83,10 @@ const JUNK_SOURCE = /SKILL\.md|\bMCP\b|Model ?Context ?Protocol|Modellkontextpro
 const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(self-?attention|attention|attends?|query|queries|keys? and values?|causal mask)\b|\bperhatian\b/i, 'who-looks-at-whom'],
   [/\b(neuron|perceptron|neural net|weights? and bias|activation|hidden layer)\b|\bneuron\b/i, 'weigh-the-inputs'],
+  [/\b(next[- ]word|temperature|sampling|softmax|predicts? the next)\b/i, 'odds-and-temperature'],
+  [/\b(tokens?|tokeni[sz](er|ation)|subwords?)\b/i, 'chop-into-tokens'],
+  [/\b(embeddings?|word vectors?|vector space|semantic search|similar meanings?)\b/i, 'map-of-meaning'],
+  [/\b(gradient descent|learning rate|loss (curve|function)|minimi[sz]e the (error|loss)|overshoot)\b/i, 'find-the-minimum'],
   [/\b(wavelengths?|spectrum|rainbow|colou?rs? of light|visible light|(short|long)(er)? waves?|pH scale|acidity|panjang gelombang|pelangi)\b/i, 'slide-the-scale'],
 ];
 const FREE_PATTERNS = new Set(['drag-to-discover', 'act-it-out', 'tipping-point', 'predict-reveal', 'map-of-meaning', 'add-the-pieces']);

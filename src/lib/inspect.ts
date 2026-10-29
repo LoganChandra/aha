@@ -102,6 +102,27 @@ function screen(l: Lesson, env: Env): string {
       body = `Attention grid, rows look at columns, tokens ${s.tokens.join(', ')}. Scale ${r2(scale)}, causal mask ${mask ? 'ON' : 'off'}. Showing ${s.show}. Weights (%, each row sums to 100): ${wts.map((r, i) => `${s.tokens[i]}: ${r.join('/')}`).join('; ')}.`;
       break;
     }
+    case 'nextWord': {
+      const T = s.temperature !== undefined ? n(s.temperature, 1) : 1, sc = s.words.map((x) => n(x.score, 0)), m = Math.max(...sc);
+      const e = sc.map((v) => Math.exp((v - m) / Math.max(0.05, T))), t = e.reduce((a, b) => a + b, 0);
+      body = `Sentence "${s.context} ___". Next-word chances at temperature ${r2(T)} (computed): ${s.words.map((x, i) => `${x.label} ${Math.round((e[i] / t) * 100)}%`).join(', ')}.`;
+      break;
+    }
+    case 'tokens': body = `Text cut into ${s.pieces.length} tokens: ${s.pieces.map((p) => `[${p.text}]`).join('')}. Ids shown: ${s.showIds !== undefined && n(s.showIds, 0) >= 0.5 ? 'yes' : 'no'}.`; break;
+    case 'embedding': {
+      const q = s.query ? { x: n(s.query.x, 0), y: n(s.query.y, 0) } : null;
+      const near = q ? s.points.map((p) => ({ l: p.label, d: Math.hypot(p.x - q.x, p.y - q.y) })).sort((a, b) => a.d - b.d).slice(0, s.nearest ?? 2) : [];
+      body = `Map of meaning: ${s.points.map((p) => `${p.id} "${p.label}" at (${p.x}, ${p.y})${p.group ? ` [${p.group}]` : ''}`).join('; ')}.${q ? ` Draggable "${s.query!.label}" at (${r2(q.x)}, ${r2(q.y)}); nearest (computed): ${near.map((x) => `${x.l} ${r2(x.d)}`).join(', ')}.` : ''}`;
+      break;
+    }
+    case 'descent': {
+      const L = (x: number) => evaluate(s.loss, { ...env, x, w: x }, NaN), wv = n(s.w, 0), lr = n(s.lr, 0.1);
+      const st = Math.max(0, Math.min(12, Math.round(s.steps !== undefined ? n(s.steps, 1) : 1)));
+      const path = [wv]; let ww = wv; for (let i = 0; i < st; i++) { const g = (L(ww + 1e-4) - L(ww - 1e-4)) / 2e-4; ww -= lr * g; path.push(ww); }
+      const xs = Array.from({ length: 61 }, (_, i) => s.range[0] + ((s.range[1] - s.range[0]) * i) / 60), best = xs.reduce((a, b) => (L(b) < L(a) ? b : a));
+      body = `Loss curve ${s.loss} over ${s.range[0]}..${s.range[1]} (lowest near ${r2(best)}). Ball at ${r2(wv)}, loss ${r2(L(wv))}. Learning rate ${r2(lr)}. Next steps drawn (computed): ${path.slice(1).map(r2).join(' → ') || 'none'}.`;
+      break;
+    }
     case 'balance': body = `Balance: left ${s.left.id} "${s.left.label}" weight ${n(s.left.weight)} vs right ${s.right.id} "${s.right.label}" weight ${n(s.right.weight)}`; break;
   }
   return `Knobs: ${knobs || 'none'}\n${body}`;

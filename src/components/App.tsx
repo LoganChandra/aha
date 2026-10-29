@@ -876,6 +876,10 @@ function sceneIds(l: Lesson): string[] {
     case 'spectrum': return ['marker', ...(s.marks ?? []).map((m) => m.id)];
     case 'network': return [...s.layers.flat().map((x) => x.id), ...s.links.map((l) => `${l.from}->${l.to}`)];
     case 'attention': return [...s.tokens.map((_, i) => `row${i}`), ...s.tokens.flatMap((_, i) => s.tokens.map((__, j) => `cell${i}_${j}`))];
+    case 'nextWord': return s.words.map((x) => x.id);
+    case 'tokens': return s.pieces.map((_, i) => `t${i}`);
+    case 'embedding': return [...s.points.map((x) => x.id), ...(s.query ? ['query'] : [])];
+    case 'descent': return ['ball', ...Array.from({ length: 12 }, (_, i) => `step${i + 1}`)];
   }
 }
 
@@ -893,6 +897,10 @@ function summarise(l: Lesson): string {
     case 'spectrum': return `Scale from ${s.from.label} (${s.from.value}) to ${s.to.label} (${s.to.value})${s.unit ? ` ${s.unit}` : ''}, marker at ${s.marker}`.slice(0, 780);
     case 'network': return `Network: ${s.layers.map((l) => l.map((x) => x.label).join(', ')).join(' → ')}; links ${s.links.map((l) => `${l.from}->${l.to} (${l.weight})`).join(', ')}`.slice(0, 780);
     case 'attention': return `Attention over ${s.tokens.join(' ')} (rows look at columns; ids rowN, cellI_J)`.slice(0, 780);
+    case 'nextWord': return `Next word after "${s.context}": ${s.words.map((x) => `${x.label} (score ${x.score})`).join(', ')}; temperature ${s.temperature ?? 1}`.slice(0, 780);
+    case 'tokens': return `Tokens: ${s.pieces.map((p) => `[${p.text}]`).join('')}`.slice(0, 780);
+    case 'embedding': return `Map of meaning: ${s.points.map((p) => `${p.label} (${p.x}, ${p.y})`).join(', ')}${s.query ? `; draggable "${s.query.label}"` : ''}`.slice(0, 780);
+    case 'descent': return `Gradient descent on loss ${s.loss}, w = ${s.w}, learning rate ${s.lr}`.slice(0, 780);
   }
 }
 
