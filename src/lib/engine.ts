@@ -136,6 +136,12 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
       // Decided in code, not left to the prompt: the first lesson is never a boxes-and-arrows diagram (it is the
       // learner's first impression), at most one per course, and unknown patterns fall back to a drawn scene.
       let flows = 0;
+      // Malaysian Malay in titles and goals too (panel, Nurul): Indonesian "kekebalan kelompok" becomes "imuniti kelompok".
+      if (/^malay/i.test(plan.lang)) {
+        const fix = (t: string) => t.replace(/kekebalan kelompok/gi, (m) => (m[0] === 'K' ? 'Imuniti Kelompok' : 'imuniti kelompok')).replace(/\bkekebalan\b/gi, (m) => (m[0] === 'K' ? 'Imuniti' : 'imuniti'));
+        plan.topic = fix(plan.topic); plan.summary = fix(plan.summary);
+        plan.lessons = plan.lessons.map((l) => ({ ...l, title: fix(l.title), goal: fix(l.goal), aha: fix(l.aha) }));
+      }
       // A template is routed at most twice per course: every lesson looking the same was Logan's 2/10 complaint.
       const used: Record<string, number> = {};
       plan.lessons = plan.lessons.map((l, i) => {
