@@ -156,7 +156,8 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
         const routed = trigCourse && !/\b(circle|bulatan|graph|graf|wave|gelombang)\b/i.test(l.title) && /\b(sides?|angles?|ratios?|sisi|sudut|nisbah|sin|cos|kos|tan|missing|hilang|hypotenuse|hipotenus)\b/i.test(`${l.title} ${l.goal}`) ? 'name-the-sides'
           : attentionCourse && /\b(softmax|scal\w*|d_k|√d|temperature|mask\w*|heads?)\b/i.test(`${l.title} ${l.goal}`) ? 'who-looks-at-whom' : templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
         if (routed !== pattern && (used[routed] ?? 0) < 2 && routed !== last) pattern = routed;
-        if ((used[pattern] ?? 0) >= 2) pattern = 'act-it-out';
+        // Never the same template twice in a row, whoever chose it: two lessons in a row looked identical (walk 2026-10-29).
+        if ((used[pattern] ?? 0) >= 2 || (pattern === last && TEMPLATE_IDS.has(pattern))) pattern = 'act-it-out';
         used[pattern] = (used[pattern] ?? 0) + 1;
         last = pattern;
         return { ...l, pattern };
