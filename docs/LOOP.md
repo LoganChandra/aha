@@ -62,3 +62,4 @@ Logan, 2026-10-29 (voice note, verbatim): "Treat them like they are your custome
 - ~15:30: code checks always run (only the model inspector is time-bound); at most 6 steps per lesson (C17). Prod: API 26/26, UI 19/19.
 - ~15:50: the Malay wording Nurul flagged is checked in code, and 'kekebalan' is corrected in plans (C20).
 - ~16:10: the tutor's health answers that promise certainty get one honest rewrite (tested on Nurul's question). Prod suites green.
+- ~16:40: the lesson loader shows the real build stages (facts, writing, checking) above the outline (C08). The 'meaning' route is narrowed. The blind-persona-qa skill now records how to turn reports into fixes. Prod: API 26/26, UI 19/19.

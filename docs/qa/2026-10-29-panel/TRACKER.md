@@ -34,7 +34,7 @@ Each row below still has its own status. These class fixes cover most of them; p
 | C05 sources | fixed | Search on the learner's words only; junk filter; disclaimer moved to the top and translated (2962e7f) |
 | C06 health | fixed in code (absolute claims rejected for health topics) + prompts | Hedging rules in writer, inspector and tutor (2962e7f, 94ee08b) |
 | C07 labels | improved | Least-overlap placement with leader lines; readouts strip; no callout on a tap target (2962e7f) |
-| C08 waits | improved | Course outline and wait time shown while lesson 1 draws; time estimate on the planner (2962e7f, 94ee08b) |
+| C08 waits | fixed (real build stages, outline, time estimate; lesson 1 ~17 s) | Course outline and wait time shown while lesson 1 draws; time estimate on the planner (2962e7f, 94ee08b) |
 | C10 level picker | fixed | Check mark, plain note, translated labels (2962e7f) |
 | C11 moves by itself / jumps | fixed | Knobs a step moved are named; top area stays steady; task cards hide while asking (5de12c5) |
 | C12 Show me | fixed | Inside the task card; demonstrates without the green tick (2962e7f) |
