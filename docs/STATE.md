@@ -25,12 +25,13 @@ last_updated: 2026-10-29
 - **Research step (df83fae).** Each lesson gets a web-grounded fact sheet (`research` in `engine.ts`, `RESEARCH_SYSTEM`). The writer must use at least 2 facts, enforced by a fact gate with one rewrite. A copy guard sends back scenes that copy the playbook. The sources show in the lesson list.
 - **Frank experiment.** `scripts/build-ai-bubble.ts` builds `src/content/library/ai-bubble.json`, a Claude-written Expert course. Prompt: "Tell me about the AI bubble".
 - **Money.** Write `\$` in lesson text. A bare `$` starts maths.
-- **Templates (16).** attention, nextWord, tokens, embedding, descent, reward, cycle, denoise, convolve, spectrum, network, sky, rightTriangle, pipeline, iconArray, balance.
+- **Templates (18).** AI: attention, nextWord, tokens, embedding, descent, reward, cycle, denoise, convolve, fit (overfitting), context (context window, hallucination, RAG). Other: spectrum, network, sky, rightTriangle, pipeline, iconArray, balance. Logan: AI comes first.
+- **AI is the default sense** of ambiguous prompts (`aiSense` in `engine.ts`).
 - **Tracker.** 221 rows: 119 fixed, 102 improved. Improved means a prompt or checker rule, so verify it in walks.
 - **Code checks (always run, in `writeWith`).** Copy guard, health absolutes, unsourced money and big figures, fact-sheet use, Malay wording. In `validate.ts`: colour words, tap tasks naming missing things, at most 6 steps, blank readouts, overlapping embedding points.
 - **Tutor.** Health answers that promise certainty get one honest rewrite.
 - **Cost (measured).** About $0.016 to $0.033 per full course, ~$0.025 average. Questions cost ~$0.0002.
-- **Tests on prod.** Last full run: API 26/26, UI 19/19. Unit: 44 tests.
+- **Tests on prod.** Last full run: API 26/26, UI 19/19. Unit: 50 tests.
 
 ## Resume prompt (paste into a fresh session)
 
