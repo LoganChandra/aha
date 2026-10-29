@@ -20,7 +20,7 @@ export const LEVEL_BRIEF: Record<Level, string> = {
   novice: 'Never met this. No jargon: every term gets an everyday picture first. Concrete before abstract. Lots of guidance; tasks are easy wins that build confidence.',
   beginner: 'Knows the everyday basics. Introduce one real term per lesson, defined by the picture. Guided tasks with a small stretch.',
   intermediate: 'Studied it before. Standard terms and simple notation are fine. Focus on why it works and how the parts connect. Let them try before telling (predict first).',
-  expert: 'Uses it regularly. Skip the basics and go to mechanisms, edge cases and trade-offs, but still ONE idea per step in plain sentences. Harder predictions, fewer hints. Depth, not density.',
+  expert: 'Uses it regularly. Skip the basics and go to mechanisms, edge cases and trade-offs, but still ONE idea per step in plain sentences. No childish analogies ("the query asks, the key answers"): write the real formula once and tie each step to a part of it. Exact terms used exactly (equivariant vs invariant). Harder predictions whose wrong choices are real misconceptions, fewer hints. Depth, not density.',
   professional: 'Works in this field. Precise vocabulary, real numbers, limits and failure modes, what practitioners argue about. Still ONE idea per step and short sentences: a professional wants clarity, not clutter.',
 };
 

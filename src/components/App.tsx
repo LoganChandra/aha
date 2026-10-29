@@ -499,7 +499,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   if (resv.current.li !== li) resv.current = { li, top: 0, bot: 0 };
   resv.current.top = Math.max(resv.current.top, answer ? 0 : topSize.h);
   resv.current.bot = Math.max(resv.current.bot, botSize.h);
-  const topRes = answer ? topSize.h : resv.current.top, botRes = asking || answer ? botSize.h : resv.current.bot;
+  const topRes = answer ? topSize.h : resv.current.top, botRes = botSize.h;
   const stepsDone = lesson ? lesson.steps.filter((_, i) => i < si || (i === si && done)).length : 0;
 
   return (
@@ -645,13 +645,14 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
               {task?.kind === 'predict' && !answer && !asking && (
                 <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 p-4 shadow-[var(--shadow)] backdrop-blur">
                   <div className="mb-2.5 flex items-start gap-2"><p className="flex-1 text-[17px] font-semibold leading-snug text-ink"><RichText text={task.question} /></p>{sp.pick === undefined && <ShowMe onClick={showMe} label={tx.showMe} />}</div>
-                  <div className="grid gap-1.5 sm:grid-cols-2">
+                  {/* Short choices sit two to a row so the picture keeps its room on a phone. */}
+                  <div className={`grid gap-1.5 ${task.choices.every((c) => c.length <= 18) ? 'grid-cols-2' : 'sm:grid-cols-2'}`}>
                     {task.choices.map((c, i) => {
                       const picked = sp.pick === i, right = i === task.answer, settled = sp.pick !== undefined;
                       return (
                         <button
                           key={i} onClick={() => pick(i)} disabled={settled}
-                          className={`flex min-h-[54px] items-center justify-between gap-2 rounded-2xl border-2 px-4 py-2.5 text-left text-[17px] font-medium transition-colors duration-150 ${settled && right ? 'border-[var(--t-green)] bg-[var(--t-green)]/10' : settled && picked ? 'border-[var(--t-accent)] bg-[var(--t-accent)]/10' : 'border-line hover:border-ink-3'} ${settled && !right && !picked ? 'opacity-50' : ''}`}
+                          className={`flex min-h-[48px] items-center justify-between gap-2 rounded-2xl border-2 px-4 py-2 text-left text-[17px] font-medium transition-colors duration-150 ${settled && right ? 'border-[var(--t-green)] bg-[var(--t-green)]/10' : settled && picked ? 'border-[var(--t-accent)] bg-[var(--t-accent)]/10' : 'border-line hover:border-ink-3'} ${settled && !right && !picked ? 'opacity-50' : ''}`}
                         >
                           <span><RichText text={c} /></span>
                           {settled && right && <span className="text-[var(--t-green)]"><Icon name="check" size={16} /></span>}
@@ -696,7 +697,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                 <button onClick={() => retryLesson(course, li)} className="mt-3 rounded-full bg-ink px-4 py-2 text-[14px] font-semibold text-paper">{tx.tryAgain}</button>
               </div>
             ) : (
-              <Drawing title={meta?.title ?? ''} aha={meta?.goal ?? ''} lessonNo={li + 1} reduced={reduced} tx={tx} />
+              <Drawing title={meta?.title ?? ''} aha={meta?.goal ?? ''} lessonNo={li + 1} reduced={reduced} tx={tx} outline={li === 0 ? course.plan.lessons.map((l) => l.title) : undefined} />
             )}
           </div>
         )}
@@ -758,7 +759,7 @@ function praise(seed: string, PRAISE: string[]): string {
 }
 
 /** While a lesson is drawn: the lesson's title and goal, and a pen line drawing itself. Calm, and honest about what is happening. */
-function Drawing({ title, aha, lessonNo, reduced, tx }: { title: string; aha: string; lessonNo: number; reduced: boolean; tx: (typeof UI)['en'] }) {
+function Drawing({ title, aha, lessonNo, reduced, tx, outline }: { title: string; aha: string; lessonNo: number; reduced: boolean; tx: (typeof UI)['en']; outline?: string[] }) {
   return (
     <div className="flex max-w-[420px] flex-col items-center text-center">
       <svg width="120" height="56" viewBox="0 0 120 56" aria-hidden className="mb-5 text-ink-3">
@@ -772,7 +773,17 @@ function Drawing({ title, aha, lessonNo, reduced, tx }: { title: string; aha: st
       <p className="text-[14px] font-medium text-ink-2">{tx.drawing(lessonNo)}</p>
       <p className="mt-1 font-serif text-[24px] leading-snug text-ink">{title}</p>
       {aha && <p className="mt-2 text-[17px] leading-snug text-ink-2">{aha}</p>}
-      <p className="mt-4 text-[14px] text-ink-3">{tx.drawingWait}</p>
+      <p className="mt-4 text-[14px] text-ink-2">{tx.drawingWait}</p>
+      {/* While the first lesson is drawn, the whole path is worth reading (panel: Nurul, Daniel). */}
+      {outline && (
+        <ol className="mx-auto mt-5 max-w-[360px] space-y-2 text-left">
+          {outline.map((t, i) => (
+            <li key={i} className="flex gap-3 text-[16px] leading-snug text-ink">
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold ${i === 0 ? 'bg-ink text-paper' : 'bg-sunk text-ink-2'}`}>{i + 1}</span>{t}
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }
