@@ -23,7 +23,9 @@ export default function RightTriangle({ scene, env, params, onDrag, focus, callo
   const on = (v: RT['showNames']) => (v === undefined ? true : evaluate(v, env, 1) >= 0.5);
   const showNames = on(scene.showNames), showLen = scene.showLengths !== undefined && on(scene.showLengths), showRat = scene.showRatios !== undefined && on(scene.showRatios);
   // Fit the largest triangle the angle range can make, so the picture does not jump as the angle changes.
-  const padX = 70, padTop = 40, padBot = 64;
+  // Tight boxes (a long caption plus a question card on a phone) get small margins and one-line labels.
+  const tight = h < 300;
+  const padX = tight ? 56 : 70, padTop = tight ? 22 : 40, padBot = tight ? 40 : 64;
   const k = Math.min((w - 2 * padX) / H, (h - padTop - padBot) / H);
   const A: [number, number] = [w / 2 - (adj * k) / 2, h - padBot];
   const C: [number, number] = [A[0] + adj * k, A[1]];
@@ -43,8 +45,14 @@ export default function RightTriangle({ scene, env, params, onDrag, focus, callo
       <line x1={p[0]} y1={p[1]} x2={q[0]} y2={q[1]} stroke={color} strokeWidth={hot(id) ? 9 : 6} strokeLinecap="round" />
       {onTap && <line x1={p[0]} y1={p[1]} x2={q[0]} y2={q[1]} stroke="transparent" strokeWidth={44} />}
       <g fontFamily="var(--font-sans)" textAnchor={anchor} fill={color} stroke="var(--paper)" strokeWidth={5} paintOrder="stroke">
-        {showNames && <text x={labelAt[0]} y={labelAt[1]} fontSize={17} fontWeight={800}>{scene.names[id]}</text>}
-        {showLen && <text x={labelAt[0]} y={labelAt[1] + (showNames ? 20 : 0)} fontSize={15} fontWeight={700} fill="var(--ink)">{formatNumber(len)}{scene.unit ? ` ${scene.unit}` : ''}</text>}
+        {tight ? (
+          (showNames || showLen) && <text x={labelAt[0]} y={labelAt[1]} fontSize={14} fontWeight={800}>{[showNames ? scene.names[id] : '', showLen ? `${formatNumber(len)}${scene.unit ? ` ${scene.unit}` : ''}` : ''].filter(Boolean).join(' · ')}</text>
+        ) : (
+          <>
+            {showNames && <text x={labelAt[0]} y={labelAt[1]} fontSize={17} fontWeight={800}>{scene.names[id]}</text>}
+            {showLen && <text x={labelAt[0]} y={labelAt[1] + (showNames ? 20 : 0)} fontSize={15} fontWeight={700} fill="var(--ink)">{formatNumber(len)}{scene.unit ? ` ${scene.unit}` : ''}</text>}
+          </>
+        )}
       </g>
     </g>
   );

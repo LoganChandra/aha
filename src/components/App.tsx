@@ -643,7 +643,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                             {/* "Show me" demonstrates; it does not earn the green tick (panel: Aisyah, Nurul). */}
                             <Icon name={sp.shown ? 'play' : task.kind === 'predict' && sp.pick !== task.answer ? 'reset' : 'check'} size={14} />
                           </motion.span>
-                          <p className="font-serif text-[19px] leading-[1.4] text-ink lg:text-[22px]">
+                          <p className={`font-serif leading-[1.4] text-ink lg:text-[22px] ${(step.after || step.say).length > 150 ? 'text-[17px]' : 'text-[19px]'}`}>
                             {sp.shown && <span className="font-semibold">{tx.shownNote} </span>}
                             {!sp.shown && task.kind === 'predict' && sp.pick !== task.answer && <span className="font-semibold">{tx.answerIs(task.choices[task.answer])} </span>}
                             {!sp.shown && !(task.kind === 'predict' && sp.pick !== task.answer) && <span className="font-semibold">{praise(key, tx.praise)} </span>}
@@ -651,7 +651,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                           </p>
                         </div>
                       ) : (
-                        <p className="font-serif text-[20px] leading-[1.38] text-ink lg:text-[23px]"><RichText text={step.say} env={env} /></p>
+                        <p className={`font-serif leading-[1.38] text-ink lg:text-[23px] ${step.say.length > 150 ? 'text-[18px]' : 'text-[20px]'}`}><RichText text={step.say} env={env} /></p>
                       )}
                     </>
                   )}
@@ -663,7 +663,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
             <div ref={botRef} className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-start gap-2 lg:inset-x-4 lg:bottom-4">
               {task?.kind === 'predict' && !answer && !asking && (
                 <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 p-4 shadow-[var(--shadow)] backdrop-blur">
-                  <div className="mb-2.5 flex items-start gap-2"><p className="flex-1 text-[17px] font-semibold leading-snug text-ink"><RichText text={task.question} /></p>{sp.pick === undefined && <ShowMe onClick={showMe} label={tx.showMe} />}</div>
+                  {/* Once answered, the question folds away: the answer and the picture matter now. */}
+                  <div className={`mb-2.5 flex items-start gap-2 ${sp.pick !== undefined ? 'hidden' : ''}`}><p className="flex-1 text-[17px] font-semibold leading-snug text-ink"><RichText text={task.question} /></p>{sp.pick === undefined && <ShowMe onClick={showMe} label={tx.showMe} />}</div>
                   {/* Short choices sit two to a row so the picture keeps its room on a phone. */}
                   <div className={`grid gap-1.5 ${task.choices.every((c) => c.length <= 18) ? 'grid-cols-2' : 'sm:grid-cols-2'}`}>
                     {task.choices.map((c, i) => {
