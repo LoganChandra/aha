@@ -265,7 +265,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   // Lessons finished: their recap card is showing (or was shown).
   const [wrapped, setWrapped] = useState<Record<number, boolean>>({});
   // What happened on each step: done, the predict choice, a wrong tap (for the nudge).
-  const [progress, setProgress] = useState<Record<string, { done?: boolean; pick?: number; miss?: number; shown?: boolean }>>({});
+  const [progress, setProgress] = useState<Record<string, { done?: boolean; pick?: number; miss?: number; shown?: boolean; empty?: boolean }>>({});
   const [instant, setInstant] = useState(false);
   // The caption and the control panel sit inside the scene; the drawing is laid out in the space between them.
   const [topRef, topSize] = useSize<HTMLDivElement>();
@@ -294,7 +294,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const setPlaying = (p: boolean | ((x: boolean) => boolean)) => setPlayState((s) => ({ ...s, [li]: typeof p === 'function' ? p(playing) : p }));
   const shownEnv = useGlide(env, instant || reduced);
 
-  const mark = useCallback((k: string, patch: { done?: boolean; pick?: number; miss?: number; shown?: boolean }) => setProgress((p) => ({ ...p, [k]: { ...p[k], ...patch } })), []);
+  const mark = useCallback((k: string, patch: { done?: boolean; pick?: number; miss?: number; shown?: boolean; empty?: boolean }) => setProgress((p) => ({ ...p, [k]: { ...p[k], ...patch } })), []);
 
   const celebrate = useCallback(() => {
     try { if (!reduced) navigator.vibrate?.(12); } catch {}
@@ -337,12 +337,23 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const setKnob = (id: string, v: number) => { setInstant(true); const next = { ...env, [id]: v }; setValues((all) => ({ ...all, [li]: next })); checkGoal(next); };
   const onDrag = useCallback((vals: Record<string, number>) => { setInstant(true); const next = { ...env, ...vals }; setValues((all) => ({ ...all, [li]: next })); checkGoal(next); }, [li, env, checkGoal]);
 
+  // Set by any item's tap handler; a click that reaches the stage without it landed on empty space.
+  const tapHit = useRef(false);
   const onTap = useCallback((id: string) => {
-    if (!task || task.kind !== 'tap' || sp.done) return;
-    if (id === task.target) { mark(key, { done: true }); celebrate(); }
-    else mark(key, { miss: (sp.miss ?? 0) + 1 });
+    tapHit.current = true;
+    if (!task || task.kind !== 'tap' || sp.done || !lesson) return;
+    // A tap on any copy of the same thing counts: four identical shields are one answer (panel: Nurul, Lim, Kumar).
+    if (id === task.target || sameThing(lesson, id, task.target)) { mark(key, { done: true }); celebrate(); }
+    else mark(key, { miss: (sp.miss ?? 0) + 1, empty: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task, sp.done, sp.miss, key, mark]);
+  }, [task, sp.done, sp.miss, key, mark, lesson]);
+  // A tap on nothing still answers: say so and light up the target, instead of silence (panel: Lim, Daniel).
+  const onStageClick = () => {
+    const hit = tapHit.current;
+    tapHit.current = false;
+    if (hit || !task || task.kind !== 'tap' || sp.done || answer) return;
+    mark(key, { miss: (sp.miss ?? 0) + 1, empty: true });
+  };
 
   function pick(i: number) {
     if (!lesson || !task || task.kind !== 'predict' || sp.pick !== undefined) return;
@@ -409,7 +420,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     if (beforeAnswer) { const b = beforeAnswer; setInstant(false); setValues((v) => ({ ...v, [li]: b })); setBeforeAnswer(null); }
   }
 
-  const tapTarget = task?.kind === 'tap' && sp.done ? [task.target] : null;
+  // After a miss the target itself lights up, so nobody is left guessing which one (panel: Kumar, Lim, Nurul).
+  const tapTarget = task?.kind === 'tap' && (sp.done || (sp.miss ?? 0) > 0) ? [task.target] : null;
   const focus = answerFocus ?? tapTarget ?? step?.focus ?? [];
   const callouts = useMemo(() => Object.fromEntries((step?.callouts ?? []).map((c) => [c.at, c.text])), [step]);
   // Direct manipulation beats a slider: a knob tied to a draggable point is moved by dragging the point itself.
@@ -457,7 +469,9 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
           <>
             <div className="absolute inset-x-0" style={{ top: topSize.h ? topSize.h + 16 : 0, bottom: botSize.h ? botSize.h + 16 : 0, transition: reduced ? undefined : 'top 220ms ease, bottom 220ms ease' }}>
               <SceneBoundary key={`${course.planId}-${li}`}>
+                <div className="contents" onClick={onStageClick}>
                 <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} callouts={callouts} onTap={task?.kind === 'tap' && !sp.done ? onTap : undefined} guide={guide} />
+                </div>
               </SceneBoundary>
               {moving && (
                 <button
@@ -471,7 +485,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
 
             {/* The recap: what this lesson taught, in the learner's own steps. Retrieval plus a moment of satisfaction. */}
             <AnimatePresence>
-              {wrapped[li] && lastStep && (
+              {/* An open question outranks the recap: the answer must never sit behind it (panel: Lim, Aisyah, Nurul). */}
+              {wrapped[li] && lastStep && !answer && (
                 <motion.div
                   className="absolute inset-0 z-20 flex items-center justify-center bg-paper/70 p-4 backdrop-blur-sm"
                   initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
@@ -512,7 +527,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   key={answer ? `a-${answer.q}` : `${key}-${done ? 'd' : 'o'}`}
                   initial={reduced ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.12 } }}
                   transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
-                  className={`no-scrollbar pointer-events-auto max-h-[36dvh] max-w-[600px] overflow-y-auto rounded-[20px] border bg-surface/95 px-5 py-4 shadow-[var(--shadow)] backdrop-blur ${task && done && !answer ? 'border-[var(--t-green)]/50' : 'border-line'}`}
+                  className={`no-scrollbar pointer-events-auto ${answer ? 'max-h-[58dvh]' : 'max-h-[36dvh]'} max-w-[600px] overflow-y-auto overscroll-contain rounded-[20px] border bg-surface/95 px-5 py-4 shadow-[var(--shadow)] backdrop-blur ${task && done && !answer ? 'border-[var(--t-green)]/50' : 'border-line'}`}
                   aria-live="polite"
                 >
                   {answer ? (
@@ -523,7 +538,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                           : answer.error ? <span className="text-ink-2">{answer.error}</span>
                           : <RichText text={answer.a!} env={env} />}
                       </div>
-                      {!answer.pending && <button onClick={closeAnswer} className="mt-2 text-[13.5px] font-semibold text-[var(--t-primary)]">Back to the lesson</button>}
+                      {!answer.pending && <button onClick={closeAnswer} className="mt-3 flex h-11 items-center gap-1.5 rounded-full border border-line px-4 text-[15px] font-semibold text-ink"><Icon name="back" size={16} />Back to the lesson</button>}
                     </>
                   ) : (
                     <>
@@ -579,7 +594,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   className="pointer-events-auto flex items-center gap-2.5 rounded-full border-2 border-[var(--t-primary)]/40 bg-surface/95 px-4 py-2.5 text-[16.5px] font-semibold text-ink shadow-[var(--shadow)] backdrop-blur"
                 >
                   <span className="h-2.5 w-2.5 rounded-full bg-[var(--t-primary)]" />
-                  {sp.miss ? `Not that one. ${task.hint}` : task.hint}
+                  {sp.miss ? `${sp.empty ? "That's empty space." : 'Not that one.'} ${task.hint}` : task.hint}
                 </motion.div>
               )}
               {(taskKnob || freeKnobs.length > 0) && !answer && task?.kind !== 'predict' && (
@@ -710,6 +725,17 @@ function clampSet(lesson: Lesson, set: Record<string, number>): Env {
     if (p && Number.isFinite(v)) out[k] = Math.min(p.max, Math.max(p.min, v));
   }
   return out;
+}
+
+// Two scene items are "the same thing" when a learner could not tell them apart: same kind, same icon,
+// same colour, and the other one carries no different name. Lets any of four identical shields count.
+function sameThing(l: Lesson, a: string, b: string): boolean {
+  if (l.scene.type !== 'graph2d') return false;
+  const items = l.scene.items as Array<{ id: string; type: string; name?: string; tone?: string; label?: string }>;
+  const x = items.find((i) => i.id === a), y = items.find((i) => i.id === b);
+  if (!x || !y || x.type !== y.type || !['icon', 'point', 'circle', 'polygon'].includes(x.type)) return false;
+  if ((x.name ?? '') !== (y.name ?? '') || (x.tone ?? 'primary') !== (y.tone ?? 'primary')) return false;
+  return !x.label || !y.label || x.label === y.label;
 }
 
 function sceneIds(l: Lesson): string[] {

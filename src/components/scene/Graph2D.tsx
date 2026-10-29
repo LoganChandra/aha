@@ -193,6 +193,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           <g key={it.id} opacity={op}>
             {fillD && <path d={fillD} fill={fx(`grad-${it.tone ?? 'primary'}`)} opacity={0.55} />}
             {glow(d)}
+            {onTap && <path d={d} fill="none" stroke="transparent" strokeWidth={44} style={{ pointerEvents: 'stroke' }} />}
             <path d={d} fill="none" stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" strokeLinejoin="round" className={it.dashed ? undefined : 'draw-in'} pathLength={it.dashed ? undefined : 1} />
           </g>
         );
@@ -204,6 +205,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         return (
           <g key={it.id} opacity={op}>
             {glow(d)}
+            {onTap && <path d={d} fill="none" stroke="transparent" strokeWidth={44} style={{ pointerEvents: 'stroke' }} />}
             <path d={d} fill="none" stroke={color} strokeWidth={width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" strokeLinejoin="round" className={it.dashed ? undefined : 'draw-in'} pathLength={it.dashed ? undefined : 1} />
           </g>
         );
@@ -217,6 +219,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           <g key={it.id} opacity={op}>
             <polyline points={pts} fill="none" stroke={color} strokeWidth={width} strokeLinejoin="round" strokeLinecap="round" />
             {it.points.map(([a, b], i) => <circle key={i} cx={X(ev(a))} cy={Y(ev(b))} r={3} fill={color} />)}
+            {onTap && <polyline points={pts} fill="none" stroke="transparent" strokeWidth={44} strokeLinejoin="round" style={{ pointerEvents: 'stroke' }} />}
           </g>
         );
       }
@@ -239,6 +242,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           <g key={it.id} opacity={op}>
             <line x1={ax_} y1={ay_} x2={it.arrow ? bx - 7 * Math.cos(Math.atan2(by - ay_, bx - ax_)) : bx} y2={it.arrow ? by - 7 * Math.sin(Math.atan2(by - ay_, bx - ax_)) : by} stroke={color} strokeWidth={it.arrow ? width + 0.6 : width} strokeDasharray={it.dashed ? '6 5' : undefined} strokeLinecap="round" />
             {it.arrow && <Arrow x={bx} y={by} angle={Math.atan2(by - ay_, bx - ax_)} color={color} size={11} />}
+            {/* Thin lines get a thumb-wide invisible hit stroke along their whole length (WCAG 2.5.8, HIG 44pt). */}
+            {onTap && <line x1={ax_} y1={ay_} x2={bx} y2={by} stroke="transparent" strokeWidth={44} strokeLinecap="round" style={{ pointerEvents: 'stroke' }} />}
           </g>
         );
       }

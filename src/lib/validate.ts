@@ -142,6 +142,16 @@ export function checkLesson(raw: unknown): Checked {
         const d = Math.abs(trial[p.id] - vals[p.id]) + (other ? Math.abs(trial[other.id] - vals[other.id]) : 0);
         if (d < bestD) { bestD = d; hit = trial; }
       }
+      // Feedback must not quote a number the learner may not have stopped at ("At 45° the ratio is 0.71" while they sit at 41°; panel: Aisyah, Daniel).
+      if (st.after) {
+        const N = '(-?\\d+(?:\\.\\d+)?)';
+        const near = t.goal.match(new RegExp(`^\\s*abs\\(\\s*${p.id}\\s*-\\s*${N}\\s*\\)\\s*<=?\\s*${N}\\s*$`));
+        const past = t.goal.match(new RegExp(`^\\s*${p.id}\\s*[<>]=?\\s*${N}\\s*$`));
+        // Only when the learner can visibly stop away from it: a loose tolerance (over 2%) or a one-sided goal.
+        const target = near && Number(near[2]) > 0.02 * Math.max(Math.abs(Number(near[1])), 1e-9) ? near[1] : past ? past[1] : null;
+        const plain = st.after.replace(/\$[^$]*\$/g, '').replace(/\{[^{}]*\}/g, '');
+        if (target && (plain.match(/-?\d+(?:\.\d+)?/g) ?? []).some((x) => Number(x) === Number(target))) errors.push(`${w} after: it quotes ${target}, but the learner can finish anywhere the goal "${t.goal}" allows. Show the value they actually reached with a live value like {${p.id}}, or drop the number.`);
+      }
       if (!hit) errors.push(`${w}: no value of "${p.id}"${other ? ` and "${other.id}"` : ''} in range makes the goal "${t.goal}" true. Widen the goal (use a tolerance like abs(${p.id}-target)<0.1).`);
       // The learner finishes the task, so later steps start from a value where the goal holds.
       else { vals[p.id] = hit[p.id]; if (other) vals[other.id] = hit[other.id]; }
@@ -192,6 +202,10 @@ function g2Errors(it: G2Item, scene: Extract<Scene, { type: 'graph2d' }>, env: E
   } else if (it.type === 'text') {
     it.at.forEach((v) => checkExpr(w, v, withT, errors));
     checkTemplate(w, it.text, withT, errors);
+    // A readout whose live value cannot be worked out shows a blank ("path through air:" with nothing; panel: Lim, Daniel).
+    if (!errors.length) for (const m of it.text.matchAll(/\{([^{}]+)\}/g)) {
+      if (!Number.isFinite(evaluate(m[1], env, NaN))) errors.push(`${w}: the live value {${m[1]}} has no number at the start (it divides by zero, takes a log of 0, or uses a knob outside its range), so the readout shows a blank. Make it give a real number for every knob value.`);
+    }
     // One readout, one value: "buy: 5 sell: 5" on one line reads as noise.
     if ((it.text.match(/\{[^}]+\}/g) ?? []).length >= 2 && (it.text.match(/:/g) ?? []).length >= 2) errors.push(`${w}: "${it.text}" packs several values into one line; make one text item per value (e.g. "buy: {qd}" and "sell: {qs}"), stacked.`);
   } else if (it.type === 'icon') {

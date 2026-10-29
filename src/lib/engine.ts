@@ -1,7 +1,8 @@
 // The engine: Score (plan the path) and Stage (write each lesson's scene), plus answers to mid-lesson questions.
 // Each stage walks a chain of models: the cheap strong one first, a different family as the fallback.
 import { AiError, chatJson, type Msg, type Route } from './ai';
-import { ASK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, lessonUser, planUser, repairUser } from './prompts';
+import { ASK_SYSTEM, CHECK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, checkUser, lessonUser, planUser, repairUser } from './prompts';
+import { describeSteps } from './inspect';
 import { detectLanguage } from './intent';
 import { PATTERN_IDS } from './playbook';
 import { Plan, type Lesson, type Level, type Source } from './recipe';
@@ -107,11 +108,32 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
 
 type Written = { lesson: Lesson; errors: string[] };
 
-/** One model writes the lesson, with one repair turn if the checker finds problems. */
-async function writeWith(route: Route, user: string, m: Meter, deadline: number): Promise<Written> {
+/**
+ * The inspector: replay the lesson as the learner meets it and let a cheap model list contradictions between the
+ * words and the picture, and wrong or overclaimed facts (blind panel 2026-10-29). Fails open: a slow or broken
+ * inspector never blocks a lesson.
+ */
+async function inspect(lesson: Lesson, ctx: { plan: Plan; index: number; level: Level }, m: Meter, timeoutMs: number): Promise<string[]> {
+  if (process.env.LESSON_INSPECT === 'off' || timeoutMs < 6000) return [];
+  const route: Route = { model: PRIMARY, reasoning: { enabled: false }, maxTokens: 1500 };
+  try {
+    const r = await chatJson<{ issues?: unknown }>(route, [{ role: 'system', content: CHECK_SYSTEM }, { role: 'user', content: checkUser(ctx.plan, ctx.index, ctx.level, describeSteps(lesson)) }], { timeoutMs, temperature: 0 });
+    m.costUsd += r.costUsd;
+    const issues = Array.isArray(r.data?.issues) ? (r.data.issues as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 8).slice(0, 10) : [];
+    m.calls.push({ model: `${route.model} (inspect)`, ok: true, costUsd: r.costUsd, ms: r.ms, note: issues.slice(0, 3).join(' | ') || undefined });
+    return issues;
+  } catch (e) {
+    m.calls.push({ model: `${route.model} (inspect)`, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
+    return [];
+  }
+}
+
+/** One model writes the lesson; the checker and then the inspector each get one repair turn. */
+async function writeWith(route: Route, user: string, m: Meter, deadline: number, ctx: { plan: Plan; index: number; level: Level }): Promise<Written> {
   const messages: Msg[] = [{ role: 'system', content: LESSON_SYSTEM }, { role: 'user', content: user }];
   let best: Written | null = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  let inspected = false;
+  for (let attempt = 0; attempt < 3; attempt++) {
     // Every call fits inside the function's time limit, so a slow first try cannot starve the others.
     const left = deadline - Date.now() - 2000;
     if (left < 8000) break;
@@ -125,10 +147,20 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number)
     m.costUsd += r.costUsd;
     const checked = checkLesson(r.data);
     m.calls.push({ model: route.model, ok: checked.errors.length === 0 && !!checked.lesson, costUsd: r.costUsd, ms: r.ms, note: checked.errors.slice(0, 3).join(' | ') || undefined });
-    if (checked.lesson && checked.errors.length === 0) return { lesson: checked.lesson, errors: [] };
-    if (checked.lesson && (!best || checked.errors.length < best.errors.length)) best = { lesson: checked.lesson, errors: checked.errors };
+    if (checked.lesson && checked.errors.length === 0) {
+      // Clean by the rules: once per lesson, check the words against the picture before accepting it.
+      if (inspected || attempt === 2) return { lesson: checked.lesson, errors: [] };
+      inspected = true;
+      const issues = await inspect(checked.lesson, ctx, m, Math.min(25_000, deadline - Date.now() - 20_000));
+      if (!issues.length) return { lesson: checked.lesson, errors: [] };
+      best = { lesson: checked.lesson, errors: [] }; // already usable; the repair can only improve it
+      messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(issues.map((x) => `Inspector: ${x}`)) });
+      continue;
+    }
+    if (checked.lesson && (!best || (best.errors.length > 0 && checked.errors.length < best.errors.length))) best = { lesson: checked.lesson, errors: checked.errors };
     messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(checked.errors) });
   }
+  if (best && best.errors.length === 0) return best;
   if (best) throw Object.assign(new AiError('lesson still had problems after a repair'), { best });
   throw new AiError(`${route.model} produced no lesson`);
 }
@@ -140,7 +172,7 @@ export async function makeLesson(plan: Plan, index: number, level: Level, source
   // Imperfect drafts from every route are kept; if no route writes a clean lesson, the least broken one is repaired.
   const drafts: Written[] = [];
   try {
-    const { lesson } = await hedge(routes, 16_000, (route) => writeWith(route, user, m, deadline).catch((e) => {
+    const { lesson } = await hedge(routes, 30_000, (route) => writeWith(route, user, m, deadline, { plan, index, level }).catch((e) => {
       if ((e as { best?: Written }).best) drafts.push((e as { best: Written }).best);
       throw e;
     }));
