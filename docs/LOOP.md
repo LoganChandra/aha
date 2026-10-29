@@ -49,3 +49,5 @@ Logan, 2026-10-29 (voice note, verbatim): "Treat them like they are your custome
 - batch 2b (5de12c5): the app is renamed AHA, at ahapoc.vercel.app. The picture area is stable. Knobs with two states show named buttons, and sliders get +/- buttons with a full-width track (C19). Knobs a step moves are named on screen (C11).
 - batch 3 (94ee08b): the course outline shows while lesson 1 draws (C08). Prediction choices are compact. Prompts now cover Expert depth (C21), Malay wording (C20), follow-up answers (C14) and pacing (C17).
 - Deployed; prod: API 25/26 then 26/26 on a clean rerun; UI 18/18 (3 new checks).
+- batch 4 (b1086ef): a wrong tap names what it hit, a wrong prediction names the answer, and a slide that stops short gets a nudge (C15). Contrast went up (C22), the writer got chart and number rules (C23), and reloading keeps the course (C25).
+- batch 5 (39c1228, 3786424, ef1ee32): the inspector now sees overlaps and tiny targets. Tick numbers sit in the margins. ENGINE.md was written. **New AHA templates: spectrum, network, attention**, routed in code. Prod: API 26/26, UI 19/19.
