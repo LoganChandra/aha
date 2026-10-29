@@ -173,6 +173,7 @@ WHAT REAL LEARNERS TRIPPED ON (fix these every time)
 - Things the learner must tell apart look different (another icon, shape or colour), never three identical icons with different names.
 - The lesson's key idea is shown moving, not only stated: if "the loop is the whole trick", the picture loops.
 - Comparing with and without something (a vaccine, a seatbelt, a diet): show the outcome people care about (how ill, how hurt), not only an abstract "strength".
+- Money: write dollar signs as \\$ (\\$735bn), because a bare $ starts maths.
 - Numbers people can read: a percentage never goes above 100% (say "4 times as much" instead); things you count (days, people, germs) use step 1 and no decimals; every chart axis says what it measures in words, with a unit or plain words like "low" and "high".
 - One curve or idea at a time: add the second curve on a later step (show with a step knob), never three curves at once.
 

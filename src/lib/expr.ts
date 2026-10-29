@@ -277,7 +277,9 @@ export function evaluate(src: string | number | undefined, env: Env, fallback = 
 
 /** Fill "{expr}" holes in text with live values, e.g. "sin θ = {sin(theta)}". Braces inside $...$ are LaTeX and stay. */
 export function fillTemplate(text: string, env: Env): string {
+  // \$ is a literal dollar sign (money), not maths; it comes out as a plain "$".
   return text
+    .replace(/\\\$/g, '\u0001')
     .split(/(\$[^$]*\$)/g)
     .map((part) => (part.startsWith('$') && part.endsWith('$') && part.length > 1 ? part : part.replace(/\{([^{}]+)\}/g, (m, inner: string) => {
       try {
@@ -287,7 +289,8 @@ export function fillTemplate(text: string, env: Env): string {
         return ''; // never show a broken formula to a learner
       }
     }).replace(/\{[^}]*$/, '')))  // a hole cut off by trimming is dropped too
-    .join('');
+    .join('')
+    .replace(/\u0001/g, '$');
 }
 
 export function formatNumber(v: number): string {
