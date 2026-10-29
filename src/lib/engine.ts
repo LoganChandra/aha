@@ -343,6 +343,20 @@ export async function makeLesson(plan: Plan, index: number, level: Level, source
   } catch (e) {
     m.ms = Date.now() - t0;
     const best = drafts.sort((a, b) => a.errors.length - b.errors.length)[0];
+    // Last resort for a templated lesson: one focused try with the template's example scene shown, so the learner gets
+    // the designed picture rather than a repaired free drawing (walk: agents course, lesson 1).
+    const pat = PLAYBOOK.find((p) => p.id === plan.lessons[index]?.pattern);
+    if (pat && /Use the [A-Z ]+ template/.test(pat.use) && (!best || best.lesson.scene.type !== pat.example.scene.type) && deadline - Date.now() > 25_000) {
+      const focused = `${user}\n\nIMPORTANT: the scene MUST be {"type":"${pat.example.scene.type}", ...} like this example scene (write your own content for this lesson, do not copy it):\n${JSON.stringify(pat.example.scene)}`;
+      try {
+        const again = await writeWith(routes[0], focused, m, deadline, { plan, index, level, anchors: factAnchors(facts) });
+        m.ms = Date.now() - t0;
+        return { lesson: again.lesson, meter: m, repaired: true, errors: [], facts };
+      } catch (e2) {
+        const b2 = (e2 as { best?: Written }).best;
+        if (b2 && b2.lesson.scene.type === pat.example.scene.type) return { lesson: repair(b2.lesson), meter: m, repaired: true, errors: b2.errors, facts };
+      }
+    }
     if (best) return { lesson: repair(best.lesson), meter: m, repaired: true, errors: best.errors, facts };
     throw e instanceof Error ? e : new AiError('no model produced a usable lesson');
   }
