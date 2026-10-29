@@ -11,7 +11,7 @@ await page.goto(base, { waitUntil: 'networkidle' });
 await page.screenshot({ path: `scripts/shots/walk-${tag}-home.png` });
 // LESSON=n opens lesson n directly through the course address (?q=...&level=...&l=n).
 if (process.env.LESSON) {
-  await page.goto(`${base}/?q=${encodeURIComponent(prompt)}&level=${level.toLowerCase()}&lang=en&l=${process.env.LESSON}`, { waitUntil: 'networkidle' });
+  await page.goto(`${base}/?q=${encodeURIComponent(prompt)}&level=${level.toLowerCase()}&lang=en&l=${process.env.LESSON}`, { waitUntil: 'domcontentloaded', timeout: 90000 });
 } else {
   await page.getByRole('radio', { name: new RegExp(level) }).click();
   await page.locator('#prompt').fill(prompt);

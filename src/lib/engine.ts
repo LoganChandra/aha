@@ -207,7 +207,7 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
       if (inspected || attempt === 2 || Date.now() - started > inspectWithin) return { lesson: checked.lesson, errors: [] };
       inspected = true;
       // A copy of a playbook example is not a lesson about this topic (walk: "Unbelievable cats love boxes" again).
-      const copied = PLAYBOOK.some((p) => JSON.stringify(p.example.scene) === JSON.stringify(checked.lesson!.scene) || (p.example.scene.type === 'nextWord' && checked.lesson!.scene.type === 'nextWord' && p.example.scene.context === checked.lesson!.scene.context) || (p.example.scene.type === 'tokens' && checked.lesson!.scene.type === 'tokens' && JSON.stringify(p.example.scene.pieces.map((x) => x.text)) === JSON.stringify(checked.lesson!.scene.pieces.slice(0, p.example.scene.pieces.length).map((x) => x.text))))
+      const copied = PLAYBOOK.some((p) => JSON.stringify(p.example.scene) === JSON.stringify(checked.lesson!.scene) || sameWords(p.example.scene, checked.lesson!.scene) || (p.example.scene.type === 'nextWord' && checked.lesson!.scene.type === 'nextWord' && p.example.scene.context === checked.lesson!.scene.context) || (p.example.scene.type === 'tokens' && checked.lesson!.scene.type === 'tokens' && JSON.stringify(p.example.scene.pieces.map((x) => x.text)) === JSON.stringify(checked.lesson!.scene.pieces.slice(0, p.example.scene.pieces.length).map((x) => x.text))))
         ? ['The scene copies the playbook example. Write your own content from this lesson\'s topic and fact sheet.'] : [];
       // A lesson that ignores its fact sheet is generic; the inspector's repair turn also asks for the facts.
       const anchors = ctx.anchors ?? [];
@@ -242,6 +242,14 @@ export async function research(plan: Plan, index: number, level: Level, m: Meter
     m.calls.push({ model: `${route.model} (research)`, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
     return [];
   }
+}
+
+/** True when a scene reuses most of a playbook example's words (labels and texts), i.e. it was copied, not written. */
+function sameWords(a: unknown, b: unknown): boolean {
+  const words = (v: unknown): string[] => (typeof v === 'string' ? [] : Array.isArray(v) ? v.flatMap(words) : v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => (['label', 'text', 'context', 'caption'].includes(k) && typeof x === 'string' ? [x.toLowerCase().trim()] : words(x))) : []);
+  const wa = new Set(words(a)), wb = words(b);
+  if (wa.size < 3 || !wb.length) return false;
+  return wb.filter((w) => wa.has(w)).length / Math.min(wa.size, wb.length) >= 0.6;
 }
 
 /** Numbers and capitalised names in the fact sheet that a lesson's words can be checked against. */

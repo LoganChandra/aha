@@ -275,8 +275,8 @@ export const Reward = z.object({
   rounds: Num,
   explore: Num.optional(),
   // The two bars' names, in the lesson's language: "chance it picks this", "what it has learned (tick = truth)".
-  pickLabel: Short(30).optional(),
-  learnedLabel: Short(40).optional(),
+  pickLabel: Short(40).optional(),
+  learnedLabel: Short(60).optional(),
   caption: Short(60).optional(),
 });
 
