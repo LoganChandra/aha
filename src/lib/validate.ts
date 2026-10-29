@@ -405,7 +405,8 @@ function normalise(raw: unknown): unknown {
     if (s.type === 'diagram' && Array.isArray(s.edges)) {
       s.edges = (s.edges as Record<string, unknown>[]).map((e) => ({ id: `${e.from}->${e.to}`, ...e }));
     }
-    out.scene = cleanScene(s, rename);
+    // Scene labels are drawn as plain text, so an escaped money sign (\\$) shows as a plain $ there.
+    out.scene = plainDollars(cleanScene(s, rename));
     // A model with explode offsets but no explode knob named: use the knob that obviously means it.
     const sc = out.scene as Record<string, unknown>;
     const ps = out.params as Record<string, unknown>[];
@@ -444,6 +445,9 @@ function cleanScene(v: unknown, rename: Map<string, string>, key = '', parentTyp
   }
   return v;
 }
+
+// Graph text items keep \\$: they go through fillTemplate, which turns it into a plain $ and keeps maths apart.
+const plainDollars = (v: unknown, key = ''): unknown => (typeof v === 'string' ? (key === 'text' ? v : v.split('\\$').join('$')) : Array.isArray(v) ? v.map((x) => plainDollars(x, key)) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, plainDollars(x, k)])) : v);
 
 function renameIds(expr: string, rename: Map<string, string>): string {
   if (!rename.size) return expr;

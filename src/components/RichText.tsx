@@ -14,9 +14,9 @@ function renderMath(src: string): string {
 
 function RichTextInner({ text, env, className }: { text: string; env?: Env; className?: string }) {
   // \$ is a literal dollar (money), never the start of maths: "\$100bn ... \$2tn" must not become one formula.
-  const safe = text.replace(/\\\$/g, '\u0001');
+  const safe = text.replace(/\\\$/g, '\u0002');
   const filled = env ? fillTemplate(safe, env) : safe;
-  const parts = filled.split(/(\$\$[^$]+\$\$|\$[^$\n]+\$)/g).filter(Boolean).map((x) => x.replace(/\u0001/g, '$'));
+  const parts = filled.split(/(\$\$[^$]+\$\$|\$[^$\n]+\$)/g).filter(Boolean).map((x) => x.replace(/\u0002/g, '$'));
   return (
     <span className={className}>
       {parts.map((p, i) => {

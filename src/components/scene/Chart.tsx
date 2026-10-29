@@ -18,7 +18,9 @@ function Bars({ scene, env, focus, callouts = {}, onTap }: { scene: C; env: Env;
   const [box, size] = useSize<HTMLDivElement>();
   const bars = (scene.bars ?? []).map((b) => ({ ...b, v: evaluate(b.value, env, 0) }));
   const max = Math.max(1e-9, ...bars.map((b) => Math.abs(b.v)));
-  const rowH = Math.min(64, Math.max(40, (size.h - 40) / Math.max(1, bars.length)));
+  // Long names go above their bar instead of being cut to "2026 AI b..." (walk 2026-10-29).
+  const stacked = bars.some((b) => b.label.length > 12) && size.w < 640;
+  const rowH = Math.min(64, Math.max(40, (size.h - 40) / Math.max(1, bars.length) - (stacked ? 24 : 0)));
   return (
     <div ref={box} className="absolute inset-0 flex flex-col justify-center px-5 py-4 sm:px-10">
       {scene.yLabel && <div className="mb-4 text-[17px] font-semibold text-ink">{scene.yLabel}</div>}
@@ -28,10 +30,10 @@ function Bars({ scene, env, focus, callouts = {}, onTap }: { scene: C; env: Env;
           return (
             <div
               key={b.id} className={`grid items-center gap-3 rounded-lg ${onTap ? 'cursor-pointer hover:bg-sunk' : ''}`}
-              style={{ gridTemplateColumns: 'minmax(72px, 30%) 1fr', opacity: op, transition: 'opacity 300ms' }}
+              style={{ gridTemplateColumns: stacked ? '1fr' : 'minmax(72px, 30%) 1fr', opacity: op, transition: 'opacity 300ms' }}
               onClick={onTap ? () => onTap(b.id) : undefined} role={onTap ? 'button' : undefined}
             >
-              <div className="truncate text-right text-[16px] font-semibold text-ink" title={b.label}>{b.label}</div>
+              <div className={`${stacked ? 'text-left leading-tight' : 'truncate text-right'} text-[16px] font-semibold text-ink`} title={b.label}>{b.label}</div>
               <div className="flex items-center gap-2" style={{ height: rowH * 0.66 }}>
                 <div
                   className="h-full rounded-[10px] shadow-sm"

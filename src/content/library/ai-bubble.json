@@ -123,7 +123,7 @@
    "scene": {
     "type": "chart",
     "kind": "bar",
-    "yLabel": "\\$ billions per year",
+    "yLabel": "$ billions per year",
     "unit": "bn",
     "bars": [
      {
