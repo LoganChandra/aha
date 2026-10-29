@@ -231,7 +231,20 @@ export function Descent({ scene, env, params, onDrag, focus, callouts = {}, onTa
             {/* the next steps, computed: hops along the curve, so an overshoot really jumps past the bottom */}
             {path.slice(1).map((p, i) => {
               const from = path[i];
-              const x1 = X(from), y1 = Y(L(from)), x2 = X(p), y2 = Y(L(p));
+              // A step that leaves the chart is drawn to the edge with an arrow, and the walk stops there (it diverged).
+              if (path.slice(0, i + 1).some((v) => v < a || v > b || L(v) > yMax * 1.02)) return null;
+              const off = p < a || p > b || L(p) > yMax * 1.02;
+              const x1 = X(from), y1 = Y(L(from));
+              if (off) {
+                const ex = p > from ? w - padR : padL;
+                return (
+                  <g key={i}>
+                    <path d={`M${x1},${y1} Q${(x1 + ex) / 2},${padT - 4} ${ex},${padT + 6}`} fill="none" stroke="var(--t-red)" strokeWidth={2.5} strokeDasharray="5 4" />
+                    <text x={ex + (p > from ? -4 : 4)} y={padT + 24} textAnchor={p > from ? 'end' : 'start'} fontSize={14} fontWeight={800} fill="var(--t-red)" fontFamily="var(--font-sans)">{p > from ? 'off the chart →' : '← off the chart'}</text>
+                  </g>
+                );
+              }
+              const x2 = X(p), y2 = Y(L(p));
               const mx = (x1 + x2) / 2, my = Math.min(y1, y2) - 26;
               return (
                 <g key={i} opacity={Math.max(0.35, 1 - i * 0.12)}>

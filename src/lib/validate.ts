@@ -333,6 +333,12 @@ function normalise(raw: unknown): unknown {
     if (q.value === undefined && typeof q.min === 'number') q.value = q.min;
     if (!q.label && typeof q.id === 'string') q.label = q.id;
     if (q.step === 0 || q.step === null) delete q.step;
+    // Things you count move in whole steps: "Steps shown 5.5" and "day 3.11" read as broken (panel: Nurul; walk 2026-10-29).
+    const lab = String(q.label ?? q.id);
+    if (!/size|rate|length|width|strength|weight/i.test(lab) && /^steps?\b|steps shown|\b(count|number of|how many|days?|people|layers|heads|hari|bilangan|jumlah|orang)\b/i.test(lab) && typeof q.min === 'number' && typeof q.max === 'number' && q.max - q.min >= 2 && !(Array.isArray(q.choices))) {
+      q.step = 1; q.min = Math.round(q.min as number); q.max = Math.round(q.max as number);
+      if (typeof q.value === 'number') q.value = Math.round(q.value);
+    }
     if (typeof q.id === 'string' && RESERVED.has(q.id)) { const n = `${q.id}Val`; rename.set(q.id, n); q.id = n; }
     return q;
   });
