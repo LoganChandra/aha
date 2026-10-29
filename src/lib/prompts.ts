@@ -159,6 +159,14 @@ DESIGN (the learner should get it from the picture before reading)
 - Draw the real thing the words name: if a step says "tap the leaf", there must be a leaf-shaped item to tap.
 - Words and picture never disagree: if a step says something changed ("night falls", "double the speed"), that step's set (or the predict reveal) makes the change happen in the picture.
 
+REAL CASES BEAT ABSTRACTIONS (the difference between a forgettable lesson and a great one)
+- Every lesson is built on something real: a named company, product, study, place, event or measured number from the FACT SHEET. Show it in the picture (a bar for the real figure, a node for the real company), not only in the words.
+- Never invent illustrative curves or numbers when real ones exist. If something must be illustrative, label it "illustrative" on screen.
+- Knobs are the assumptions people actually argue about (useful life, margin, interest rate, dose, temperature), and the picture computes the consequence live from them with real formulas.
+- Debated topics: show both sides. Give the strongest counter-argument a step with its own number.
+- Every number carries its unit and date ("$735bn, 2026"); estimates say "about" or "estimated".
+- Intermediate and above: no definitions-only lesson; teach the mechanism and its consequences.
+
 WHAT REAL LEARNERS TRIPPED ON (fix these every time)
 - A tap task asks for a thing by its role or property ("Tap the energy source"), never by reading its label, and no callout sits on the thing to find. Never print an answer before the learner works it out.
 - One task per step. Never add a second question to a step that already asks them to drag.
@@ -195,7 +203,7 @@ function langNotes(lang?: string): string {
   return '\nMalay wording: polite everyday Malay with "tidak", one register throughout. "Ketik" for tap, "Seret" for drag, "Gerakkan peluncur" for a slider (never "Tarik slaid"). Give the real term once in brackets: "askar badan (sel darah putih)". Malaysian Malay, not Indonesian ("imuniti kelompok", not "kekebalan kelompok"). Avoid heavy or wrong metaphors ("penjenayah", "kebal", "hafal", "kekal"); prefer "kuman", "imun", "ingat", "mengenali".';
 }
 
-export function lessonUser(plan: Plan, index: number, level: Level, sources: { title: string }[]): string {
+export function lessonUser(plan: Plan, index: number, level: Level, sources: { title: string }[], research: { fact: string; source?: string }[] = []): string {
   const l = plan.lessons[index];
   const outline = plan.lessons.map((x, i) => `${i + 1}. ${x.title}${i === index ? '  <- THIS ONE' : ''}`).join('\n');
   return `Course: ${plan.topic}
@@ -210,7 +218,7 @@ Goal: ${l.goal}
 The aha: ${l.aha}
 Planned visual: ${l.visual}
 Facts to get right:
-${l.facts.map((f) => `- ${f}`).join('\n') || '- (none given; use only well-established knowledge)'}${sources.length ? `\nResearched sources: ${sources.slice(0, 5).map((s) => s.title).join('; ')}` : ''}`;
+${l.facts.map((f) => `- ${f}`).join('\n') || '- (none given; use only well-established knowledge)'}${research.length ? `\nFACT SHEET (researched for this lesson; build the lesson on at least 2 of these, quote their numbers exactly, put the real-world case in the picture, say "about" or "estimated" where the fact does):\n${research.map((f) => `- ${f.fact}${f.source ? ` [${f.source}]` : ''}`).join('\n')}` : ''}${sources.length ? `\nResearched sources: ${sources.slice(0, 5).map((s) => s.title).join('; ')}` : ''}`;
 }
 
 export function repairUser(errors: string[]): string {
@@ -242,4 +250,15 @@ Return ONLY JSON: {"issues":["step N: what is wrong. Fix: what to change", ...]}
 export function checkUser(plan: Plan, index: number, level: Level, described: string): string {
   const l = plan.lessons[index];
   return `Course: ${plan.topic}. Level: ${level}. Language: ${plan.lang ?? 'English'}.\nLesson ${index + 1}: ${l?.title ?? ''}. The idea it must land: ${l?.goal ?? ''}\n\n${described.slice(0, 16000)}`;
+}
+
+// Research (the Frank experiment, 2026-10-29): the cheap writer was only as good as its facts. One web-grounded call
+// per lesson builds a fact sheet of checkable numbers, names and dates, each with its source.
+export const RESEARCH_SYSTEM = `You are the researcher for one AHA lesson. Using the web results you are given (and only well-established knowledge otherwise), return 4 to 7 facts the lesson can be built on.
+Each fact: one sentence, concrete and checkable: a number with its unit and date, a named company, product, person, study or event, a formula, or a measured effect. Prefer the most recent figures and say "about" or "estimated" when the source does. No opinions, no vague claims ("AI is growing fast"). If sources disagree, give the range. Include at least one fact for the strongest counter-argument when the topic is debated.
+Return ONLY JSON: {"facts":[{"fact":"...","source":"site or publication name","url":"https://..."}]}. Write the facts in English; the writer translates.`;
+
+export function researchUser(plan: Plan, index: number, level: Level): string {
+  const l = plan.lessons[index];
+  return `Course: ${plan.topic}. Level: ${level}.\nLesson: ${l?.title ?? ''}\nGoal: ${l?.goal ?? ''}\nAha: ${l?.aha ?? ''}\nFind facts about: ${plan.topic}: ${l?.title ?? ''}`;
 }

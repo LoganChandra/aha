@@ -13,7 +13,7 @@ import Stage from './Stage';
 import { Icon, Knob, PromptBar } from './ui';
 
 type Course = { prompt: string; level: Level; planId: string; askToken: string; plan: Plan; sources: Source[]; lang: UiLang; startAt?: number };
-type Slot = { status: 'idle' | 'loading' | 'ready' | 'error'; lesson?: Lesson; error?: string };
+type Slot = { status: 'idle' | 'loading' | 'ready' | 'error'; lesson?: Lesson; error?: string; sources?: Source[] };
 type Answer = { q: string; a?: string; error?: string; pending: boolean };
 
 async function post<T>(url: string, body: unknown): Promise<T> {
@@ -61,8 +61,8 @@ export default function App() {
     };
     put({ status: 'loading' });
     try {
-      const { lesson } = await post<{ lesson: Lesson }>('/api/lesson', { plan: c.plan, sources: c.sources, level: c.level, planId: c.planId, index: i });
-      put({ status: 'ready', lesson });
+      const { lesson, sources } = await post<{ lesson: Lesson; sources?: Source[] }>('/api/lesson', { plan: c.plan, sources: c.sources, level: c.level, planId: c.planId, index: i });
+      put({ status: 'ready', lesson, sources });
     } catch (e) {
       put({ status: 'error', error: (e as Error).message });
     }
@@ -922,6 +922,8 @@ function summarise(l: Lesson): string {
 function LessonSheet({ course, slots, tx, current, reduced, onPick, onClose, onRelevel }: {
   course: Course; slots: Slot[]; tx: (typeof UI)['en']; current: number; reduced: boolean; onPick: (i: number) => void; onClose: () => void; onRelevel: (l: Level) => void;
 }) {
+  // The course's sources plus each built lesson's researched ones, without repeats.
+  const allSources = [...course.sources, ...slots.flatMap((sl) => sl.sources ?? [])].filter((x, k, a) => a.findIndex((y) => y.url === x.url) === k).slice(0, 14);
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', k);
@@ -970,11 +972,11 @@ function LessonSheet({ course, slots, tx, current, reduced, onPick, onClose, onR
             ))}
           </div>
         </div>
-        {course.sources.length > 0 && (
+        {allSources.length > 0 && (
           <div className="mt-5">
             <div className="mb-1 text-[14px] font-semibold text-ink-2">{tx.sources}</div>
             <ul>
-              {course.sources.map((s) => (
+              {allSources.map((s) => (
                 <li key={s.url}>
                   <a href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 py-1.5 text-[14px] text-ink-2 hover:text-ink">
                     <span className="truncate">{s.title}</span><span className="shrink-0 text-ink-3"><Icon name="link" size={14} /></span>

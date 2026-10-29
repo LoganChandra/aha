@@ -1,7 +1,7 @@
 // The engine: Score (plan the path) and Stage (write each lesson's scene), plus answers to mid-lesson questions.
 // Each stage walks a chain of models: the cheap strong one first, a different family as the fallback.
 import { AiError, chatJson, type Msg, type Route } from './ai';
-import { ASK_SYSTEM, CHECK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, checkUser, lessonUser, planBrief, planUser, repairUser } from './prompts';
+import { ASK_SYSTEM, CHECK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, RESEARCH_SYSTEM, checkUser, lessonUser, planBrief, planUser, repairUser, researchUser } from './prompts';
 import { describeSteps } from './inspect';
 import { detectLanguage } from './intent';
 import { PATTERN_IDS } from './playbook';
@@ -179,7 +179,7 @@ async function inspect(lesson: Lesson, ctx: { plan: Plan; index: number; level: 
 }
 
 /** One model writes the lesson; the checker and then the inspector each get one repair turn. */
-async function writeWith(route: Route, user: string, m: Meter, deadline: number, ctx: { plan: Plan; index: number; level: Level }): Promise<Written> {
+async function writeWith(route: Route, user: string, m: Meter, deadline: number, ctx: { plan: Plan; index: number; level: Level; anchors?: string[] }): Promise<Written> {
   const messages: Msg[] = [{ role: 'system', content: LESSON_SYSTEM }, { role: 'user', content: user }];
   let best: Written | null = null;
   let inspected = false;
@@ -204,7 +204,10 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
       // Clean by the rules: once per lesson, check the words against the picture before accepting it.
       if (inspected || attempt === 2 || Date.now() - started > inspectWithin) return { lesson: checked.lesson, errors: [] };
       inspected = true;
-      const issues = await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000));
+      // A lesson that ignores its fact sheet is generic; the inspector's repair turn also asks for the facts.
+      const anchors = ctx.anchors ?? [];
+      const factGap = anchors.length >= 3 && factsUsed(checked.lesson, anchors) < 2 ? ['The lesson uses none of the FACT SHEET: rebuild it around at least 2 of those facts (their numbers, names or dates) and show them in the picture.'] : [];
+      const issues = [...factGap, ...(await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
       if (!issues.length) return { lesson: checked.lesson, errors: [] };
       best = { lesson: checked.lesson, errors: [] }; // already usable; the repair can only improve it
       messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(issues.map((x) => `Inspector: ${x}`)) });
@@ -218,23 +221,57 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
   throw new AiError(`${route.model} produced no lesson`);
 }
 
-export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = index === 0 ? FIRST_LESSON_ROUTES : LESSON_ROUTES, deadline = Date.now() + 170_000): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[] }> {
+export type Fact = { fact: string; source?: string; url?: string };
+/** One web-grounded call per lesson: a fact sheet the writer must build on. Fails open (no facts, no block). */
+export async function research(plan: Plan, index: number, level: Level, m: Meter, timeoutMs = 14_000): Promise<Fact[]> {
+  if (process.env.LESSON_RESEARCH === 'off') return [];
+  const route: Route = { model: PRIMARY, reasoning: { enabled: false }, maxTokens: 1200 };
+  try {
+    const r = await chatJson<{ facts?: unknown }>(route, [{ role: 'system', content: RESEARCH_SYSTEM }, { role: 'user', content: researchUser(plan, index, level) }], { web: true, timeoutMs, temperature: 0.2 });
+    m.costUsd += r.costUsd;
+    const facts = (Array.isArray(r.data?.facts) ? r.data.facts : []).filter((f): f is Fact => !!f && typeof (f as Fact).fact === 'string' && (f as Fact).fact.length > 12).slice(0, 7)
+      .map((f) => ({ fact: f.fact.slice(0, 240), source: typeof f.source === 'string' ? f.source.slice(0, 60) : undefined, url: typeof f.url === 'string' ? f.url : undefined }));
+    m.calls.push({ model: `${route.model} (research)`, ok: true, costUsd: r.costUsd, ms: r.ms, note: `${facts.length} facts` });
+    return facts;
+  } catch (e) {
+    m.calls.push({ model: `${route.model} (research)`, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
+    return [];
+  }
+}
+
+/** Numbers and capitalised names in the fact sheet that a lesson's words can be checked against. */
+export function factAnchors(facts: Fact[]): string[] {
+  const out = new Set<string>();
+  for (const f of facts) {
+    for (const n of f.fact.match(/\d[\d,.]*\d|\d/g) ?? []) if (n.replace(/[,.]/g, '').length >= 2 && !/^(19|20)\d\d$/.test(n)) out.add(n.replace(/,/g, ''));
+    for (const w of f.fact.match(/\b[A-Z][a-zA-Z]{2,}(?:\s[A-Z][a-zA-Z]+)*/g) ?? []) if (!/^(The|A|An|In|On|By|At|It|This|That|About|Estimated|According)$/.test(w)) out.add(w);
+  }
+  return [...out];
+}
+/** How many fact anchors a lesson actually uses in what the learner reads or sees. */
+export function factsUsed(lesson: Lesson, anchors: string[]): number {
+  const text = JSON.stringify([lesson.steps.map((s) => [s.say, s.after, s.task]), lesson.scene]).replace(/,(?=\d{3})/g, '');
+  return anchors.filter((a) => text.includes(a)).length;
+}
+
+export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = index === 0 ? FIRST_LESSON_ROUTES : LESSON_ROUTES, deadline = Date.now() + 170_000): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[]; facts: Fact[] }> {
   const m = meter();
   const t0 = Date.now();
-  const user = lessonUser(plan, index, level, sources);
+  const facts = await research(plan, index, level, m, index === 0 ? 10_000 : 16_000);
+  const user = lessonUser(plan, index, level, sources, facts);
   // Imperfect drafts from every route are kept; if no route writes a clean lesson, the least broken one is repaired.
   const drafts: Written[] = [];
   try {
-    const { lesson } = await hedge(routes, 30_000, (route) => writeWith(route, user, m, deadline, { plan, index, level }).catch((e) => {
+    const { lesson } = await hedge(routes, 30_000, (route) => writeWith(route, user, m, deadline, { plan, index, level, anchors: factAnchors(facts) }).catch((e) => {
       if ((e as { best?: Written }).best) drafts.push((e as { best: Written }).best);
       throw e;
     }));
     m.ms = Date.now() - t0;
-    return { lesson, meter: m, repaired: false, errors: [] };
+    return { lesson, meter: m, repaired: false, errors: [], facts };
   } catch (e) {
     m.ms = Date.now() - t0;
     const best = drafts.sort((a, b) => a.errors.length - b.errors.length)[0];
-    if (best) return { lesson: repair(best.lesson), meter: m, repaired: true, errors: best.errors };
+    if (best) return { lesson: repair(best.lesson), meter: m, repaired: true, errors: best.errors, facts };
     throw e instanceof Error ? e : new AiError('no model produced a usable lesson');
   }
 }
