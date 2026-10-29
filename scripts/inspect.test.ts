@@ -133,3 +133,13 @@ describe('context template logic', () => {
     expect(contextView(ids, 2, 'm1', ['m1'], true).knows).toBe(true);
   });
 });
+
+import { aiSense } from '../src/lib/engine';
+describe('AI is the home subject', () => {
+  test('ambiguous terms get the AI sense; explicit other senses and plain topics do not', () => {
+    expect(aiSense('how does a transformer work')).toContain('AI');
+    expect(aiSense('how does an electrical transformer work')).not.toContain('(in AI');
+    expect(aiSense('why is the sky blue')).toBe('why is the sky blue');
+    expect(aiSense('how does chatgpt work')).toBe('how does chatgpt work');
+  });
+});
