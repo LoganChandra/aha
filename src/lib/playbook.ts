@@ -555,6 +555,77 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'slide-the-scale',
+    name: 'Slide along the scale',
+    use: 'Anything that lives on a scale: wavelength and colour, pH, temperature, loudness, frequency, earthquake size. Use the SPECTRUM template.',
+    moves: 'Name the two ends → drag the marker to one end and read the number → predict where a named thing sits → land on it → state the rule that runs along the scale.',
+    example: {
+      title: 'White light is a rainbow of wavelengths',
+      params: [{ id: 'lam', label: 'Wavelength', min: 400, max: 700, step: 5, value: 550, unit: 'nm' }],
+      scene: {
+        type: 'spectrum', caption: 'Visible light, by wavelength', colors: 'light', unit: 'nm', marker: 'lam', markerLabel: 'your colour',
+        from: { value: 700, label: 'red: long waves' }, to: { value: 400, label: 'violet: short waves' },
+        marks: [{ id: 'blue', at: 470, label: 'blue' }, { id: 'green', at: 530, label: 'green' }],
+      },
+      steps: [
+        { say: 'Sunlight looks white, but it is every colour mixed. Each colour is a wave of a different length: its wavelength.', task: { kind: 'slide', param: 'lam', goal: 'lam >= 660', hint: 'Drag the marker to the red end (left).' }, after: 'Red waves are the longest: about {lam} nanometres, tiny millionths of a millimetre.' },
+        { say: 'Now go the other way.', task: { kind: 'slide', param: 'lam', goal: 'lam <= 430', hint: 'Drag to the violet end (right).' }, after: 'Violet waves are the shortest we can see: about {lam} nm.' },
+        { say: 'Before you look: where does blue sit?', task: { kind: 'predict', question: 'Blue light is…', choices: ['near the violet end', 'in the middle', 'near the red end'], answer: 0, reveal: { set: { lam: 470 } } }, after: 'Blue sits next to violet, at the short-wave end.' },
+        { say: 'Colour is wavelength: long waves look red, short waves look blue and violet.', focus: ['blue', 'marker'] },
+      ],
+    },
+  },
+  {
+    id: 'weigh-the-inputs',
+    name: 'Weigh the inputs',
+    use: 'A neuron, a neural network layer, any decision that adds up weighted evidence (a credit score, a spam filter). Use the NETWORK template.',
+    moves: 'Show inputs flowing into one node → turn one weight up and watch the output light → predict what a negative weight does → find the weights that make it fire → state "weighted sum, then a threshold".',
+    example: {
+      title: 'A neuron adds up weighted evidence',
+      params: [
+        { id: 'w1', label: 'Weight: "free money"', min: -2, max: 2, step: 0.1, value: 0.2 },
+        { id: 'w2', label: 'Weight: from a friend', min: -2, max: 2, step: 0.1, value: 0 },
+      ],
+      scene: {
+        type: 'network', caption: 'Is this email spam?',
+        layers: [
+          [{ id: 'x1', label: '"free money"', icon: 'coins', value: 1, tone: 'warm' }, { id: 'x2', label: 'from a friend', icon: 'user', value: 1, tone: 'cool' }],
+          [{ id: 'out', label: 'spam?', icon: 'mail', value: '1/(1+exp(-(4*(w1*1+w2*1)-2)))', tone: 'red' }],
+        ],
+        links: [{ from: 'x1', to: 'out', weight: 'w1' }, { from: 'x2', to: 'out', weight: 'w2' }],
+      },
+      steps: [
+        { say: 'A neuron takes in clues. Each clue arrives along a link with a weight: how much that clue counts.', task: { kind: 'tap', target: 'out', hint: 'Tap the part that makes the decision.' }, after: 'This node adds up the weighted clues and decides: spam or not.' },
+        { say: 'Make the "free money" clue count a lot.', task: { kind: 'slide', param: 'w1', goal: 'w1 >= 1.2', hint: 'Turn up the "free money" weight.' }, after: 'A thick link: that clue now dominates, and the spam light is at {round(100/(1+exp(-(4*(w1+w2)-2))))}%.' },
+        { say: 'Before you try it: a negative weight on "from a friend" would…', task: { kind: 'predict', question: 'A negative weight on "from a friend"…', choices: ['pushes the answer toward "not spam"', 'makes spam more likely', 'does nothing'], answer: 0, reveal: { set: { w2: -1.5 } } }, after: 'A red, negative link votes against: a friend makes spam less likely.' },
+        { say: 'A neuron is a weighted sum of clues, then a squash into a yes-or-no strength. Learning means adjusting the weights.', focus: ['out'] },
+      ],
+    },
+  },
+  {
+    id: 'who-looks-at-whom',
+    name: 'Who looks at whom',
+    use: 'Attention in transformers, self-attention, masking, how a chatbot decides which earlier words matter. Use the ATTENTION template (softmax is computed for you).',
+    moves: 'Read one row: where does this word look → raise the scale and watch attention sharpen → predict what the causal mask removes → state the formula softmax(QKᵀ/√d)V in plain words.',
+    example: {
+      title: 'Attention: each word decides where to look',
+      params: [
+        { id: 'sharp', label: 'Scale (1/√d)', min: 0.2, max: 3, step: 0.1, value: 0.5 },
+        { id: 'causal', label: 'Causal mask', min: 0, max: 1, step: 1, value: 0, choices: ['Off', 'On'] },
+      ],
+      scene: {
+        type: 'attention', caption: 'Row = the word looking. Column = the word it looks at.', tokens: ['the', 'cat', 'sat', 'down'],
+        scores: [[2, 1, 0, 0], [1, 3, 1, 0], [0, 3, 1, 1], [0, 1, 3, 1]], scale: 'sharp', mask: 'causal', focusRow: 2, show: 'weights',
+      },
+      steps: [
+        { say: 'Each row is one word deciding how much to look at every word. "sat" is highlighted.', task: { kind: 'tap', target: 'cell2_1', hint: 'Tap where "sat" looks most.' }, after: '"sat" looks most at "cat": who sat? The cat.' },
+        { say: 'The scores are scaled, then softmax turns each row into shares of 100%. Make attention sharper.', task: { kind: 'slide', param: 'sharp', goal: 'sharp >= 2', hint: 'Raise the scale.' }, after: 'At scale {sharp} the biggest score takes almost everything. Too sharp, and the model stops learning from the rest.' },
+        { say: 'When writing, a word cannot see the words after it.', task: { kind: 'predict', question: 'Turning the causal mask on…', choices: ['zeroes the cells to the right of each row\'s own word', 'zeroes the first column', 'changes nothing'], answer: 0, reveal: { set: { causal: 1 } } }, after: 'Future cells drop to 0 and each row re-shares its 100% over the words it may see.' },
+        { say: 'Attention is softmax(QKᵀ/√d)·V: scores, scaled, turned into shares, used to blend the words.', focus: ['row2'] },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */

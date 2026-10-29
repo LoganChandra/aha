@@ -86,6 +86,20 @@ function screen(l: Lesson, env: Env): string {
     case 'timeline': body = `Timeline: ${s.events.map((e) => `${e.id} ${e.when} "${e.label}"`).join('; ')}`; break;
     case 'pipeline': body = `Process strip: ${s.stages.map((x) => `${x.id} "${x.label}"${x.value !== undefined ? ` = ${n(x.value)}` : ''}`).join(' → ')}${(s.side ?? []).length ? `; side: ${(s.side ?? []).map((x) => `${x.id} "${x.label}" ${x.dir} ${x.stage}`).join(', ')}` : ''}`; break;
     case 'iconArray': body = `Grid of ${s.total} "${s.icon}" icons: ${s.groups.map((g) => `${g.id} "${g.label}" = ${n(g.count)}`).join(', ')}`; break;
+    case 'spectrum': {
+      const v = n(s.marker);
+      body = `Coloured scale. Left end: "${s.from.label}" ${s.from.value}${s.unit ?? ''}; right end: "${s.to.label}" ${s.to.value}${s.unit ?? ''}. Marker at ${v}${s.unit ?? ''}, ${Math.round(((v - s.from.value) / (s.to.value - s.from.value || 1)) * 100)}% of the way from left to right${s.markerLabel ? ` ("${s.markerLabel}")` : ''}.${(s.marks ?? []).length ? ` Marks: ${(s.marks ?? []).map((m) => `${m.id} "${m.label}" at ${m.at}`).join('; ')}.` : ''}`;
+      break;
+    }
+    case 'network': body = `Network, left to right: ${s.layers.map((l) => l.map((x) => `${x.id} "${x.label}"${x.value !== undefined ? ` = ${n(x.value)}` : ''}`).join(', ')).join(' | ')}. Links: ${s.links.map((l) => `${l.from}→${l.to} weight ${n(l.weight)}`).join('; ')}.`; break;
+    case 'attention': {
+      const nT = s.tokens.length;
+      const sc = Array.from({ length: nT }, (_, i) => Array.from({ length: nT }, (_, j) => n(s.scores[i]?.[j] ?? 0, 0)));
+      const scale = s.scale !== undefined ? n(s.scale, 1) : 1, mask = s.mask !== undefined ? n(s.mask, 0) >= 0.5 : false;
+      const wts = sc.map((row, i) => { const z = row.map((v, j) => (mask && j > i ? -Infinity : v * scale)); const m = Math.max(...z.filter(Number.isFinite)); const e = z.map((v) => (Number.isFinite(v) ? Math.exp(v - m) : 0)); const t = e.reduce((a, b) => a + b, 0) || 1; return e.map((v) => Math.round((v / t) * 100)); });
+      body = `Attention grid, rows look at columns, tokens ${s.tokens.join(', ')}. Scale ${r2(scale)}, causal mask ${mask ? 'ON' : 'off'}. Showing ${s.show}. Weights (%, each row sums to 100): ${wts.map((r, i) => `${s.tokens[i]}: ${r.join('/')}`).join('; ')}.`;
+      break;
+    }
     case 'balance': body = `Balance: left ${s.left.id} "${s.left.label}" weight ${n(s.left.weight)} vs right ${s.right.id} "${s.right.label}" weight ${n(s.right.weight)}`; break;
   }
   return `Knobs: ${knobs || 'none'}\n${body}`;

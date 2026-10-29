@@ -23,3 +23,18 @@ describe('inspector record', () => {
     expect(checkLesson(l).errors.some((e) => e.includes('quotes 45'))).toBe(true);
   });
 });
+
+import { attentionWeights } from '../src/components/scene/Attention';
+describe('attention template maths', () => {
+  test('rows sum to 1, masked cells are exactly 0, scale sharpens', () => {
+    const s = [[2, 1, 0], [1, 3, 1], [0, 3, 1]];
+    const w = attentionWeights(s, 1, true);
+    for (const r of w) expect(Math.abs(r.reduce((a, b) => a + b, 0) - 1)).toBeLessThan(1e-9);
+    expect(w[0][1]).toBe(0); expect(w[0][2]).toBe(0); expect(w[1][2]).toBe(0);
+    expect(w[0][0]).toBeCloseTo(1, 9);
+    const soft = attentionWeights(s, 0.2, false), sharp = attentionWeights(s, 3, false);
+    expect(Math.max(...sharp[1])).toBeGreaterThan(Math.max(...soft[1]));
+    // a score of 0 is not zero attention: e^0 is a share like any other (panel, Daniel)
+    expect(attentionWeights([[0, 0], [0, 0]], 1, false)[0][0]).toBeCloseTo(0.5, 9);
+  });
+});

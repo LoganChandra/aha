@@ -102,7 +102,7 @@ Energy. Bars that trade height: a pendulum or roller coaster with a chart-like p
 
 Waves and sound. A wave on a graph moving with t, amplitude and frequency knobs, predict what doubling does. Superposition: two waves and their sum (add-the-pieces). Sound pitch versus loudness. Doppler: an icon moving with rings (circles) emitted at regular times, bunching up in front.
 
-Light and optics. Rays as segments from a source through a lens (a lens drawn as a polygon or ellipse) bending toward the focal point; drag the object distance and watch the image move and flip. Refraction: a ray hitting water at a draggable angle, bending by Snell's law. Colour: a prism splitting white into a fan of coloured rays.
+Light and optics. Rays as segments from a source through a lens (a lens drawn as a polygon or ellipse) bending toward the focal point; drag the object distance and watch the image move and flip. Refraction: a ray hitting water at a draggable angle, bending by Snell's law. Colour: a prism splitting white into a fan of coloured rays. Wavelength and colour (why the sky is blue, rainbows): the SPECTRUM template with colors "light", the marker on a wavelength knob; never draw the rainbow bar by hand.
 
 Electricity. A circuit as a drawing, not boxes: a battery icon, wires as segments, a lightbulb icon whose fill or glow (a circle with fill opacity tied to the current) depends on the voltage knob; flowing dots along the wire (points moving along segments with t). Ohm's law: drag the resistance, watch the current readout and brightness. Series versus parallel: predict which bulbs stay lit when one breaks.
 
@@ -128,13 +128,13 @@ Algorithms: sorting as bars (chart) that rearrange step by step with a step knob
 
 The internet: a packet (an envelope icon) travelling from a phone icon to a server icon across a few router icons, position driven by t; a knob for network congestion that slows it; tap the router where it's delayed. Prefer this drawing over a boxes-and-arrows diagram.
 
-Neurons and neural networks: tipping-point pattern for one neuron (weight and bias knobs on a sigmoid). For a small network, draw 3 layers of circles connected by segments whose thickness or opacity depends on weight knobs, with the output circle's fill showing the prediction; task: drag a weight until the output says the right answer.
+Neurons and neural networks: tipping-point pattern for one neuron (weight and bias knobs on a sigmoid). For a neuron or a small network use the NETWORK template: inputs on the left, weighted links (expressions of weight knobs), the output node's value lighting it; task: turn a weight until the output says the right answer.
 
 Learning and gradient descent: find-the-minimum pattern. A loss curve with the model's position as a draggable ball, the slope as a tangent segment, the step size as a knob; predict the direction of the next step; make the step so big it overshoots.
 
 Fitting a line (what "training" means): points on a graph and a line with draggable slope and intercept; an error readout (sum of squared distances drawn as vertical dashed segments from each point to the line); task: shrink the error below a target.
 
-Language models: odds-you-can-steer pattern for next-word prediction with temperature. Tokens: a sentence (text items) split into coloured chunks. Embeddings: map-of-meaning pattern. Attention: one word (a highlighted text item) with lines to the other words whose thickness is its attention weight; knobs that shift which word it attends to; predict which word "it" refers to.
+Language models: odds-you-can-steer pattern for next-word prediction with temperature. Tokens: a sentence (text items) split into coloured chunks. Embeddings: map-of-meaning pattern. Attention: the ATTENTION template (it computes softmax, scale and the causal mask correctly); a scale knob for sharpness, a causal-mask knob with choices Off/On, focusRow on the word that matters; predict which word "it" looks at. Never hand-draw an attention matrix.
 
 Images and vision: a tiny grid of pixels (polygons with fill opacity from expressions) and a filter (3x3 numbers) sliding across; a convolution as a moving window whose output appears in a second grid.
 

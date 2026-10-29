@@ -184,7 +184,47 @@ export const Balance = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance]);
+/**
+ * A scale with a marker: wavelength and colour, pH, temperature, loudness, frequency. Position and readout come from
+ * the same mapping, so the number can never run backwards against the end labels (panel 2026-10-29, Lim).
+ */
+export const Spectrum = z.object({
+  type: z.literal('spectrum'),
+  from: z.object({ value: z.number(), label: Short(24) }),
+  to: z.object({ value: z.number(), label: Short(24) }),
+  unit: Short(12).optional(),
+  colors: z.enum(['light', 'heat', 'acid', 'plain']).catch('plain'),
+  marker: Num,
+  markerLabel: Short(24).optional(),
+  marks: Many(z.object({ id: Id, at: z.number(), label: Short(24) }), 0, 6).optional(),
+  caption: Short(60).optional(),
+});
+/**
+ * Layers of nodes joined by weighted links: a neuron, a small neural network, a food web with strengths. Node values
+ * and link weights are expressions; the renderer draws link width from |weight| and colour from its sign.
+ */
+export const Network = z.object({
+  type: z.literal('network'),
+  layers: Many(Many(z.object({ id: Id, label: Short(20), value: Num.optional(), icon: IconName.optional(), tone: Tone.optional() }), 1, 6), 2, 4),
+  links: Many(z.object({ from: Id, to: Id, weight: Num, label: Short(16).optional() }), 1, 24),
+  caption: Short(60).optional(),
+});
+/**
+ * Attention: tokens attend to tokens. The model gives raw scores; the renderer computes softmax per row in code with
+ * the scale (and an optional causal mask), so every row sums to 100% and masked cells are exactly 0 (panel: Daniel).
+ */
+export const Attention = z.object({
+  type: z.literal('attention'),
+  tokens: Many(Short(14), 2, 6),
+  scores: z.array(z.array(Num)).min(2).max(6),
+  scale: Num.optional(),
+  mask: Num.optional(),
+  focusRow: Num.optional(),
+  show: z.enum(['weights', 'scores']).catch('weights'),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

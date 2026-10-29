@@ -12,6 +12,9 @@ import Timeline from './scene/Timeline';
 import Balance from './scene/Balance';
 import IconArray from './scene/IconArray';
 import Pipeline from './scene/Pipeline';
+import Spectrum from './scene/Spectrum';
+import Network from './scene/Network';
+import Attention from './scene/Attention';
 
 // three.js is only downloaded when a lesson actually has a 3D model.
 const Model3D = dynamic(() => import('./scene/Model3D'), { ssr: false, loading: () => <div className="shimmer absolute inset-6 rounded-[var(--radius)]" /> });
@@ -40,6 +43,9 @@ function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guid
     case 'pipeline': return <Pipeline scene={s} env={e} focus={focus} t={t} playing={playing} callouts={callouts} onTap={onTap} />;
     case 'iconArray': return <IconArray scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'balance': return <Balance scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
+    case 'spectrum': return <Spectrum scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} guide={guide} />;
+    case 'network': return <Network scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
+    case 'attention': return <Attention scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
   }
 }
 

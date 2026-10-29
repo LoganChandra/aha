@@ -872,6 +872,9 @@ function sceneIds(l: Lesson): string[] {
     case 'pipeline': return [...s.stages.map((x) => x.id), ...(s.side ?? []).map((x) => x.id)];
     case 'iconArray': return s.groups.map((g) => g.id);
     case 'balance': return [s.left.id, s.right.id];
+    case 'spectrum': return ['marker', ...(s.marks ?? []).map((m) => m.id)];
+    case 'network': return [...s.layers.flat().map((x) => x.id), ...s.links.map((l) => `${l.from}->${l.to}`)];
+    case 'attention': return [...s.tokens.map((_, i) => `row${i}`), ...s.tokens.flatMap((_, i) => s.tokens.map((__, j) => `cell${i}_${j}`))];
   }
 }
 
@@ -886,6 +889,9 @@ function summarise(l: Lesson): string {
     case 'pipeline': return `Process: ${s.stages.map((x) => x.label).join(' → ')}${(s.side ?? []).length ? `; also ${(s.side ?? []).map((x) => `${x.label} (${x.dir})`).join(', ')}` : ''}`.slice(0, 780);
     case 'iconArray': return `Out of ${s.total}: ${s.groups.map((g) => `${g.label} = ${g.count}`).join(', ')}`.slice(0, 780);
     case 'balance': return `Balance: ${s.left.label} (${s.left.weight}) vs ${s.right.label} (${s.right.weight})`.slice(0, 780);
+    case 'spectrum': return `Scale from ${s.from.label} (${s.from.value}) to ${s.to.label} (${s.to.value})${s.unit ? ` ${s.unit}` : ''}, marker at ${s.marker}`.slice(0, 780);
+    case 'network': return `Network: ${s.layers.map((l) => l.map((x) => x.label).join(', ')).join(' → ')}; links ${s.links.map((l) => `${l.from}->${l.to} (${l.weight})`).join(', ')}`.slice(0, 780);
+    case 'attention': return `Attention over ${s.tokens.join(' ')} (rows look at columns; ids rowN, cellI_J)`.slice(0, 780);
   }
 }
 

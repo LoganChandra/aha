@@ -38,6 +38,9 @@ function sceneIds(scene: Scene): string[] {
     case 'pipeline': return [...scene.stages.map((x) => x.id), ...(scene.side ?? []).map((x) => x.id)];
     case 'iconArray': return scene.groups.map((g) => g.id);
     case 'balance': return [scene.left.id, scene.right.id];
+    case 'spectrum': return ['marker', ...(scene.marks ?? []).map((m) => m.id)];
+    case 'network': return [...scene.layers.flat().map((x) => x.id), ...scene.links.map((l) => `${l.from}->${l.to}`)];
+    case 'attention': return [...scene.tokens.map((_, i) => `row${i}`), ...scene.tokens.flatMap((_, i) => scene.tokens.map((__, j) => `cell${i}_${j}`))];
   }
 }
 
@@ -102,6 +105,20 @@ export function checkLesson(raw: unknown): Checked {
     for (const g of scene.groups) checkExpr(`group "${g.id}" count`, g.count, withT, errors);
   } else if (scene.type === 'balance') {
     for (const side of [scene.left, scene.right]) { if (side.icon && !ICONS[side.icon]) errors.push(`balance "${side.id}": no icon "${side.icon}".`); checkExpr(`balance "${side.id}" weight`, side.weight, withT, errors); }
+  } else if (scene.type === 'spectrum') {
+    if (scene.from.value === scene.to.value) errors.push('spectrum: from and to need different values.');
+    checkExpr('spectrum marker', scene.marker, withT, errors);
+    const lo = Math.min(scene.from.value, scene.to.value), hi = Math.max(scene.from.value, scene.to.value);
+    for (const m of scene.marks ?? []) if (m.at < lo || m.at > hi) errors.push(`spectrum mark "${m.id}" at ${m.at} is off the scale (${lo} to ${hi}).`);
+  } else if (scene.type === 'network') {
+    const ids = new Set(scene.layers.flat().map((x) => x.id));
+    for (const l of scene.links) { if (!ids.has(l.from) || !ids.has(l.to)) errors.push(`link ${l.from}->${l.to}: both ends must be node ids (${[...ids].join(', ')}).`); checkExpr(`link ${l.from}->${l.to} weight`, l.weight, withT, errors); }
+    for (const x of scene.layers.flat()) { checkExpr(`node "${x.id}" value`, x.value, withT, errors); if (x.icon && !ICONS[x.icon]) errors.push(`node "${x.id}": no icon "${x.icon}".`); }
+  } else if (scene.type === 'attention') {
+    const nT = scene.tokens.length;
+    if (scene.scores.length !== nT || scene.scores.some((r) => r.length !== nT)) errors.push(`attention: scores must be ${nT} rows of ${nT} numbers (one row per token).`);
+    scene.scores.flat().forEach((v) => checkExpr('attention score', v, withT, errors));
+    checkExpr('attention scale', scene.scale, withT, errors); checkExpr('attention mask', scene.mask, withT, errors); checkExpr('attention focusRow', scene.focusRow, withT, errors);
   } else if (scene.type === 'chart') {
     if (!scene.bars?.length && !scene.series?.length) errors.push('chart: give bars or series.');
     for (const b of scene.bars ?? []) checkExpr(`bar "${b.id}"`, b.value, withT, errors);
