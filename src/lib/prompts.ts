@@ -111,6 +111,10 @@ T16. SKY (why the sky is blue, sunsets, haze):
    {"type":"sky","sun":"sun","dust":"du","names":{"sun":"Sun","eye":"you","path":"path through air","blueLeft":"blue light left"}}
    sun is degrees above the horizon (a knob). The sky colour, the path length through air and the blue light left are computed. Write names in the lesson's language. Tap ids: sun, eye, path.
 
+T17. FIT (overfitting, underfitting, training vs test data, generalisation):
+   {"type":"fit","truth":"sin(2*pi*x)","degree":"deg","points":10,"noise":0.25,"showTest":"tst","xLabel":"input"}
+   truth is the real pattern in x on [0, 1]; dots are sampled from it with noise. degree (a knob) is the model's complexity; the fit and both errors are computed. Tap ids: curve, train, test.
+
 FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.

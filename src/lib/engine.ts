@@ -83,6 +83,7 @@ const JUNK_SOURCE = /SKILL\.md|\bMCP\b|Model ?Context ?Protocol|Modellkontextpro
 const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(self-?attention|attention|attends?|query|queries|keys? and values?|causal mask)\b|\bperhatian\b/i, 'who-looks-at-whom'],
   [/\b(neuron|perceptron|neural net|weights? and bias|activation|hidden layer)\b|\bneuron\b/i, 'weigh-the-inputs'],
+  [/\b(overfit\w*|underfit\w*|generali[sz]\w*|training (vs|versus|and) test|test (set|data)|memori[sz]\w*|bias[- ]variance)\b/i, 'too-good-to-be-true'],
   [/\b(reinforcement|rewards?|RLHF|human feedback|explor(e|ation) (vs|versus|and) exploit|exploit|thumbs[- ]up)\b/i, 'learn-from-reward'],
   [/\b(sunsets?|sunrise|horizon|haze|dusk|dawn)\b|\b(matahari terbenam|senja)\b/i, 'watch-the-sky'],
   [/\b(trigonometr\w*|trigonometri|sines?|cosines?|tangents?|hypotenuse|hipotenus|SOH.?CAH.?TOA|sin, cos|sin cos|right[- ]angled? triangles?|segi tiga tegak)\b/i, 'name-the-sides'],

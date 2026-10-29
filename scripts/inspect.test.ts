@@ -102,3 +102,14 @@ describe('words must match the picture', () => {
     expect(checkLesson(l).errors.some((e) => e.includes('"cat"'))).toBe(true);
   });
 });
+
+import { fitData, mse, polyFit } from '../src/components/scene/AiTemplates';
+describe('fit template maths', () => {
+  test('high complexity fits training data but does worse on new data than a moderate fit', () => {
+    const { train, test } = fitData((x) => Math.sin(2 * Math.PI * x), 10, 0.25);
+    const low = polyFit(train, 1), mid = polyFit(train, 3), high = polyFit(train, 9);
+    expect(mse(high, train)).toBeLessThan(mse(mid, train));
+    expect(mse(mid, test)).toBeLessThan(mse(low, test));
+    expect(mse(high, test)).toBeGreaterThan(mse(mid, test));
+  });
+});

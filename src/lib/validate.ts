@@ -50,6 +50,7 @@ function sceneIds(scene: Scene): string[] {
     case 'rightTriangle': return ['opp', 'adj', 'hyp', 'angle'];
     case 'convolve': return ['image', 'output'];
     case 'sky': return ['sun', 'eye', 'path'];
+    case 'fit': return ['curve', 'train', 'test'];
     case 'denoise': return ['image'];
   }
 }
@@ -153,6 +154,8 @@ export function checkLesson(raw: unknown): Checked {
   } else if (scene.type === 'reward') {
     scene.options.forEach((x) => { checkExpr(`option "${x.id}" reward`, x.reward, withT, errors); if (x.icon && !ICONS[x.icon]) errors.push(`option "${x.id}": no icon "${x.icon}".`); });
     checkExpr('reward rounds', scene.rounds, withT, errors); checkExpr('reward explore', scene.explore, withT, errors);
+  } else if (scene.type === 'fit') {
+    checkExpr('fit truth', scene.truth, new Set([...withT, 'x']), errors); checkExpr('fit degree', scene.degree, withT, errors); checkExpr('fit showTest', scene.showTest, withT, errors);
   } else if (scene.type === 'sky') {
     checkExpr('sky sun', scene.sun, withT, errors); checkExpr('sky dust', scene.dust, withT, errors);
   } else if (scene.type === 'convolve') {

@@ -765,6 +765,27 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'too-good-to-be-true',
+    name: 'Too good to be true',
+    use: 'Overfitting, underfitting, generalisation, training vs test data, why a model can ace practice and fail in the real world, model complexity. Use the FIT template (the fitting and both errors are computed for you).',
+    moves: 'A straight line misses the pattern (underfit) → raise complexity until training error is tiny → reveal new data and see its error climb (overfit) → find the complexity where new-data error is lowest → state the rule.',
+    example: {
+      title: 'Why a perfect score can be a bad sign',
+      params: [
+        { id: 'deg', label: 'Model complexity', min: 1, max: 9, step: 1, value: 1 },
+        { id: 'tst', label: 'New data', min: 0, max: 1, step: 1, value: 0, choices: ['Hidden', 'Shown'] },
+      ],
+      scene: { type: 'fit', truth: 'sin(2*pi*x)', degree: 'deg', points: 10, noise: 0.25, showTest: 'tst', xLabel: 'input', caption: 'The model only sees the blue dots' },
+      steps: [
+        { say: 'A model learns from examples: the blue dots. A straight line is too simple to follow their wave.', task: { kind: 'tap', target: 'train', hint: 'Tap the examples the model learns from.' }, after: 'Those dots are the training data. The model never sees anything else.' },
+        { say: 'Make the model more flexible until it passes through almost every dot.', task: { kind: 'slide', param: 'deg', goal: 'deg>=9', hint: 'Turn complexity up to 9.' }, after: 'Training error is almost 0. A perfect score on the practice questions.' },
+        { say: 'Now test it on new examples it has never seen.', task: { kind: 'predict', question: 'On the new data (orange squares), the wiggly model will…', choices: ['do badly: it memorised the noise', 'be perfect too', 'do exactly as well'], answer: 0, reveal: { set: { tst: 1 } } }, after: 'It memorised the noise in the blue dots, so it misses the new ones: that is overfitting.' },
+        { say: 'Find the complexity where the error on new data is lowest.', task: { kind: 'slide', param: 'deg', goal: 'deg>=3 && deg<=5', hint: 'Bring complexity down to about 3 to 5.' }, after: 'At {deg} the model follows the real pattern, not the noise, and does best on new data.' },
+        { say: 'Good models are judged on data they never saw: a perfect training score can mean memorising, not learning.', focus: ['test'] },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */

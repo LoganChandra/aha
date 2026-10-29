@@ -5,6 +5,7 @@
 // every sentence with that record and lists contradictions and wrong facts, and the writer gets one repair turn.
 import { evaluate, fillTemplate, type Env } from './expr';
 import type { Lesson } from './recipe';
+import { fitData, mse, polyFit } from '../components/scene/AiTemplates';
 
 type Num = number | string;
 // The POC skin's colours, so "the orange dot" can be checked (writer prompt uses the same names).
@@ -128,6 +129,13 @@ function screen(l: Lesson, env: Env): string {
       const k = 1 - Math.exp(-Math.max(0, rounds) / 6), est = rw.map((r) => 0.5 + (Math.max(0, Math.min(1, r)) - 0.5) * k);
       const e = est.map((v) => Math.exp(8 * v)), sm = e.reduce((a, b) => a + b, 0), pk = e.map((v) => (1 - ex) * (v / sm) + ex / rw.length);
       body = `Learning from reward after ${rounds} rounds (explore ${r2(ex)}). For each option: true reward, learned estimate, chance of picking it now (computed): ${s.options.map((x, i) => `${x.label}: ${r2(rw[i])} / ${r2(est[i])} / ${Math.round(pk[i] * 100)}%`).join('; ')}.`;
+      break;
+    }
+    case 'fit': {
+      const { train, test } = fitData((x) => evaluate(s.truth, { ...env, x }, 0), s.points ?? 10, s.noise ?? 0.25);
+      const deg = Math.max(0, Math.min((s.points ?? 10) - 1, Math.round(n(s.degree, 1))));
+      const c = polyFit(train, deg);
+      body = `Curve fitting. ${train.length} training dots (blue) and ${test.length} new-data squares (orange) from the same true curve y = ${s.truth} plus noise. A curve of complexity (polynomial degree) ${deg} is fitted to the training dots only. Computed: training error ${r2(mse(c, train))}, error on new data ${r2(mse(c, test))}.`;
       break;
     }
     case 'sky': {

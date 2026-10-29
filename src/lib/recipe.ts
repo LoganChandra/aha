@@ -333,7 +333,21 @@ export const Sky = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle, Convolve, Sky]);
+/** Overfitting: noisy training dots and held-out test dots from one true curve; a polynomial of the chosen
+ * complexity is fitted by least squares in code and both errors are computed, so the U-shaped test error is real. */
+export const Fit = z.object({
+  type: z.literal('fit'),
+  truth: Short(120),
+  degree: Num,
+  points: z.number().int().min(6).max(20).optional(),
+  noise: z.number().min(0).max(2).optional(),
+  showTest: Num.optional(),
+  xLabel: Short(24).optional(),
+  yLabel: Short(24).optional(),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle, Convolve, Sky, Fit]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

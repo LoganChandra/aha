@@ -12,7 +12,7 @@ type NW = Extract<Scene, { type: 'nextWord' }>;
 type TK = Extract<Scene, { type: 'tokens' }>;
 type EM = Extract<Scene, { type: 'embedding' }>;
 type DS = Extract<Scene, { type: 'descent' }>;
-export type TemplateWords = { nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string; round?: (n: number) => string; noiseLeft?: (p: number) => string; stepOf2?: (n: number, t: number) => string };
+export type TemplateWords = { nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string; round?: (n: number) => string; noiseLeft?: (p: number) => string; stepOf2?: (n: number, t: number) => string; trainErr?: string; testErr?: string };
 const EN: TemplateWords = { nTokens: (n) => `${n} tokens`, slope: 'slope', offChart: 'off the chart', chancePick: 'chance it picks this', learned: 'what it has learned (| = truth)' };
 type Common = { env: Env; focus: string[]; callouts?: Record<string, string>; onTap?: (id: string) => void; words?: TemplateWords };
 
@@ -473,6 +473,73 @@ export function Convolve({ scene, env, focus }: { scene: CV } & Common) {
             {px >= 0 && (
               <text x={ox + (ow * cell) / 2} y={oy + oh * cell + 22} textAnchor="middle" fontSize={16} fontWeight={800} fill="var(--ink)" fontFamily="var(--font-sans)">{formatNumber(out[py][px])}</text>
             )}
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type FT = Extract<Scene, { type: 'fit' }>;
+/** Seeded random numbers, so the same lesson always shows the same dots. */
+function rng(seed: number) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+/** Train and test points from one true curve on [0, 1], with Gaussian-ish noise; exported for tests. */
+export function fitData(truth: (x: number) => number, n: number, noise: number) {
+  const r = rng(7), g = () => (r() + r() + r() - 1.5) * 0.8;
+  const train = Array.from({ length: n }, (_, i) => { const x = (i + 0.5) / n; return [x, truth(x) + noise * g()] as [number, number]; });
+  // New data sits between the training points (and out to the edges), where an overfitted curve swings most.
+  const test = Array.from({ length: n }, (_, i) => { const x = Math.min(0.99, Math.max(0.01, i / (n - 1))); return [x, truth(x) + noise * g()] as [number, number]; });
+  return { train, test };
+}
+/** Least-squares polynomial fit (normal equations on x in [0,1]), returning the coefficients; exported for tests. */
+export function polyFit(pts: [number, number][], degree: number): number[] {
+  const d = Math.max(0, Math.min(pts.length - 1, Math.round(degree))), k = d + 1;
+  const A = Array.from({ length: k }, () => Array(k + 1).fill(0));
+  // Work in t = 2x - 1 (on [-1, 1]) so high degrees stay well conditioned and can pass through every point.
+  for (const [x0, y] of pts) { const x = 2 * x0 - 1; for (let i = 0; i < k; i++) { for (let j = 0; j < k; j++) A[i][j] += x ** (i + j); A[i][k] += y * x ** i; } }
+  for (let i = 0; i < k; i++) A[i][i] += 1e-12; // keeps high degrees solvable
+  for (let c = 0; c < k; c++) {
+    let p = c; for (let r = c + 1; r < k; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]];
+    for (let r = 0; r < k; r++) if (r !== c) { const f = A[r][c] / (A[c][c] || 1e-12); for (let j = c; j <= k; j++) A[r][j] -= f * A[c][j]; }
+  }
+  return A.map((row, i) => row[k] / (row[i] || 1e-12));
+}
+export const polyAt = (c: number[], x: number) => c.reduce((a, ci, i) => a + ci * (2 * x - 1) ** i, 0);
+export const mse = (c: number[], pts: [number, number][]) => pts.reduce((a, [x, y]) => a + (polyAt(c, x) - y) ** 2, 0) / pts.length;
+
+export function Fit({ scene, env, focus, words = EN }: { scene: FT } & Common) {
+  const [box, size] = useSize<HTMLDivElement>();
+  const { w, h } = size;
+  const truth = (x: number) => evaluate(scene.truth, { ...env, x }, 0);
+  const n = scene.points ?? 10, noise = scene.noise ?? 0.25;
+  const { train, test } = fitData(truth, n, noise);
+  const degree = Math.max(0, Math.min(n - 1, Math.round(evaluate(scene.degree, env, 1))));
+  const c = polyFit(train, degree);
+  const showTest = scene.showTest === undefined ? true : evaluate(scene.showTest, env, 1) >= 0.5;
+  const ys = [...train, ...test].map((p) => p[1]);
+  const y0 = Math.min(...ys) - 0.3, y1 = Math.max(...ys) + 0.3;
+  const padL = 16, padR = 16, padT = 16, padB = 28;
+  const X = (x: number) => padL + x * (w - padL - padR), Y = (y: number) => padT + (1 - (Math.max(y0 - 1, Math.min(y1 + 1, y)) - y0) / (y1 - y0)) * (h - padT - padB);
+  const d = Array.from({ length: 161 }, (_, i) => i / 160).map((x, i) => `${i ? 'L' : 'M'}${X(x).toFixed(1)},${Y(polyAt(c, x)).toFixed(1)}`).join('');
+  const trainErr = mse(c, train), testErr = mse(c, test);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
+  return (
+    <div className="absolute inset-0 flex select-none flex-col">
+      <Caption text={scene.caption} />
+      <div className="flex shrink-0 flex-wrap justify-center gap-1.5 px-2 pt-1" aria-live="polite">
+        <span className="rounded-full border border-line bg-surface px-3 py-1 text-[15px] font-semibold tabular-nums" style={{ color: 'var(--t-primary)' }}>{words.trainErr ?? 'training error'}: {formatNumber(trainErr)}</span>
+        {showTest && <span className="rounded-full border border-line bg-surface px-3 py-1 text-[15px] font-semibold tabular-nums" style={{ color: 'var(--t-accent)' }}>{words.testErr ?? 'error on new data'}: {formatNumber(testErr)}</span>}
+      </div>
+      <div ref={box} className="relative min-h-0 flex-1">
+        {w > 0 && (
+          <svg width={w} height={h} className="block" role="img" aria-label={scene.caption ?? 'Fitting a curve'}>
+            <defs><clipPath id="fit-clip"><rect x={padL} y={padT} width={w - padL - padR} height={h - padT - padB} /></clipPath></defs>
+            <line x1={padL} x2={w - padR} y1={h - padB} y2={h - padB} stroke="var(--axis)" strokeWidth={1.4} />
+            {scene.xLabel && <text x={w - padR} y={h - 8} textAnchor="end" fontSize={14} fontWeight={600} fill="var(--ink-2)" fontFamily="var(--font-sans)">{scene.xLabel} →</text>}
+            <path d={d} fill="none" stroke="var(--ink)" strokeWidth={3.5} strokeLinecap="round" clipPath="url(#fit-clip)" opacity={dim('curve')} />
+            <g opacity={dim('train')}>{train.map(([x, y], i) => <circle key={`t${i}`} cx={X(x)} cy={Y(y)} r={7} fill="var(--t-primary)" stroke="var(--surface)" strokeWidth={2} />)}</g>
+            {showTest && <g opacity={dim('test')}>{test.map(([x, y], i) => <rect key={`v${i}`} x={X(x) - 6} y={Y(y) - 6} width={12} height={12} rx={2} fill="none" stroke="var(--t-accent)" strokeWidth={3} />)}</g>}
           </svg>
         )}
       </div>
