@@ -218,7 +218,7 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
       const anchors = ctx.anchors ?? [];
       // Health topics never promise certainty (panel, Nurul: "pertahanan: 100%", "Anda tidak sakit").
       const health = /\b(vaccin\w*|vaksin|medicin\w*|ubat|disease|penyakit|immun\w*|imun\w*|virus|infection|jangkitan|cancer|kanser|diabetes|drug|dose|dos)\b/i.test(`${ctx.plan.topic} ${ctx.plan.lessons[ctx.index]?.title ?? ''}`);
-      const absolute = health ? [...new Set(JSON.stringify([checked.lesson.steps, checked.lesson.scene]).match(/\b(100 ?%|always|never get sick|completely safe|totally safe|guaranteed|cannot get sick|won'?t get sick|tidak akan sakit|tidak sakit|pasti selamat|sentiasa|selamat sepenuhnya)\b/gi) ?? [])] : [];
+      const absolute = health ? [...new Set(JSON.stringify([checked.lesson.steps, checked.lesson.scene]).match(/\b(100 ?%|never get sick|completely safe|totally safe|guaranteed|cannot get sick|won'?t get sick|tidak akan sakit|tidak sakit|pasti selamat|selamat sepenuhnya)\b/gi) ?? [])] : [];
       const healthGap = absolute.length ? [`Health claims must be honest and hedged: replace ${absolute.slice(0, 3).map((x) => `"${x}"`).join(', ')} with "usually", "much less likely", "milder", or a real figure from the FACT SHEET.`] : [];
       // Money and big-number claims must come from the fact sheet or the knobs, never from thin air (C04).
       const sheet = (ctx.anchors ?? []).join(' ');
