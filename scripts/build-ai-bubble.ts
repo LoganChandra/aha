@@ -71,10 +71,10 @@ const lessons = [
     scene: {
       type: 'cycle', speed: 'sp', center: 'the same dollars, counted at each stop', caption: 'Follow one investment dollar',
       stages: [
-        { id: 'nvidia', label: 'Nvidia invests in OpenAI', icon: 'cpu', tone: 'green' },
-        { id: 'openai', label: 'OpenAI pays for compute', icon: 'sparkles', tone: 'primary' },
-        { id: 'oracle', label: 'Oracle builds data centres', icon: 'server', tone: 'warm' },
-        { id: 'chips', label: 'Oracle buys Nvidia chips', icon: 'coins', tone: 'accent' },
+        { id: 'nvidia', label: 'Nvidia invests', icon: 'cpu', tone: 'green' },
+        { id: 'openai', label: 'OpenAI buys compute', icon: 'sparkles', tone: 'primary' },
+        { id: 'oracle', label: 'Oracle builds', icon: 'server', tone: 'warm' },
+        { id: 'chips', label: 'Buys Nvidia chips', icon: 'coins', tone: 'accent' },
       ],
     },
     steps: [
@@ -91,13 +91,13 @@ const lessons = [
     scene: {
       type: 'iconArray', total: 100, icon: 'building', caption: 'Who owns Meta\'s Hyperion AI campus, out of 100 parts',
       groups: [
-        { id: 'meta', label: 'owned by Meta (on its books)', tone: 'primary', count: 'own' },
-        { id: 'owl', label: 'owned by Blue Owl funds (off Meta\'s books)', tone: 'cool', count: '100-own' },
+        { id: 'meta', label: 'Meta (on its books)', tone: 'primary', count: 'own' },
+        { id: 'owl', label: 'Blue Owl funds (off them)', tone: 'cool', count: '100-own' },
       ],
     },
     steps: [
       { say: 'Hyperion, in Louisiana, is one of Meta\'s biggest AI data centres. Normally a company owns what it builds.', task: { kind: 'tap', target: 'meta', hint: 'Tap Meta\'s share.' }, after: 'Owning it all puts the cost, and any debt, on Meta\'s balance sheet where investors see it.' },
-      { say: 'In October 2025 Meta sold most of it to outside investors.', task: { kind: 'slide', param: 'own', goal: 'own<=20', hint: 'Move Meta\'s share down to 20%.' }, after: 'Blue Owl funds took 80%. About $27bn of bonds, sold via Pimco and due 2049, sit in the venture, not on Meta.' },
+      { say: 'In October 2025 Meta sold most of it to outside investors.', task: { kind: 'slide', param: 'own', goal: 'abs(own-20)<5', hint: 'Move Meta\'s share down to 20%.' }, after: 'Blue Owl funds took 80%. About $27bn of bonds, sold via Pimco and due 2049, sit in the venture, not on Meta.' },
       { say: 'Meta leases the campus back, for an initial 4 years, and guarantees part of its value for the first 16.', task: { kind: 'predict', question: 'If AI demand fades and the campus is worth less, who covers the shortfall?', choices: ['Meta, through the value guarantee', 'only the bond buyers', 'nobody'], answer: 0 }, after: 'The debt is off Meta\'s books, but much of the risk is not.' },
       { say: 'Watch the debt that does not show: it lets AI building outrun what balance sheets alone would allow.', set: { own: 20 }, focus: ['owl'] },
     ],

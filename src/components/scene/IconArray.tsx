@@ -18,7 +18,8 @@ export default function IconArray({ scene, env, focus, callouts = {}, onTap }: {
   let k = 0;
   counts.forEach((c, gi) => { for (let j = 0; j < c && k < total; j++, k++) owner.push(gi); });
   while (owner.length < total) owner.push(-1);
-  const legendH = scene.groups.length * 40 + (scene.caption ? 30 : 0) + 16;
+  // Long group names wrap to two lines on a phone; leave room so the last group is not hidden.
+  const legendH = scene.groups.reduce((a, g) => a + (g.label.length > 24 && w < 520 ? 62 : 40), 0) + (scene.caption ? (scene.caption.length > 40 && w < 520 ? 52 : 30) : 0) + 16;
   const gridH = Math.max(80, h - legendH - 16), gridW = w - 32;
   // Columns that make the cells as large as possible in the space.
   let best = { cols: 10, cell: 0 };

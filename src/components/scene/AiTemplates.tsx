@@ -328,7 +328,8 @@ export function Cycle({ scene, env, focus, callouts = {}, onTap, t = 0, words = 
   const { w, h } = size;
   const n = scene.stages.length;
   const speed = scene.speed !== undefined ? Math.max(0, evaluate(scene.speed, env, 0.4)) : 0.4;
-  const R = Math.max(60, Math.min(w, h) / 2 - 58), cx = w / 2, cy = h / 2;
+  // Room for the side labels (up to ~90px each side) and the label under the bottom stage.
+  const R = Math.max(56, Math.min(w / 2 - 92, h / 2 - 64)), cx = w / 2, cy = h / 2 - 8;
   const at = (k: number): [number, number] => [cx + R * Math.sin((2 * Math.PI * k) / n), cy - R * Math.cos((2 * Math.PI * k) / n)];
   const pos = t * speed; // stages travelled
   const round = Math.floor(pos / n) + 1;
@@ -343,6 +344,8 @@ export function Cycle({ scene, env, focus, callouts = {}, onTap, t = 0, words = 
   return (
     <div className="absolute inset-0 flex select-none flex-col">
       <Caption text={scene.caption} />
+      {/* On a small circle the centre note moves under the caption instead of colliding with the stages. */}
+      {scene.center && <p className="shrink-0 px-3 text-center text-[14px] font-medium text-ink-2">{scene.center}</p>}
       <div ref={box} className="relative min-h-0 flex-1">
         {w > 0 && (
           <svg width={w} height={h} className="block" role="img" aria-label={scene.caption ?? 'Cycle'}>
@@ -359,13 +362,18 @@ export function Cycle({ scene, env, focus, callouts = {}, onTap, t = 0, words = 
                 <g key={st.id} opacity={dim(st.id)} onClick={onTap ? () => onTap(st.id) : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
                   <Glyph name={st.icon} cx={x} cy={y} size={node * 2} color={tone(st.tone)} ring={k === here} />
                   {onTap && <circle className="pulse-ring" cx={x} cy={y} r={node + 6} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />}
-                  <text x={x} y={y + node + 20} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--ink)" stroke="var(--paper)" strokeWidth={4} paintOrder="stroke" fontFamily="var(--font-sans)">{st.label}</text>
+                  {/* Labels wrap onto two short lines so side labels never run off a phone screen. */}
+                  {(() => {
+                    const words = st.label.split(' '), lines: string[] = [];
+                    for (const wd of words) { const last = lines[lines.length - 1]; if (last && (last + ' ' + wd).length <= 14) lines[lines.length - 1] = last + ' ' + wd; else lines.push(wd); }
+                    return lines.slice(0, 3).map((ln, li) => <text key={li} x={Math.max(54, Math.min(w - 54, x))} y={y + node + 18 + li * 17} textAnchor="middle" fontSize={14.5} fontWeight={700} fill="var(--ink)" stroke="var(--paper)" strokeWidth={4} paintOrder="stroke" fontFamily="var(--font-sans)">{ln}</text>);
+                  })()}
                 </g>
               );
             })}
             <g fontFamily="var(--font-sans)" textAnchor="middle">
-              {scene.center && <text x={cx} y={cy - 6} fontSize={15} fontWeight={600} fill="var(--ink-2)">{scene.center}</text>}
-              <text x={cx} y={cy + 22} fontSize={22} fontWeight={800} fill="var(--ink)">{(words.round ?? ((r: number) => `round ${r}`))(round)}</text>
+              {false && scene.center && <text x={cx} y={cy - 6} fontSize={14} fontWeight={600} fill="var(--ink-2)">{scene.center}</text>}
+              <text x={cx} y={cy + 8} fontSize={22} fontWeight={800} fill="var(--ink)">{(words.round ?? ((r: number) => `round ${r}`))(round)}</text>
             </g>
             <Pins w={w} h={h} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
           </svg>

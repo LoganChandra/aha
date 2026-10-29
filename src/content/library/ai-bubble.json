@@ -363,25 +363,25 @@
     "stages": [
      {
       "id": "nvidia",
-      "label": "Nvidia invests in OpenAI",
+      "label": "Nvidia invests",
       "icon": "cpu",
       "tone": "green"
      },
      {
       "id": "openai",
-      "label": "OpenAI pays for compute",
+      "label": "OpenAI buys compute",
       "icon": "sparkles",
       "tone": "primary"
      },
      {
       "id": "oracle",
-      "label": "Oracle builds data…",
+      "label": "Oracle builds",
       "icon": "server",
       "tone": "warm"
      },
      {
       "id": "chips",
-      "label": "Oracle buys Nvidia chips",
+      "label": "Buys Nvidia chips",
       "icon": "coins",
       "tone": "accent"
      }
@@ -466,13 +466,13 @@
     "groups": [
      {
       "id": "meta",
-      "label": "owned by Meta (on its books)",
+      "label": "Meta (on its books)",
       "tone": "primary",
       "count": "own"
      },
      {
       "id": "owl",
-      "label": "owned by Blue Owl funds (off…",
+      "label": "Blue Owl funds (off them)",
       "tone": "cool",
       "count": "100-own"
      }
@@ -504,7 +504,7 @@
      "task": {
       "kind": "slide",
       "param": "own",
-      "goal": "own<=20",
+      "goal": "abs(own-20)<5",
       "hint": "Move Meta's share down to 20%."
      },
      "after": "Blue Owl funds took 80%. About \\$27bn of bonds, sold via Pimco and due 2049, sit in the venture, not on Meta."

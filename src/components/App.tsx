@@ -668,6 +668,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   <div className={`grid gap-1.5 ${task.choices.every((c) => c.length <= 18) ? 'grid-cols-2' : 'sm:grid-cols-2'}`}>
                     {task.choices.map((c, i) => {
                       const picked = sp.pick === i, right = i === task.answer, settled = sp.pick !== undefined;
+                      // Once answered, only the right answer (and a wrong pick) stay, so the picture gets its room back.
+                      if (settled && !right && !picked) return null;
                       return (
                         <button
                           key={i} onClick={() => pick(i)} disabled={settled}
@@ -808,7 +810,14 @@ function Drawing({ title, aha, lessonNo, reduced, tx, outline }: { title: string
 }
 
 /** The value of a knob that completes a slide goal: the middle of the nearest stretch where the goal holds. */
-function goalTarget(goal: string, p: { id: string; min: number; max: number }, env: Env): number | null {
+function goalTarget(goal: string, p: { id: string; min: number; max: number; step?: number }, env: Env): number | null {
+  const t = goalTargetRaw(goal, p, env);
+  if (t === null || !p.step) return t;
+  // Land on a real knob value (a 1-year step shows 6, not 6.5), still inside the goal.
+  const snapped = Math.min(p.max, Math.max(p.min, p.min + Math.round((t - p.min) / p.step) * p.step));
+  return evaluate(goal, { ...env, t: 0, [p.id]: snapped }, 0) ? snapped : t;
+}
+function goalTargetRaw(goal: string, p: { id: string; min: number; max: number }, env: Env): number | null {
   const N = 600, ok: boolean[] = [];
   for (let k = 0; k <= N; k++) ok.push(!!evaluate(goal, { ...env, t: 0, [p.id]: p.min + ((p.max - p.min) * k) / N }, 0));
   let best: number | null = null;

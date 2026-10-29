@@ -20,9 +20,9 @@ function Bars({ scene, env, focus, callouts = {}, onTap }: { scene: C; env: Env;
   const max = Math.max(1e-9, ...bars.map((b) => Math.abs(b.v)));
   // Long names go above their bar instead of being cut to "2026 AI b..." (walk 2026-10-29).
   const stacked = bars.some((b) => b.label.length > 12) && size.w < 640;
-  const rowH = Math.min(64, Math.max(40, (size.h - 40) / Math.max(1, bars.length) - (stacked ? 24 : 0)));
+  const rowH = stacked ? Math.min(56, Math.max(22, (size.h - 48) / Math.max(1, bars.length) - 34)) : Math.min(64, Math.max(40, (size.h - 40) / Math.max(1, bars.length)));
   return (
-    <div ref={box} className="absolute inset-0 flex flex-col justify-center px-5 py-4 sm:px-10">
+    <div ref={box} className={`absolute inset-0 flex flex-col overflow-y-auto px-5 py-4 sm:px-10 ${stacked ? 'justify-start' : 'justify-center'}`}>
       {scene.yLabel && <div className="mb-4 text-[17px] font-semibold text-ink">{scene.yLabel}</div>}
       <div className="flex flex-col" style={{ gap: Math.max(6, rowH * 0.22) }}>
         {bars.map((b) => {
