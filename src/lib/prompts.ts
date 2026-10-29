@@ -33,7 +33,7 @@ ${CATALOG}
 // With the level brief in it, searches found "Technical Jargon - NN/G" and prompt-skill pages instead of the topic
 // (blind panel 2026-10-29, Aisyah and Nurul). The brief goes in a second system message.
 export function planBrief(level: Level, lang = 'English'): string {
-  return `Learner level: ${level}. ${LEVEL_BRIEF[level]}\nLanguage: write EVERY field (topic, summary, titles, goals, question, options) in ${lang}.\nThe next message is what they want to understand, exactly as they typed it.`;
+  return `Learner level: ${level}. ${LEVEL_BRIEF[level]}\nLanguage: write EVERY field (topic, summary, titles, goals, question, options) in ${lang}.\nThe next message is what they want to understand, exactly as they typed it.${langNotes(lang)}`;
 }
 export function planUser(prompt: string): string {
   return prompt.slice(0, 600);
@@ -166,7 +166,7 @@ ${playbookPrompt()}`;
 // Wording a native speaker flagged (panel 2026-10-29, Nurul, a Malay-speaking nurse).
 function langNotes(lang?: string): string {
   if (!lang || !/^malay/i.test(lang)) return '';
-  return '\nMalay wording: polite everyday Malay with "tidak", one register throughout. "Ketik" for tap, "Seret" for drag, "Gerakkan peluncur" for a slider (never "Tarik slaid"). Give the real term once in brackets: "askar badan (sel darah putih)". Avoid heavy or wrong metaphors ("penjenayah", "kebal", "hafal", "kekal"); prefer "kuman", "imun", "ingat", "mengenali".';
+  return '\nMalay wording: polite everyday Malay with "tidak", one register throughout. "Ketik" for tap, "Seret" for drag, "Gerakkan peluncur" for a slider (never "Tarik slaid"). Give the real term once in brackets: "askar badan (sel darah putih)". Malaysian Malay, not Indonesian ("imuniti kelompok", not "kekebalan kelompok"). Avoid heavy or wrong metaphors ("penjenayah", "kebal", "hafal", "kekal"); prefer "kuman", "imun", "ingat", "mengenali".';
 }
 
 export function lessonUser(plan: Plan, index: number, level: Level, sources: { title: string }[]): string {
