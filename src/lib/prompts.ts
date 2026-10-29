@@ -198,7 +198,7 @@ set and focus are optional and may only use the param ids and scene ids you are 
 
 // The text-versus-picture inspector (blind panel 2026-10-29). It sees the lesson exactly as the learner meets it,
 // step by step, and lists only real problems: the writer then fixes them in one repair turn.
-export const CHECK_SYSTEM = `You are the inspector for AHA lessons. You get a lesson as the learner meets it: for every step, the sentence they read, their task, and an exact record of what the screen shows (knob values, readouts, labels, positions, what is DRAGGABLE, what is HIDDEN). x grows to the right, y grows upward. "Notes on picture" are small tags drawn next to the named item, so they are on the screen.
+export const CHECK_SYSTEM = `You are the inspector for AHA lessons. You get a lesson as the learner meets it: for every step, the sentence they read, their task, and an exact record of what the screen shows (knob values, readouts, labels, positions, what is DRAGGABLE, what is HIDDEN). x grows to the right, y grows upward. Colours are named as the learner sees them. "Callout tags" are drawn on the picture next to the named item. A DRAGGABLE item can be dragged directly AND its knob also appears as a slider, so "drag the dot" and "slide the knob" are both correct. Readouts are recomputed live from the knobs, so they always show the current value.
 
 List every real problem of these kinds, and nothing else:
 1. The text names or describes something that is not on the screen at that step (hidden, missing, or a different shape/colour than drawn).
@@ -211,7 +211,7 @@ List every real problem of these kinds, and nothing else:
 8. The text promises something the lesson never shows or answers.
 9. The ON SCREEN notes: things drawn on top of each other that the learner must tell apart or tap, and things the text points at ("the bar", "the line") that are tiny. Fix: move them apart, make them bigger, or change the words.
 
-Return ONLY JSON: {"issues":["step N: what is wrong. Fix: what to change", ...]}. At most 10 issues, most serious first. Be concrete: quote the words and the numbers. If there is nothing real, return {"issues":[]}. Do not report style or wording preferences, and never list something you then call acceptable: only real problems.`;
+Return ONLY JSON: {"issues":["step N: what is wrong. Fix: what to change", ...]}. At most 6 issues, most serious first. Report only what a real learner would trip on and you are sure of; when in doubt, leave it out. Never report something that is consistent. Be concrete: quote the words and the numbers. If there is nothing real, return {"issues":[]}. Do not report style or wording preferences, and never list something you then call acceptable: only real problems.`;
 
 export function checkUser(plan: Plan, index: number, level: Level, described: string): string {
   const l = plan.lessons[index];

@@ -152,7 +152,8 @@ async function inspect(lesson: Lesson, ctx: { plan: Plan; index: number; level: 
   try {
     const r = await chatJson<{ issues?: unknown }>(route, [{ role: 'system', content: CHECK_SYSTEM }, { role: 'user', content: checkUser(ctx.plan, ctx.index, ctx.level, describeSteps(lesson)) }], { timeoutMs, temperature: 0 });
     m.costUsd += r.costUsd;
-    const issues = Array.isArray(r.data?.issues) ? (r.data.issues as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 8).slice(0, 10) : [];
+    // Cheap models sometimes list a check that passed ("...is consistent. No issue."); those never reach the writer.
+    const issues = Array.isArray(r.data?.issues) ? (r.data.issues as unknown[]).filter((x): x is string => typeof x === 'string' && x.length > 8 && !/\bno issue\b|\bis consistent\b|\bthis is fine\b|\bacceptable\b/i.test(x)).slice(0, 6) : [];
     m.calls.push({ model: `${route.model} (inspect)`, ok: true, costUsd: r.costUsd, ms: r.ms, note: issues.slice(0, 3).join(' | ') || undefined });
     return issues;
   } catch (e) {

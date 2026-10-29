@@ -7,6 +7,8 @@ import { evaluate, fillTemplate, type Env } from './expr';
 import type { Lesson } from './recipe';
 
 type Num = number | string;
+// The POC skin's colours, so "the orange dot" can be checked (writer prompt uses the same names).
+const COLOUR: Record<string, string> = { primary: 'blue', accent: 'orange', warm: 'rust', cool: 'teal', green: 'green', red: 'red', neutral: 'grey' };
 const r2 = (v: number) => (Number.isFinite(v) ? Math.round(v * 100) / 100 : NaN);
 
 function startEnv(l: Lesson): Env {
@@ -38,7 +40,7 @@ function screen(l: Lesson, env: Env): string {
       for (const it of s.items) {
         if (it.show !== undefined && !(evaluate(it.show, env, 1) > 0)) { lines.push(`- ${it.id}: HIDDEN now`); continue; }
         const lab = it.label ? ` label "${fillTemplate(it.label, env)}"` : '';
-        const tone = it.tone ? ` ${it.tone}` : '';
+        const tone = ` ${COLOUR[it.tone ?? 'primary']}`;
         switch (it.type) {
           case 'text': lines.push(`- ${it.id}: text "${fillTemplate(it.text, env)}" at (${n(it.at[0])}, ${n(it.at[1])})`); break;
           case 'point': lines.push(`- ${it.id}: dot${tone} at (${n(it.x)}, ${n(it.y)})${lab}${it.dragX || it.dragY ? ` DRAGGABLE (moves ${[it.dragX, it.dragY].filter(Boolean).join(', ')})` : ''}`); break;
@@ -116,7 +118,7 @@ export function describeSteps(l: Lesson): string {
       : t.kind === 'slide' ? `SLIDE knob ${t.param} until ${t.goal}. Hint: "${t.hint}"`
       : t.kind === 'tap' ? `TAP ${t.target}. Hint: "${t.hint}"`
       : `PREDICT "${t.question}" choices ${t.choices.map((c, k) => `${k === t.answer ? '[correct] ' : ''}"${c}"`).join(', ')}`;
-    out.push(`STEP ${i + 1}\nLearner reads: "${fillTemplate(st.say, env)}"${st.callouts?.length ? `\nNotes on picture: ${st.callouts.map((c) => `${c.at}: "${c.text}"`).join('; ')}` : ''}\nTask: ${task}\nSCREEN AT START:\n${screen(l, env)}`);
+    out.push(`STEP ${i + 1}\nLearner reads: "${fillTemplate(st.say, env)}"${st.callouts?.length ? `\nCallout tags drawn on the picture (visible): ${st.callouts.map((c) => `on ${c.at}: "${c.text}"`).join('; ')}` : ''}\nTask: ${task}\nSCREEN AT START:\n${screen(l, env)}`);
     if (t?.kind === 'slide') env = solveSlide(l, env, t.param, t.goal);
     if (t?.kind === 'predict' && t.reveal?.set) env = { ...env, ...t.reveal.set };
     if (st.after) out.push(`After the task the learner reads: "${fillTemplate(st.after, env)}"\nSCREEN THEN:\n${t?.kind === 'slide' || t?.kind === 'predict' ? screen(l, env) : '(same as start)'}`);
