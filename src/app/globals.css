@@ -7,7 +7,7 @@
   --sunk: #efede7;
   --ink: #17171a;
   --ink-2: #4a4a52;
-  --ink-3: #85858e;
+  --ink-3: #696970; /* 5:1 on paper (WCAG 1.4.3); was 3.5:1, too faint for older eyes (panel: Lim) */
   --line: #e3e1da;
   --line-2: #d2cfc6;
   --focus: #1d5fd1;

@@ -444,7 +444,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
             </g>
           )}
           {showAxes && (
-            <g fontSize={13} fill="var(--ink-2)" fontFamily="var(--font-sans)" fontWeight={500}>
+            <g fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-sans)" fontWeight={500}>
               {xTicks.filter((v) => (Math.abs(v) > xs / 1000 || ax !== 0) && X(v) > PAD.l + 8 && X(v) < PAD.l + view.iw - 8).map((v) => <text key={`tx${v}`} x={X(v)} y={Math.min(view.h - 6, Y(ay) + 16)} textAnchor="middle">{tickLabel(v, xs, usePi)}</text>)}
               {yTicks.filter((v) => Math.abs(v) > ys / 1000 && Y(v) > PAD.t + 8 && Y(v) < PAD.t + view.ih - 8).map((v) => <text key={`ty${v}`} x={Math.max(PAD.l - 6, X(ax) - 6)} y={Y(v) + 4} textAnchor="end">{tickLabel(v, ys, false)}</text>)}
               {scene.xLabel && <text x={PAD.l + view.iw} y={view.h - 8} textAnchor="end" fill="var(--ink-2)" fontWeight={600}>{scene.xLabel} →</text>}

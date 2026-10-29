@@ -132,6 +132,8 @@ WHAT REAL LEARNERS TRIPPED ON (fix these every time)
 - Effects have the right direction and size: say "scattering grows as 1/wavelength⁴" not "the fourth power"; check any ratio you quote against the numbers the scene shows.
 - Health and medicine: hedge honestly ("usually", "much less likely", "milder"), never "100%", "always", "you will not get sick". Vaccines contain a weakened or killed germ, a piece of it, or instructions to make a piece; mention that a sore arm or mild fever for a day or two is normal.
 - Labels sit beside their thing, never on top of another label; prefer fewer, bigger labels.
+- Numbers people can read: a percentage never goes above 100% (say "4 times as much" instead); things you count (days, people, germs) use step 1 and no decimals; every chart axis says what it measures in words, with a unit or plain words like "low" and "high".
+- One curve or idea at a time: add the second curve on a later step (show with a step knob), never three curves at once.
 
 RULES
 - The scene must be correct: real formulas, real proportions, real facts from the plan. Do not invent specs.

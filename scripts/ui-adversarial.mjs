@@ -226,6 +226,16 @@ await check('a Malay course shows Malay buttons', {}, async (page) => {
   return (await page.getByText(/Pelajaran 1 daripada/).count()) > 0 && (await page.getByRole('button', { name: /Tanya/ }).count()) > 0;
 });
 
+// Panel (Aisyah): a reload must not throw the course away.
+await check('reloading mid-course reopens the same course', {}, async (page) => {
+  await startCourse(page, 'compound interest', 'Beginner');
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
+  const topic = await page.locator('header button').nth(1).innerText();
+  await page.reload();
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
+  return (await page.locator('header button').nth(1).innerText()) === topic;
+});
+
 await browser.close();
 let pass = 0;
 for (const [n, ok, e] of results) { if (ok) pass++; console.log(`${ok ? 'PASS' : 'FAIL'}  ${n}${e ? `  (${e})` : ''}`); }

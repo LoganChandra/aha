@@ -12,7 +12,7 @@ import SceneBoundary from './SceneBoundary';
 import Stage from './Stage';
 import { Icon, Knob, PromptBar } from './ui';
 
-type Course = { prompt: string; level: Level; planId: string; askToken: string; plan: Plan; sources: Source[] };
+type Course = { prompt: string; level: Level; planId: string; askToken: string; plan: Plan; sources: Source[]; lang: UiLang; startAt?: number };
 type Slot = { status: 'idle' | 'loading' | 'ready' | 'error'; lesson?: Lesson; error?: string };
 type Answer = { q: string; a?: string; error?: string; pending: boolean };
 
@@ -74,7 +74,7 @@ export default function App() {
     loadLesson(c, i);
   }, [loadLesson]);
 
-  async function start(text: string, lvl = level, lg: UiLang = lang) {
+  async function start(text: string, lvl = level, lg: UiLang = lang, startAt = 0) {
     const p = text.trim();
     if (!p) return;
     setHomeMsg(null);
@@ -95,7 +95,7 @@ export default function App() {
         setView('home');
         return;
       }
-      const c: Course = { prompt: p, level: lvl, planId: r.planId, askToken: r.askToken, plan: r.plan, sources: r.sources };
+      const c: Course = { prompt: p, level: lvl, planId: r.planId, askToken: r.askToken, plan: r.plan, sources: r.sources, lang: lg, startAt: Math.min(Math.max(0, startAt), r.plan.lessons.length - 1) };
       coursePlanId.current = c.planId;
       const empty: Slot[] = r.plan.lessons.map(() => ({ status: 'idle' }));
       slotsRef.current = empty;
@@ -103,8 +103,11 @@ export default function App() {
       setCourse(c);
       setPrompt('');
       setView('course');
-      if (window.history.state?.profai !== 'course') window.history.pushState({ profai: 'course' }, '');
-      loadLesson(c, 0);
+      // The address holds the course, so a reload or a shared link reopens it (plans and lessons are cached, so it is quick and free).
+      const url = courseUrl(c, c.startAt ?? 0);
+      if (window.history.state?.profai !== 'course') window.history.pushState({ profai: 'course' }, '', url);
+      else window.history.replaceState({ profai: 'course' }, '', url);
+      loadLesson(c, c.startAt ?? 0);
     } catch (e) {
       setHomeMsg({ kind: 'error', text: (e as Error).message });
       setView('home');
@@ -117,10 +120,11 @@ export default function App() {
     const topic = q.get('q');
     if (!topic) return;
     const lv = q.get('level') as Level | null, lg = q.get('lang') as UiLang | null;
+    const at = Number(q.get('l') ?? 0) || 0;
     history.replaceState(null, '', location.pathname);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (lg && lg in UI) setLang(lg);
-    start(topic, lv && LEVELS.includes(lv) ? lv : level, lg && lg in UI ? lg : undefined);
+    start(topic, lv && LEVELS.includes(lv) ? lv : level, lg && lg in UI ? lg : undefined, at);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -282,7 +286,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const reduced = useReducedMotion();
   const ul = uiLangOf(course.plan.lang);
   const tx = UI[ul];
-  const [li, setLi] = useState(0);
+  const [li, setLi] = useState(course.startAt ?? 0);
   // Continue pressed before the step is done: say what to do instead of a dead grey button (panel: Nurul, Kumar).
   const [nudge, setNudge] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -305,7 +309,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   // Lessons finished: their recap card is showing (or was shown).
   const [wrapped, setWrapped] = useState<Record<number, boolean>>({});
   // What happened on each step: done, the predict choice, a wrong tap (for the nudge).
-  const [progress, setProgress] = useState<Record<string, { done?: boolean; pick?: number; miss?: number; shown?: boolean; empty?: boolean }>>({});
+  const [progress, setProgress] = useState<Record<string, { done?: boolean; pick?: number; miss?: number; shown?: boolean; empty?: boolean; hit?: string }>>({});
   const [instant, setInstant] = useState(false);
   // The caption and the control panel sit inside the scene; the drawing is laid out in the space between them.
   const [topRef, topSize] = useSize<HTMLDivElement>();
@@ -334,7 +338,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const setPlaying = (p: boolean | ((x: boolean) => boolean)) => setPlayState((s) => ({ ...s, [li]: typeof p === 'function' ? p(playing) : p }));
   const shownEnv = useGlide(env, instant || reduced);
 
-  const mark = useCallback((k: string, patch: { done?: boolean; pick?: number; miss?: number; shown?: boolean; empty?: boolean }) => setProgress((p) => ({ ...p, [k]: { ...p[k], ...patch } })), []);
+  const mark = useCallback((k: string, patch: { done?: boolean; pick?: number; miss?: number; shown?: boolean; empty?: boolean; hit?: string }) => setProgress((p) => ({ ...p, [k]: { ...p[k], ...patch } })), []);
 
   const celebrate = useCallback(() => {
     try { if (!reduced) navigator.vibrate?.(12); } catch {}
@@ -373,6 +377,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     resetAsk();
     setLi(n);
     setSi(0);
+    try { window.history.replaceState(window.history.state, '', courseUrl(course, n)); } catch {}
     setMovedBy([]);
     setHistory([]);
     setSheet(false);
@@ -389,7 +394,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     if (!task || task.kind !== 'tap' || sp.done || !lesson) return;
     // A tap on any copy of the same thing counts: four identical shields are one answer (panel: Nurul, Lim, Kumar).
     if (id === task.target || sameThing(lesson, id, task.target)) { mark(key, { done: true }); celebrate(); }
-    else mark(key, { miss: (sp.miss ?? 0) + 1, empty: false });
+    else mark(key, { miss: (sp.miss ?? 0) + 1, empty: false, hit: nameOf(lesson, id) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task, sp.done, sp.miss, key, mark, lesson]);
   // A tap on nothing still answers: say so and light up the target, instead of silence (panel: Lim, Daniel).
@@ -424,7 +429,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
 
   // Share the course: the link reopens the same topic and level (the plan is cached, so it opens fast).
   async function shareCourse() {
-    const url = `${location.origin}/?q=${encodeURIComponent(course.prompt)}&level=${course.level}&lang=${ul}`;
+    const url = location.origin + courseUrl(course, 0);
     try {
       if (navigator.share) { await navigator.share({ title: course.plan.topic, url }); return; }
       await navigator.clipboard.writeText(url);
@@ -485,6 +490,19 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const slideKnob = task?.kind === 'slide' ? lesson?.params.find((p) => p.id === task.param) : undefined;
   // Dragging the picture is the main way, but never the only way (WCAG 2.5.7): the slider is always there too.
   const taskKnob = slideKnob;
+  // A slide that stops short of the goal: after a pause, say which way to go (panel: Aisyah's drags got no answer).
+  const [stall, setStall] = useState<'more' | 'less' | null>(null);
+  const slideStart = useRef<{ key: string; v: number } | null>(null);
+  useEffect(() => {
+    setStall(null);
+    if (!lesson || task?.kind !== 'slide' || done) return;
+    const v = env[task.param];
+    if (!slideStart.current || slideStart.current.key !== key) { slideStart.current = { key, v }; return; }
+    if (v === slideStart.current.v) return;
+    const id = setTimeout(() => { const p = lesson.params.find((q) => q.id === task.param); const t = p ? goalTarget(task.goal, p, env) : null; if (t !== null) setStall(t > v ? 'more' : 'less'); }, 1400);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [env, key, done]);
   // Where the active slide task wants the knob: drives the glowing handle and the direction arrows.
   const guide = useMemo(() => {
     if (!slideKnob || task?.kind !== 'slide' || done) return undefined;
@@ -626,7 +644,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                           </motion.span>
                           <p className="font-serif text-[19px] leading-[1.4] text-ink lg:text-[22px]">
                             {sp.shown && <span className="font-semibold">{tx.shownNote} </span>}
-                            {!sp.shown && task.kind === 'predict' && sp.pick !== task.answer && <span className="font-semibold">{tx.notQuite} </span>}
+                            {!sp.shown && task.kind === 'predict' && sp.pick !== task.answer && <span className="font-semibold">{tx.answerIs(task.choices[task.answer])} </span>}
                             {!sp.shown && !(task.kind === 'predict' && sp.pick !== task.answer) && <span className="font-semibold">{praise(key, tx.praise)} </span>}
                             <RichText text={step.after || step.say} env={env} />
                           </p>
@@ -669,7 +687,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   className="pointer-events-auto flex w-full max-w-[600px] flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-[22px] border-2 border-[var(--t-primary)]/40 bg-surface/95 py-2 pl-4 pr-2 text-[16.5px] font-semibold text-ink shadow-[var(--shadow)] backdrop-blur"
                 >
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--t-primary)]" />
-                  <span className="min-w-[55%] flex-1">{sp.miss ? `${sp.empty ? tx.emptySpace : tx.notThat} ${task.hint}` : task.hint}</span>
+                  <span className="min-w-[55%] flex-1">{sp.miss ? `${sp.empty ? tx.emptySpace : sp.hit ? `${tx.notThat} ${tx.youTapped(sp.hit)}` : tx.notThat} ${task.hint}` : task.hint}</span>
                   {/* The way out sits next to the instruction, where a stuck learner is already looking (panel: Kumar, Aisyah). */}
                   <span className="ml-auto"><ShowMe onClick={showMe} label={tx.showMe} /></span>
                 </motion.div>
@@ -678,7 +696,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                 <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 px-4 py-2.5 shadow-[var(--shadow)] backdrop-blur">
                   {taskKnob && task?.kind === 'slide' && (
                     <>
-                      {!done && <div className="flex items-center gap-2 pt-1.5"><p className="flex-1 text-[16px] font-semibold text-ink">{task.hint}</p><ShowMe onClick={showMe} label={tx.showMe} /></div>}
+                      {!done && <div className="flex items-center gap-2 pt-1.5"><p className="flex-1 text-[16px] font-semibold text-ink">{stall ? `${stall === 'more' ? tx.keepMore : tx.keepLess} ${task.hint}` : task.hint}</p><ShowMe onClick={showMe} label={tx.showMe} /></div>}
                       <Knob p={taskKnob} value={env[taskKnob.id] ?? taskKnob.value} onChange={(v) => setKnob(taskKnob.id, v)} toward={guide?.target} />
                     </>
                   )}
@@ -827,6 +845,20 @@ function sameThing(l: Lesson, a: string, b: string): boolean {
   if (!x || !y || x.type !== y.type || !['icon', 'point', 'circle', 'polygon'].includes(x.type)) return false;
   if ((x.name ?? '') !== (y.name ?? '') || (x.tone ?? 'primary') !== (y.tone ?? 'primary')) return false;
   return !x.label || !y.label || x.label === y.label;
+}
+
+function courseUrl(c: Course, lesson: number): string {
+  return `/?q=${encodeURIComponent(c.prompt)}&level=${c.level}&lang=${c.lang}${lesson ? `&l=${lesson}` : ''}`;
+}
+
+/** The learner-facing name of a scene item, for "That's the kitten." */
+function nameOf(l: Lesson, id: string): string | undefined {
+  const s = l.scene as unknown as Record<string, unknown>;
+  for (const k of ['items', 'nodes', 'parts', 'bars', 'events', 'stages', 'side', 'groups']) {
+    const hit = (s[k] as Array<{ id: string; label?: string }> | undefined)?.find((x) => x.id === id);
+    if (hit?.label && !hit.label.includes('{')) return `"${hit.label}"`;
+  }
+  return undefined;
 }
 
 function sceneIds(l: Lesson): string[] {
