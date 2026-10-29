@@ -17,10 +17,15 @@ export default function Network({ scene, env, focus, callouts = {}, onTap }: { s
   const cols = scene.layers.length;
   const most = Math.max(...scene.layers.map((l) => l.length));
   // Node size: as big as the tighter of the column gap and the row gap allows, within reason.
-  const r = Math.max(16, Math.min(34, (w / cols) * 0.22, (h - top - bottom) / (most * 2 + 1.6) * 0.62));
+  const r = Math.max(14, Math.min(34, (w / cols) * 0.2, ((h - top - bottom) / most) * 0.36));
+  // Inputs carry their names on the left and outputs on the right, so a tall stack never buries a label under the
+  // next node (walk 2026-10-29). Middle layers keep labels underneath.
+  const textW = (layer: { label: string }[]) => Math.max(...layer.map((x) => x.label.length)) * 8.4;
+  const xFirst = Math.min(w * 0.4, textW(scene.layers[0]) + r + 18), xLast = Math.max(w * 0.6, w - textW(scene.layers[cols - 1]) - r - 18);
+  const side = (ci: number) => (ci === 0 ? 'left' : ci === cols - 1 ? 'right' : 'below');
   const pos: Record<string, [number, number]> = {};
   scene.layers.forEach((layer, ci) => {
-    const x = w * ((ci + 0.5) / cols);
+    const x = cols === 1 ? w / 2 : xFirst + ((xLast - xFirst) * ci) / (cols - 1);
     const gap = (h - top - bottom) / layer.length;
     layer.forEach((n, ri) => { pos[n.id] = [x, top + gap * (ri + 0.5) - 8]; });
   });
@@ -62,8 +67,17 @@ export default function Network({ scene, env, focus, callouts = {}, onTap }: { s
                 {n.icon ? <Glyph name={n.icon} cx={x} cy={y} size={r * 2} color={c} ring />
                   : <><circle cx={x} cy={y} r={r} fill="var(--surface)" stroke={c} strokeWidth={2.5} /><circle cx={x} cy={y} r={r - 2} fill={c} fillOpacity={lit} /></>}
                 {!n.icon && val !== undefined && <text x={x} y={y + 6} textAnchor="middle" fontSize={Math.max(13, r * 0.55)} fontWeight={800} fill={lit > 0.55 ? 'var(--surface)' : 'var(--ink)'} fontFamily="var(--font-sans)">{formatNumber(val)}</text>}
-                <text x={x} y={y + r + 20} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--ink)" fontFamily="var(--font-sans)">{n.label}</text>
-                {n.icon && val !== undefined && <text x={x} y={y + r + 40} textAnchor="middle" fontSize={14} fontWeight={700} fill="var(--ink-2)" fontFamily="var(--font-sans)">{formatNumber(val)}</text>}
+                {(() => {
+                  const sd = side(scene.layers.findIndex((l) => l.some((q) => q.id === n.id)));
+                  const tx = sd === 'left' ? x - r - 10 : sd === 'right' ? x + r + 10 : x, anchor = sd === 'left' ? 'end' : sd === 'right' ? 'start' : 'middle';
+                  const ty = sd === 'below' ? y + r + 20 : y + (n.icon && val !== undefined ? -2 : 5);
+                  return (
+                    <g fontFamily="var(--font-sans)" textAnchor={anchor}>
+                      <text x={tx} y={ty} fontSize={15} fontWeight={700} fill="var(--ink)">{n.label}</text>
+                      {n.icon && val !== undefined && <text x={tx} y={ty + 18} fontSize={14} fontWeight={700} fill="var(--ink-2)">{formatNumber(val)}</text>}
+                    </g>
+                  );
+                })()}
                 {onTap && <circle className="pulse-ring" cx={x} cy={y} r={r + 6} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />}
               </g>
             );

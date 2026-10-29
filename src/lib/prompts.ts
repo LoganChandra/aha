@@ -65,7 +65,7 @@ T4. SPECTRUM (anything on a scale: light wavelength and colour, pH, temperature,
    colors: light (real wavelength colours, 380-750 nm), heat (cold blue to hot red), acid (pH colours), plain. marker is a param id (draggable along the bar) or an expression. The readout and the end labels always agree. readouts (0-3) are live numbers that follow the marker, shown big under the scale. Tap ids: marker and each mark id.
 T5. NETWORK (a neuron, a small neural network, weighted evidence adding up):
    {"type":"network","caption":"Is this email spam?","layers":[[{"id":"x1","label":"free money","icon":"coins","value":1},{"id":"x2","label":"from a friend","icon":"user","value":1}],[{"id":"out","label":"spam?","icon":"mail","value":"1/(1+exp(-(w1+w2)))"}]],"links":[{"from":"x1","to":"out","weight":"w1"},{"from":"x2","to":"out","weight":"w2"}]}
-   2-4 layers left to right, 1-6 nodes each. Link width shows |weight|, red means negative. A node value 0-1 lights it. Tap ids: node ids and "from->to".
+   2-4 layers left to right, 1-6 nodes each. Link width shows |weight|; positive links are blue, negative links are red (say so correctly in the text). A node value 0-1 lights it. Tap ids: node ids and "from->to".
 T6. ATTENTION (transformers, self-attention, masking: which words look at which):
    {"type":"attention","caption":"Row looks at column","tokens":["the","cat","sat"],"scores":[[2,1,0],[1,3,1],[0,3,1]],"scale":"sharp","mask":"causal","focusRow":2,"show":"weights"}
    You give raw scores (numbers or expressions); the app computes softmax per row with the scale and the causal mask, so rows always sum to 100% and masked cells are 0. show "scores" to show raw scores first. Tap ids: row0.. and cellI_J (row I, column J).
