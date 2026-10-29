@@ -51,3 +51,4 @@ Logan, 2026-10-29 (voice note, verbatim): "Treat them like they are your custome
 - Deployed; prod: API 25/26 then 26/26 on a clean rerun; UI 18/18 (3 new checks).
 - batch 4 (b1086ef): a wrong tap names what it hit, a wrong prediction names the answer, and a slide that stops short gets a nudge (C15). Contrast went up (C22), the writer got chart and number rules (C23), and reloading keeps the course (C25).
 - batch 5 (39c1228, 3786424, ef1ee32): the inspector now sees overlaps and tiny targets. Tick numbers sit in the margins. ENGINE.md was written. **New AHA templates: spectrum, network, attention**, routed in code. Prod: API 26/26, UI 19/19.
+- batch 6 (a4ddfc6 to ab54bbb): the planner now covers everything the request names, links lessons and adds exam practice (C09). The inspector is more precise. Lesson 1 inspects within a time budget. **AI templates added: next word, tokens, embedding, descent** (Logan: AI topics first). Prod: API 26/26, UI 19/19.

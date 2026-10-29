@@ -31,7 +31,9 @@ The schema is in `src/lib/recipe.ts` and is validated with zod. A recipe holds *
 - `params`: knobs with a range, a unit, and optional `choices` (named states).
 - `scene`: what to draw, as data. Coordinates are in the scene's own units, not pixels. It can be one of these:
   - free drawings: `graph2d` (curves, shapes, icons, draggable points, readouts), `model3d` (parts from the parts library), `diagram`, `chart`, `timeline`;
-  - designed templates the model only fills in: `pipeline`, `iconArray`, `balance`.
+  - designed templates the model only fills in: `pipeline`, `iconArray`, `balance`, `spectrum`, `network`;
+  - AI templates, whose maths runs in the renderer, not the model: `attention` (softmax, scale, causal mask), `nextWord` (softmax at a temperature), `tokens`, `embedding` (nearest neighbours by real distance), `descent` (slope and steps on the loss curve).
+  - Lessons plainly about one of these are routed to its pattern in code (`templateFor` in `engine.ts`).
 - Colours are roles (`primary`, `accent`, `warm`, `cool`, `green`, `red`, `neutral`), and the renderer maps them to its own palette.
 - `steps`: `say`, `callouts` (pinned to scene ids), `set` / `focus` / `play`, a `task` (`slide` toward a goal, `tap` a target, or `predict` with a reveal), and `after`.
 - Every number on screen is an expression of the knobs (`{sin(theta)}`), so any renderer can recompute it live.
