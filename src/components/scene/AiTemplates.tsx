@@ -115,6 +115,23 @@ export function Embedding({ scene, env, params, onDrag, focus, callouts = {}, on
   };
   const anchors: Record<string, [number, number]> = {};
   scene.points.forEach((p) => { anchors[p.id] = [X(p.x), Y(p.y)]; });
+  // Each label goes right, left, above or below its dot, whichever covers no other dot or label (walk: "soup" hid under "pizza").
+  const taken: { x0: number; x1: number; y0: number; y1: number }[] = scene.points.map((p) => ({ x0: X(p.x) - 11, x1: X(p.x) + 11, y0: Y(p.y) - 11, y1: Y(p.y) + 11 }));
+  if (q) taken.push({ x0: X(q.x) - 14, x1: X(q.x) + 14, y0: Y(q.y) - 14, y1: Y(q.y) + 14 });
+  const labelAt: Record<string, [number, number, 'start' | 'end' | 'middle']> = {};
+  for (const p of [...scene.points].sort((a, b) => b.y - a.y)) {
+    const tw = p.label.length * 8.8 + 4, px = X(p.x), py = Y(p.y);
+    const tries: [number, number, 'start' | 'end' | 'middle', number][] = [[px + 13, py + 5, 'start', 0], [px - 13, py + 5, 'end', -tw], [px, py - 14, 'middle', -tw / 2], [px, py + 25, 'middle', -tw / 2]];
+    let best = tries[0], bestA = Infinity;
+    for (const t of tries) {
+      const b = { x0: t[0] + t[3], x1: t[0] + t[3] + tw, y0: t[1] - 15, y1: t[1] + 4 };
+      const a = taken.reduce((s2, o) => s2 + Math.max(0, Math.min(b.x1, o.x1) - Math.max(b.x0, o.x0)) * Math.max(0, Math.min(b.y1, o.y1) - Math.max(b.y0, o.y0)), 0) + (b.x0 < 2 || b.x1 > w - 2 ? 5000 : 0);
+      if (a < bestA) { bestA = a; best = t; }
+      if (a === 0) break;
+    }
+    labelAt[p.id] = [best[0], best[1], best[2]];
+    taken.push({ x0: best[0] + best[3], x1: best[0] + best[3] + tw, y0: best[1] - 15, y1: best[1] + 4 });
+  }
   if (q) anchors.query = [X(q.x), Y(q.y)];
   const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
   return (
@@ -138,7 +155,7 @@ export function Embedding({ scene, env, params, onDrag, focus, callouts = {}, on
               <g key={p.id} opacity={dim(p.id)} onClick={onTap ? () => onTap(p.id) : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
                 <circle cx={X(p.x)} cy={Y(p.y)} r={9} fill={colour(p.group)} stroke="var(--surface)" strokeWidth={2.5} />
                 {onTap && <circle cx={X(p.x)} cy={Y(p.y)} r={24} fill="transparent" />}
-                <text x={X(p.x) + 13} y={Y(p.y) + 5} fontSize={16} fontWeight={700} fill={colour(p.group)} stroke="var(--paper)" strokeWidth={4} paintOrder="stroke" fontFamily="var(--font-sans)">{p.label}</text>
+                <text x={labelAt[p.id][0]} y={labelAt[p.id][1]} textAnchor={labelAt[p.id][2]} fontSize={16} fontWeight={700} fill={colour(p.group)} stroke="var(--paper)" strokeWidth={4} paintOrder="stroke" fontFamily="var(--font-sans)">{p.label}</text>
               </g>
             ))}
             {q && scene.query && (
@@ -182,7 +199,7 @@ export function Descent({ scene, env, params, onDrag, focus, callouts = {}, onTa
   const samples = Array.from({ length: 121 }, (_, i) => a + ((b - a) * i) / 120);
   const ys = samples.map(L).filter(Number.isFinite);
   const yMin = Math.min(...ys), yMax = Math.max(...ys);
-  const padL = 40, padR = 16, padT = 16, padB = 34;
+  const padL = 40, padR = 16, padT = 30, padB = 34;
   const X = (x: number) => padL + ((x - a) / (b - a)) * (w - padL - padR);
   const Y = (y: number) => padT + (1 - (y - yMin) / (yMax - yMin || 1)) * (h - padT - padB);
   const d = samples.map((x, i) => `${i ? 'L' : 'M'}${X(x).toFixed(1)},${Y(Math.min(yMax, L(x))).toFixed(1)}`).join('');
@@ -207,7 +224,7 @@ export function Descent({ scene, env, params, onDrag, focus, callouts = {}, onTa
             <line x1={padL} x2={w - padR} y1={h - padB} y2={h - padB} stroke="var(--axis)" strokeWidth={1.4} />
             <line x1={padL} x2={padL} y1={padT} y2={h - padB} stroke="var(--axis)" strokeWidth={1.4} />
             {scene.xLabel && <text x={w - padR} y={h - 8} textAnchor="end" fontSize={14} fontWeight={600} fill="var(--ink-2)" fontFamily="var(--font-sans)">{scene.xLabel} →</text>}
-            {scene.yLabel && <text x={padL + 4} y={padT + 12} fontSize={14} fontWeight={600} fill="var(--ink-2)" fontFamily="var(--font-sans)">↑ {scene.yLabel}</text>}
+            {scene.yLabel && <text x={padL} y={18} fontSize={14} fontWeight={600} fill="var(--ink-2)" fontFamily="var(--font-sans)">↑ {scene.yLabel}</text>}
             <path d={d} fill="none" stroke="var(--t-primary)" strokeWidth={3.5} strokeLinecap="round" />
             {/* the slope where the ball stands */}
             <line x1={X(wv - tl)} y1={Y(L(wv) - slope * tl)} x2={X(wv + tl)} y2={Y(L(wv) + slope * tl)} stroke="var(--t-accent)" strokeWidth={3} strokeLinecap="round" opacity={0.9} />
