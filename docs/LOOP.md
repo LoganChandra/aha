@@ -44,3 +44,8 @@ Logan, 2026-10-29 (voice note, verbatim): "Treat them like they are your custome
 ## Progress log
 
 - 2026-10-29 09:15: loop started. The tracker is being built from the 5 reports. First fix: the ask answer was hidden behind the recap card.
+- 2026-10-29 batch 1 (450af6e): the answer now shows above the recap card (C03). Taps are forgiving: duplicate targets count, empty-space taps get a message, the target highlights after a miss, and thin lines get wide hit strokes (C02). A words-vs-picture inspector checks each lesson, with one repair turn (C01, C04, C06). The checker now catches blank readouts and feedback that quotes a fixed goal value.
+- batch 2 (2962e7f): the UI follows the learner's language (C18). Searches use only the learner's words, and junk sources are filtered (C05). Also: the disclaimer moved up; the home screen gets a level picker and example topics (C10, C26); Show me sits inside the task card and gives no tick (C12); Continue explains itself (C24); the step count is labelled; a course-end card has share and restart (C13); readouts sit in a strip; labels and callouts are placed to avoid overlap (C07); the writer prompt carries the panel's rules.
+- batch 2b (5de12c5): the app is renamed AHA, at ahapoc.vercel.app. The picture area is stable. Knobs with two states show named buttons, and sliders get +/- buttons with a full-width track (C19). Knobs a step moves are named on screen (C11).
+- batch 3 (94ee08b): the course outline shows while lesson 1 draws (C08). Prediction choices are compact. Prompts now cover Expert depth (C21), Malay wording (C20), follow-up answers (C14) and pacing (C17).
+- Deployed; prod: API 25/26 then 26/26 on a clean rerun; UI 18/18 (3 new checks).

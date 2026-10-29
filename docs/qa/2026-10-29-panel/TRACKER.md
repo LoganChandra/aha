@@ -20,6 +20,36 @@ Source: the five reports in this folder (`1-aisyah-17-trig.md`, `2-kumar-44-chat
 - Complaint quotes the reviewer's own text. "Their fix" is the reviewer's fix; where the report gave none the cell says "Not stated" and any implied direction is labelled as implied.
 - Reviewer caveats are kept in the row: Aisyah's lesson 1 redraw lag, Kumar's and Daniel's synthetic taps, and Daniel's unverified dark mode may be partly tool artefacts.
 
+
+## Status by class (2026-10-29, Frank)
+
+Each row below still has its own status. These class fixes cover most of them; per-row ticks come after the next walk-through.
+
+| Class | State | Fix (commit) |
+|---|---|---|
+| C01 text vs render | fixed in code, verify per lesson | Inspector pass plus repair; checker rules for blank readouts and quoting a fixed goal value (450af6e) |
+| C02 taps | fixed | Duplicate items count; empty-space taps get a message; target lights up after a miss; 44px hit strokes (450af6e) |
+| C03 hidden answer | fixed, UI test added | Answer outranks the recap card; bigger card and back button (450af6e) |
+| C04 facts | improved | Inspector rule 7; writer rules on direction and size of effects; Expert brief (450af6e, 94ee08b) |
+| C05 sources | fixed | Search on the learner's words only; junk filter; disclaimer moved to the top and translated (2962e7f) |
+| C06 health | improved | Hedging rules in writer, inspector and tutor (2962e7f, 94ee08b) |
+| C07 labels | improved | Least-overlap placement with leader lines; readouts strip; no callout on a tap target (2962e7f) |
+| C08 waits | improved | Course outline and wait time shown while lesson 1 draws; time estimate on the planner (2962e7f, 94ee08b) |
+| C10 level picker | fixed | Check mark, plain note, translated labels (2962e7f) |
+| C11 moves by itself / jumps | fixed | Knobs a step moved are named; top area stays steady; task cards hide while asking (5de12c5) |
+| C12 Show me | fixed | Inside the task card; demonstrates without the green tick (2962e7f) |
+| C13 ending | fixed | Whole-course recap, share link, start again (2962e7f) |
+| C14 follow-up answers | improved | Tutor prompt (94ee08b) |
+| C17 pacing | improved | Writer rules (94ee08b) |
+| C18 language | fixed (zh/ta not yet checked by a native speaker) | i18n, language picker, plan follows the pick (2962e7f) |
+| C19 sliders | fixed | Named states, +/- buttons, full-width track, round steps (5de12c5) |
+| C20 Malay wording | improved | Language notes for the writer (94ee08b) |
+| C21 Expert depth | improved | Level brief (94ee08b) |
+| C24 progress / Continue | fixed | Step count; Continue explains (2962e7f) |
+| C26 home | fixed | Example topics; tap the title to type (2962e7f) |
+| C28 title overflow | fixed | Truncation, clamped planning title (2962e7f) |
+| C09, C15, C16, C22, C23, C25, C27 | open | next |
+
 ## Classes
 
 | ID | Name | Severity | Personas | Items |
