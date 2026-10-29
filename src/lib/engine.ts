@@ -228,6 +228,10 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
     const checked = checkLesson(r.data);
     // A copy is an error on every draft, so a repeat copy is never accepted as clean.
     if (checked.lesson && copiesPlaybook(checked.lesson)) checked.errors.push(COPY_ERROR);
+    // A lesson routed to a template must use it: free drawings of loops and grids came out messy (walk: the agent loop).
+    const pat = PLAYBOOK.find((p) => p.id === ctx.plan.lessons[ctx.index]?.pattern);
+    if (checked.lesson && pat && /Use the [A-Z ]+ template/.test(pat.use) && checked.lesson.scene.type !== pat.example.scene.type)
+      checked.errors.push(`This lesson must use the "${pat.example.scene.type}" template (see its example in the playbook), not "${checked.lesson.scene.type}". Rewrite the scene with type "${pat.example.scene.type}".`);
     m.calls.push({ model: route.model, ok: checked.errors.length === 0 && !!checked.lesson, costUsd: r.costUsd, ms: r.ms, note: checked.errors.slice(0, 3).join(' | ') || undefined });
     if (checked.lesson && checked.errors.length === 0) {
       // Clean by the rules: once per lesson, check the words against the picture before accepting it.
