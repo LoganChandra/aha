@@ -65,7 +65,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
     const step = niceStep(b - a, Math.max(80, size.h - 40), 52);
     const longest = Math.max(...[a, b, (a + b) / 2].map((v) => tickLabel(Math.round(v / step) * step, step, false).length));
     // Axis titles get their own room outside the plot, so curves never run through them.
-    return { l: Math.max(30, 12 + longest * 7), r: 14, t: scene.yLabel ? 26 : 14, b: scene.xLabel ? 42 : 26 };
+    return { l: Math.max(30, 14 + longest * 8), r: 14, t: scene.yLabel ? 26 : 14, b: scene.xLabel ? 42 : 26 };
   }, [showAxes, scene.y, size.h, scene.xLabel, scene.yLabel]);
 
   // Illustrations (no axes) are framed around what is actually drawn, wherever the knobs go, so a model's loose
@@ -443,10 +443,11 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
               <line y1={PAD.t} y2={PAD.t + view.ih} x1={X(ax)} x2={X(ax)} />
             </g>
           )}
+          {/* Tick numbers sit in the margins, never inside the picture where they hit curves and dots (panel: Aisyah, Kumar). */}
           {showAxes && (
             <g fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-sans)" fontWeight={500}>
-              {xTicks.filter((v) => (Math.abs(v) > xs / 1000 || ax !== 0) && X(v) > PAD.l + 8 && X(v) < PAD.l + view.iw - 8).map((v) => <text key={`tx${v}`} x={X(v)} y={Math.min(view.h - 6, Y(ay) + 16)} textAnchor="middle">{tickLabel(v, xs, usePi)}</text>)}
-              {yTicks.filter((v) => Math.abs(v) > ys / 1000 && Y(v) > PAD.t + 8 && Y(v) < PAD.t + view.ih - 8).map((v) => <text key={`ty${v}`} x={Math.max(PAD.l - 6, X(ax) - 6)} y={Y(v) + 4} textAnchor="end">{tickLabel(v, ys, false)}</text>)}
+              {xTicks.filter((v) => X(v) > PAD.l + 8 && X(v) < PAD.l + view.iw - 8).map((v) => <text key={`tx${v}`} x={X(v)} y={PAD.t + view.ih + 18} textAnchor="middle">{tickLabel(v, xs, usePi)}</text>)}
+              {yTicks.filter((v) => Y(v) > PAD.t + 8 && Y(v) < PAD.t + view.ih - 8).map((v) => <text key={`ty${v}`} x={PAD.l - 6} y={Y(v) + 4} textAnchor="end">{tickLabel(v, ys, false)}</text>)}
               {scene.xLabel && <text x={PAD.l + view.iw} y={view.h - 8} textAnchor="end" fill="var(--ink-2)" fontWeight={600}>{scene.xLabel} →</text>}
               {scene.yLabel && <text x={PAD.l} y={15} fill="var(--ink-2)" fontWeight={600}>↑ {scene.yLabel}</text>}
             </g>

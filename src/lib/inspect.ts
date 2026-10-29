@@ -55,6 +55,28 @@ function screen(l: Lesson, env: Env): string {
           case 'parametric': lines.push(`- ${it.id}: curve${tone} (x=${it.x}, y=${it.y})${lab}`); break;
         }
       }
+      // What the eye actually meets: things drawn on top of each other, and things too small to see or act on.
+      const W = s.x[1] - s.x[0], H = s.y[1] - s.y[0];
+      const spots: { id: string; x: number; y: number; w: number; h: number }[] = [];
+      for (const it of s.items) {
+        if (it.show !== undefined && !(evaluate(it.show, env, 1) > 0)) continue;
+        const box = (xs: number[], ys: number[]) => { const f = xs.filter(Number.isFinite), g = ys.filter(Number.isFinite); if (f.length && g.length) spots.push({ id: it.id, x: (Math.min(...f) + Math.max(...f)) / 2, y: (Math.min(...g) + Math.max(...g)) / 2, w: Math.max(...f) - Math.min(...f), h: Math.max(...g) - Math.min(...g) }); };
+        if (it.type === 'point') box([n(it.x)], [n(it.y)]);
+        else if (it.type === 'icon' || it.type === 'text') box([n(it.at[0])], [n(it.at[1])]);
+        else if (it.type === 'segment') box([n(it.from[0]), n(it.to[0])], [n(it.from[1]), n(it.to[1])]);
+        else if (it.type === 'polygon') box(it.points.map(([a]) => n(a)), it.points.map(([, b]) => n(b)));
+        else if (it.type === 'circle') { const c = [n(it.center[0]), n(it.center[1])], r = Math.abs(n(it.r)); box([c[0] - r, c[0] + r], [c[1] - r, c[1] + r]); }
+      }
+      const notes: string[] = [];
+      for (let i = 0; i < spots.length; i++) for (let j = i + 1; j < spots.length; j++) {
+        const a = spots[i], b = spots[j];
+        if (Math.abs(a.x - b.x) < W * 0.05 && Math.abs(a.y - b.y) < H * 0.05) notes.push(`${a.id} and ${b.id} sit on top of each other`);
+      }
+      for (const sp of spots) {
+        const it = s.items.find((x) => x.id === sp.id)!;
+        if ((it.type === 'polygon' || it.type === 'segment') && Math.max(sp.w / W, sp.h / H) < 0.04) notes.push(`${sp.id} is tiny (under 4% of the picture), hard to see or tap`);
+      }
+      if (notes.length) lines.push(`ON SCREEN: ${notes.slice(0, 12).join('; ')}.`);
       body = lines.join('\n');
       break;
     }

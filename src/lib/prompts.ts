@@ -193,6 +193,7 @@ List every real problem of these kinds, and nothing else:
 6. A predict question or tap task whose answer is already printed on the screen (a callout or label on the very thing to find, or the result shown before it is worked out).
 7. A fact that is wrong, or overclaimed: "100%", "always", "never", "you will not get sick", "exactly", a wrong formula or a wrong direction of an effect. Health and medicine must be hedged ("usually", "much less likely").
 8. The text promises something the lesson never shows or answers.
+9. The ON SCREEN notes: things drawn on top of each other that the learner must tell apart or tap, and things the text points at ("the bar", "the line") that are tiny. Fix: move them apart, make them bigger, or change the words.
 
 Return ONLY JSON: {"issues":["step N: what is wrong. Fix: what to change", ...]}. At most 10 issues, most serious first. Be concrete: quote the words and the numbers. If there is nothing real, return {"issues":[]}. Do not report style or wording preferences, and never list something you then call acceptable: only real problems.`;
 
