@@ -136,6 +136,13 @@ export function checkLesson(raw: unknown): Checked {
     if (scene.query) { checkExpr('query x', scene.query.x, withT, errors); checkExpr('query y', scene.query.y, withT, errors); }
     const ids = new Set(scene.points.map((p) => p.id));
     for (const [a, b] of scene.arrows ?? []) if (!ids.has(a) || !ids.has(b)) errors.push(`embedding arrow ${a}->${b}: both ends must be point ids.`);
+    // Points drawn on top of each other cannot be told apart or tapped (walk 2026-10-29: kitten, cat, rug in one blob).
+    const xs = scene.points.map((p) => p.x), ys = scene.points.map((p) => p.y);
+    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1e-9);
+    for (let i = 0; i < scene.points.length; i++) for (let j = i + 1; j < scene.points.length; j++) {
+      const a = scene.points[i], b = scene.points[j];
+      if (Math.hypot(a.x - b.x, a.y - b.y) < span * 0.08) errors.push(`embedding points "${a.id}" and "${b.id}" are almost on top of each other; spread them (at least ${(span * 0.1).toFixed(2)} apart) while keeping similar words close.`);
+    }
   } else if (scene.type === 'descent') {
     checkExpr('descent loss', scene.loss, new Set([...withT, 'x', 'w']), errors);
     checkExpr('descent w', scene.w, withT, errors); checkExpr('descent lr', scene.lr, withT, errors); checkExpr('descent steps', scene.steps, withT, errors);
