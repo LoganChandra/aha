@@ -781,6 +781,24 @@ function praise(seed: string, PRAISE: string[]): string {
 }
 
 /** While a lesson is drawn: the lesson's title and goal, and a pen line drawing itself. Calm, and honest about what is happening. */
+function DrawingStages({ stages, reduced }: { stages: string[]; reduced: boolean }) {
+  const [t, setT] = useState(0);
+  useEffect(() => { const t0 = performance.now(); const id = setInterval(() => setT((performance.now() - t0) / 1000), 400); return () => clearInterval(id); }, []);
+  const at = [0, 6, 14];
+  return (
+    <ol className="mx-auto mt-3 space-y-1.5 text-left">
+      {stages.map((st, i) => t >= at[i] && (
+        <li key={st} className="flex items-center gap-2 text-[14px]">
+          <span className={`flex h-4 w-4 items-center justify-center rounded-full ${i < stages.length - 1 && t >= at[i + 1] ? 'bg-ink text-paper' : 'border-2 border-line-2'}`}>
+            {i < stages.length - 1 && t >= at[i + 1] ? <Icon name="check" size={10} /> : <span className={`h-1 w-1 rounded-full bg-ink-2 ${reduced ? '' : 'animate-pulse'}`} />}
+          </span>
+          <span className={i < stages.length - 1 && t >= at[i + 1] ? 'text-ink-3' : 'font-medium text-ink'}>{st}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function Drawing({ title, aha, lessonNo, reduced, tx, outline }: { title: string; aha: string; lessonNo: number; reduced: boolean; tx: (typeof UI)['en']; outline?: string[] }) {
   return (
     <div className="flex max-w-[420px] flex-col items-center text-center">
@@ -796,6 +814,8 @@ function Drawing({ title, aha, lessonNo, reduced, tx, outline }: { title: string
       <p className="mt-1 font-serif text-[24px] leading-snug text-ink">{title}</p>
       {aha && <p className="mt-2 text-[17px] leading-snug text-ink-2">{aha}</p>}
       <p className="mt-4 text-[14px] text-ink-2">{tx.drawingWait}</p>
+      {/* The real stages, in order, each appearing when it typically starts: honest progress, not a dead screen (panel: Kumar). */}
+      <DrawingStages stages={tx.lessonStages} reduced={reduced} />
       {/* While the first lesson is drawn, the whole path is worth reading (panel: Nurul, Daniel). */}
       {outline && (
         <ol className="mx-auto mt-5 max-w-[360px] space-y-2 text-left">
