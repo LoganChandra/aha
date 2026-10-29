@@ -48,7 +48,13 @@ Each row below still has its own status. These class fixes cover most of them; p
 | C24 progress / Continue | fixed | Step count; Continue explains (2962e7f) |
 | C26 home | fixed | Example topics; tap the title to type (2962e7f) |
 | C28 title overflow | fixed | Truncation, clamped planning title (2962e7f) |
-| C09, C15, C16, C22, C23, C25, C27 | open | next |
+| C09 lesson content | improved | Research fact sheet per lesson + fact-use gate; real-case rules; coverage rules for the planner; templates for AI topics (df83fae, a4ddfc6) |
+| C15 miss feedback | fixed | Names what was tapped, names the right answer, nudges a stalled slide (b1086ef) |
+| C16 jargon | improved | Writer rule: every new term gets a plain sentence; templates remove coordinate jargon (embedding) |
+| C22 contrast/size | fixed | Muted text 5:1; unfocused items 60%; bigger ticks; branded focus ring (b1086ef, 6972e0c) |
+| C23 charts | improved | Writer rules; tick numbers in margins; bar names above bars on phones (ab54bbb, aef08fc) |
+| C25 coverage | improved | Reload test; Malay, empty-tap and hidden-answer UI tests; prod suites green each batch |
+| C27 lesson list | fixed | Scrollable sheet; goals written to the learner; sources per lesson (df83fae) |
 
 ## Classes
 
