@@ -405,7 +405,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
       {readoutItems.length > 0 && (
         <div className="flex shrink-0 flex-wrap gap-1.5 px-2 pb-1 pt-1" aria-live="polite">
           {readoutItems.map((r) => (
-            <span key={r.id} className="rounded-full border border-line bg-surface/95 px-3 py-1 text-[15px] font-semibold tabular-nums shadow-sm" style={{ color: r.color }}>{r.text}</span>
+            <span key={r.id} className={`rounded-full border border-line bg-surface/95 px-2.5 py-0.5 font-semibold tabular-nums shadow-sm ${readoutItems.length > 2 || r.text.length > 26 ? 'text-[13.5px]' : 'text-[15px]'}`} style={{ color: r.color }}>{r.text}</span>
           ))}
         </div>
       )}

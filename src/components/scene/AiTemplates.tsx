@@ -171,7 +171,7 @@ export function Embedding({ scene, env, params, onDrag, focus, callouts = {}, on
                 {(qx || qy) && <circle cx={X(q.x)} cy={Y(q.y)} r={30} fill="transparent" style={{ cursor: 'grab', touchAction: 'none' }} role="slider" aria-label={`Drag ${scene.query.label}`} onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = true; }} />}
               </g>
             )}
-            <Pins w={w} h={h} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
+            <Pins w={w} h={h} avoid={taken} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
           </svg>
         )}
       </div>
