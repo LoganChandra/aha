@@ -84,6 +84,8 @@ const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(self-?attention|attention|attends?|query|queries|keys? and values?|causal mask)\b|\bperhatian\b/i, 'who-looks-at-whom'],
   [/\b(neuron|perceptron|neural net|weights? and bias|activation|hidden layer)\b|\bneuron\b/i, 'weigh-the-inputs'],
   [/\b(reinforcement|rewards?|RLHF|human feedback|explor(e|ation) (vs|versus|and) exploit|exploit|thumbs[- ]up)\b/i, 'learn-from-reward'],
+  [/\b(diffusion|denois\w*|image generat\w*|stable diffusion|midjourney|dall-?e)\b/i, 'out-of-the-noise'],
+  [/\b(training loop|one (word|token) at a time|loop|epochs?|iterat\w+)\b/i, 'go-round-the-loop'],
   [/\b(next[- ]word|temperature|sampling|softmax|predicts? the next)\b/i, 'odds-and-temperature'],
   [/\b(embeddings?|word vectors?|vector space|semantic search|similar meanings?|meaning)\b/i, 'map-of-meaning'],
   [/\b(tokens?|tokeni[sz](er|ation)|subwords?)\b/i, 'chop-into-tokens'],

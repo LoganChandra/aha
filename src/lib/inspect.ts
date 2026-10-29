@@ -130,6 +130,8 @@ function screen(l: Lesson, env: Env): string {
       body = `Learning from reward after ${rounds} rounds (explore ${r2(ex)}). For each option: true reward, learned estimate, chance of picking it now (computed): ${s.options.map((x, i) => `${x.label}: ${r2(rw[i])} / ${r2(est[i])} / ${Math.round(pk[i] * 100)}%`).join('; ')}.`;
       break;
     }
+    case 'cycle': body = `A loop drawn as a circle: ${s.stages.map((x) => `${x.id} "${x.label}"`).join(' → ')} → back to the first. A dot travels round while playing and a "round N" counter in the middle counts the laps.${s.center ? ` Centre text: "${s.center}".` : ''}`; break;
+    case 'denoise': { const st = Math.max(0, Math.min(s.steps, Math.round(n(s.step, 0)))); body = `Diffusion picture of a "${s.icon}" icon${s.prompt ? ` for the prompt "${s.prompt}"` : ''}: step ${st} of ${s.steps}, ${Math.round((1 - st / s.steps) * 100)}% of the picture still covered by grey noise.`; break; }
     case 'balance': body = `Balance: left ${s.left.id} "${s.left.label}" weight ${n(s.left.weight)} vs right ${s.right.id} "${s.right.label}" weight ${n(s.right.weight)}`; break;
   }
   return `Knobs: ${knobs || 'none'}\n${body}`;

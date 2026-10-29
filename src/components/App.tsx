@@ -325,7 +325,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const total = course.plan.lessons.length;
   const meta = course.plan.lessons[li];
   const lastStep = lesson ? si >= lesson.steps.length - 1 : false;
-  const moving = useMemo(() => (lesson ? usesTime(lesson.scene) || (lesson.scene.type === 'diagram' && lesson.scene.edges.some((e) => e.flow !== undefined)) : false), [lesson]);
+  const moving = useMemo(() => (lesson ? usesTime(lesson.scene) || lesson.scene.type === 'cycle' || (lesson.scene.type === 'diagram' && lesson.scene.edges.some((e) => e.flow !== undefined)) : false), [lesson]);
 
   // Keep the next lesson building while this one is studied.
   useEffect(() => {
@@ -881,6 +881,8 @@ function sceneIds(l: Lesson): string[] {
     case 'embedding': return [...s.points.map((x) => x.id), ...(s.query ? ['query'] : [])];
     case 'descent': return ['ball', ...Array.from({ length: 12 }, (_, i) => `step${i + 1}`)];
     case 'reward': return s.options.map((o) => o.id);
+    case 'cycle': return s.stages.map((x) => x.id);
+    case 'denoise': return ['image'];
   }
 }
 
@@ -902,6 +904,8 @@ function summarise(l: Lesson): string {
     case 'tokens': return `Tokens: ${s.pieces.map((p) => `[${p.text}]`).join('')}`.slice(0, 780);
     case 'embedding': return `Map of meaning: ${s.points.map((p) => `${p.label} (${p.x}, ${p.y})`).join(', ')}${s.query ? `; draggable "${s.query.label}"` : ''}`.slice(0, 780);
     case 'descent': return `Gradient descent on loss ${s.loss}, w = ${s.w}, learning rate ${s.lr}`.slice(0, 780);
+    case 'cycle': return `A loop: ${s.stages.map((x) => x.label).join(' → ')} → back to the start`.slice(0, 780);
+    case 'denoise': return `Diffusion: "${s.prompt ?? ''}" emerging from noise over ${s.steps} steps (step ${s.step})`.slice(0, 780);
     case 'reward': return `Learning from reward: ${s.options.map((o) => `${o.label} (true reward ${o.reward})`).join(', ')}; rounds ${s.rounds}`.slice(0, 780);
   }
 }

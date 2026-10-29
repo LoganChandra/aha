@@ -46,6 +46,8 @@ function sceneIds(scene: Scene): string[] {
     case 'embedding': return [...scene.points.map((x) => x.id), ...(scene.query ? ['query'] : [])];
     case 'descent': return ['ball', ...Array.from({ length: 12 }, (_, i) => `step${i + 1}`)];
     case 'reward': return scene.options.map((o) => o.id);
+    case 'cycle': return scene.stages.map((x) => x.id);
+    case 'denoise': return ['image'];
   }
 }
 
@@ -141,6 +143,12 @@ export function checkLesson(raw: unknown): Checked {
   } else if (scene.type === 'reward') {
     scene.options.forEach((x) => { checkExpr(`option "${x.id}" reward`, x.reward, withT, errors); if (x.icon && !ICONS[x.icon]) errors.push(`option "${x.id}": no icon "${x.icon}".`); });
     checkExpr('reward rounds', scene.rounds, withT, errors); checkExpr('reward explore', scene.explore, withT, errors);
+  } else if (scene.type === 'cycle') {
+    scene.stages.forEach((x) => { if (!ICONS[x.icon]) errors.push(`stage "${x.id}": no icon "${x.icon}".`); });
+    checkExpr('cycle speed', scene.speed, withT, errors);
+  } else if (scene.type === 'denoise') {
+    if (!ICONS[scene.icon]) errors.push(`denoise: no icon "${scene.icon}".`);
+    checkExpr('denoise step', scene.step, withT, errors);
   } else if (scene.type === 'chart') {
     if (!scene.bars?.length && !scene.series?.length) errors.push('chart: give bars or series.');
     for (const b of scene.bars ?? []) checkExpr(`bar "${b.id}"`, b.value, withT, errors);

@@ -657,6 +657,48 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'go-round-the-loop',
+    name: 'Go round the loop',
+    use: 'Anything that repeats until done: a training loop, a chatbot writing one word at a time, a feedback loop. Use the CYCLE template (the loop is drawn as a loop and counts its rounds).',
+    moves: 'Show the stages in their circle → tap where it starts → watch one lap → predict what changes on the next lap → state why repeating is the whole trick.',
+    example: {
+      title: 'A chatbot writes one word at a time',
+      params: [{ id: 'sp', label: 'Speed', min: 0, max: 2, step: 0.1, value: 0.6 }],
+      scene: {
+        type: 'cycle', speed: 'sp', center: 'one word per lap', caption: 'The whole reply is this loop, again and again',
+        stages: [
+          { id: 'read', label: 'Read everything so far', icon: 'book-open', tone: 'cool' },
+          { id: 'score', label: 'Score every next word', icon: 'brain', tone: 'primary' },
+          { id: 'pick', label: 'Pick one', icon: 'sparkles', tone: 'accent' },
+          { id: 'add', label: 'Add it to the text', icon: 'pencil', tone: 'green' },
+        ],
+      },
+      steps: [
+        { say: 'A chatbot does not write a whole answer at once. It runs this loop.', play: true, task: { kind: 'tap', target: 'pick', hint: 'Tap the step where chance comes in.' }, after: 'It picks the next word by chance, weighted by the scores.' },
+        { say: 'Each lap adds exactly one word, then it reads everything again, including that word.', task: { kind: 'predict', question: 'A 100-word answer takes about…', choices: ['100 laps', '1 lap', '10 laps'], answer: 0 }, after: 'One lap per word (strictly, per token): long answers take many laps.' },
+        { say: 'Speed it up and count the laps.', task: { kind: 'slide', param: 'sp', goal: 'sp>=1.5', hint: 'Turn the speed up.' }, after: 'Faster laps, same loop: the trick is repeating it, not one giant leap.' },
+        { say: 'Read, score, pick, add, repeat: that loop is how every word of a reply is written.' },
+      ],
+    },
+  },
+  {
+    id: 'out-of-the-noise',
+    name: 'Out of the noise',
+    use: 'Diffusion models and AI image generation: starting from noise and removing a little at each step. Use the DENOISE template.',
+    moves: 'Show pure noise and the prompt → step forward and watch shapes appear → predict what happens with very few steps → state "learn to remove noise, then run it many times".',
+    example: {
+      title: 'How an AI paints a picture from noise',
+      params: [{ id: 'st', label: 'Steps done', min: 0, max: 30, step: 1, value: 0 }],
+      scene: { type: 'denoise', icon: 'cat', prompt: 'a cat', step: 'st', steps: 30, tone: 'warm', caption: 'Each step removes a little noise' },
+      steps: [
+        { say: 'An image AI starts from pure noise: random grey speckles, no picture at all.', task: { kind: 'predict', question: 'Where does the picture come from?', choices: ['removing noise step by step, guided by the prompt', 'copying a stored photo', 'drawing outlines first'], answer: 0 }, after: 'It learned to remove a little noise at a time so the result matches the words.' },
+        { say: 'Take steps and watch the picture appear.', task: { kind: 'slide', param: 'st', goal: 'st>=15', hint: 'Do 15 steps.' }, after: 'Halfway: {round(100*(1-st/30))}% noise is left and the shape is already clear.' },
+        { say: 'Finish the job.', task: { kind: 'slide', param: 'st', goal: 'st>=30', hint: 'Do all 30 steps.' }, after: 'No noise left: the picture the prompt asked for.' },
+        { say: 'Diffusion: learn to remove a little noise, then run that step many times, guided by the words.' },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */

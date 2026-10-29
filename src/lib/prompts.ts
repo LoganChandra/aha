@@ -91,6 +91,13 @@ T11. REWARD (reinforcement learning, RLHF, explore vs exploit):
    {"type":"reward","rounds":"r","explore":"ex","pickLabel":"chance it answers this way","learnedLabel":"what it has learned (| = truth)","options":[{"id":"clear","label":"Clear and correct","reward":0.9},{"id":"rude","label":"Short and rude","reward":0.1}]}
    2-5 options with a true reward 0-1. As rounds grow, the learned estimates move to the truth and the chance of picking each option follows; explore mixes in random tries. Write pickLabel and learnedLabel in the lesson's language. Tap ids: option ids.
 
+T12. CYCLE (loops: training loops, writing one word at a time, any repeat-until-done process):
+   {"type":"cycle","speed":"sp","center":"one word per lap","stages":[{"id":"read","label":"Read so far","icon":"book-open"},{"id":"pick","label":"Pick a word","icon":"sparkles"},{"id":"add","label":"Add it","icon":"pencil"}]}
+   3-6 stages round a circle; a dot goes round while playing and the centre counts the rounds. Tap ids: stage ids.
+T13. DENOISE (diffusion, image generation from noise):
+   {"type":"denoise","icon":"cat","prompt":"a cat","step":"st","steps":30,"tone":"warm"}
+   step 0 is pure noise; as step reaches steps the picture clears. Tap id: image.
+
 FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.

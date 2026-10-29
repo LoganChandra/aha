@@ -5,13 +5,14 @@ import { useRef } from 'react';
 import { evaluate, formatNumber, type Env } from '@/lib/expr';
 import type { Param, Scene } from '@/lib/recipe';
 import { Pins } from './Graph2D';
+import { Glyph } from './glyph';
 import { tone, useSize } from './runtime';
 
 type NW = Extract<Scene, { type: 'nextWord' }>;
 type TK = Extract<Scene, { type: 'tokens' }>;
 type EM = Extract<Scene, { type: 'embedding' }>;
 type DS = Extract<Scene, { type: 'descent' }>;
-export type TemplateWords = { nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string };
+export type TemplateWords = { nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string; round?: (n: number) => string; noiseLeft?: (p: number) => string; stepOf2?: (n: number, t: number) => string };
 const EN: TemplateWords = { nTokens: (n) => `${n} tokens`, slope: 'slope', offChart: 'off the chart', chancePick: 'chance it picks this', learned: 'what it has learned (| = truth)' };
 type Common = { env: Env; focus: string[]; callouts?: Record<string, string>; onTap?: (id: string) => void; words?: TemplateWords };
 
@@ -317,6 +318,94 @@ export function Reward({ scene, env, focus, callouts = {}, onTap, words = EN }: 
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+type CY = Extract<Scene, { type: 'cycle' }>;
+export function Cycle({ scene, env, focus, callouts = {}, onTap, t = 0, words = EN }: { scene: CY; t?: number } & Common) {
+  const [box, size] = useSize<HTMLDivElement>();
+  const { w, h } = size;
+  const n = scene.stages.length;
+  const speed = scene.speed !== undefined ? Math.max(0, evaluate(scene.speed, env, 0.4)) : 0.4;
+  const R = Math.max(60, Math.min(w, h) / 2 - 58), cx = w / 2, cy = h / 2;
+  const at = (k: number): [number, number] => [cx + R * Math.sin((2 * Math.PI * k) / n), cy - R * Math.cos((2 * Math.PI * k) / n)];
+  const pos = t * speed; // stages travelled
+  const round = Math.floor(pos / n) + 1;
+  const here = Math.floor(pos) % n;
+  const frac = pos - Math.floor(pos);
+  const a0 = at(here), a1 = at(here + 1);
+  const dot: [number, number] = [a0[0] + (a1[0] - a0[0]) * frac, a0[1] + (a1[1] - a0[1]) * frac];
+  const node = Math.max(26, Math.min(40, R * 0.34));
+  const anchors: Record<string, [number, number]> = {};
+  scene.stages.forEach((st, k) => { anchors[st.id] = at(k); });
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
+  return (
+    <div className="absolute inset-0 flex select-none flex-col">
+      <Caption text={scene.caption} />
+      <div ref={box} className="relative min-h-0 flex-1">
+        {w > 0 && (
+          <svg width={w} height={h} className="block" role="img" aria-label={scene.caption ?? 'Cycle'}>
+            <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--line-2)" strokeWidth={3} strokeDasharray="2 8" strokeLinecap="round" />
+            {scene.stages.map((st, k) => {
+              const [x, y] = at(k), [x2, y2] = at(k + 1), mx = (x + x2) / 2, my = (y + y2) / 2;
+              const ang = Math.atan2(y2 - y, x2 - x);
+              return <path key={`a${k}`} d={`M${mx - 7 * Math.cos(ang - 0.5)},${my - 7 * Math.sin(ang - 0.5)} L${mx},${my} L${mx - 7 * Math.cos(ang + 0.5)},${my - 7 * Math.sin(ang + 0.5)}`} fill="none" stroke="var(--ink-3)" strokeWidth={2.5} strokeLinecap="round" />;
+            })}
+            <circle cx={dot[0]} cy={dot[1]} r={9} fill="var(--t-accent)" stroke="var(--surface)" strokeWidth={3} />
+            {scene.stages.map((st, k) => {
+              const [x, y] = at(k);
+              return (
+                <g key={st.id} opacity={dim(st.id)} onClick={onTap ? () => onTap(st.id) : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
+                  <Glyph name={st.icon} cx={x} cy={y} size={node * 2} color={tone(st.tone)} ring={k === here} />
+                  {onTap && <circle className="pulse-ring" cx={x} cy={y} r={node + 6} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />}
+                  <text x={x} y={y + node + 20} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--ink)" stroke="var(--paper)" strokeWidth={4} paintOrder="stroke" fontFamily="var(--font-sans)">{st.label}</text>
+                </g>
+              );
+            })}
+            <g fontFamily="var(--font-sans)" textAnchor="middle">
+              {scene.center && <text x={cx} y={cy - 6} fontSize={15} fontWeight={600} fill="var(--ink-2)">{scene.center}</text>}
+              <text x={cx} y={cy + 22} fontSize={22} fontWeight={800} fill="var(--ink)">{(words.round ?? ((r: number) => `round ${r}`))(round)}</text>
+            </g>
+            <Pins w={w} h={h} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type DN = Extract<Scene, { type: 'denoise' }>;
+/** Deterministic noise per cell, so the same step always looks the same. */
+const hash = (i: number) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+export function Denoise({ scene, env, focus, words = EN }: { scene: DN } & Common) {
+  const [box, size] = useSize<HTMLDivElement>();
+  const { w, h } = size;
+  const step = Math.max(0, Math.min(scene.steps, Math.round(evaluate(scene.step, env, 0))));
+  const noise = 1 - step / scene.steps; // share of noise left
+  const side = Math.max(120, Math.min(w - 40, h - 70));
+  const cells = 18, cell = side / cells, x0 = (w - side) / 2, y0 = Math.max(8, (h - side - 50) / 2);
+  return (
+    <div className="absolute inset-0 flex select-none flex-col">
+      <Caption text={scene.caption} />
+      {scene.prompt && <p className="shrink-0 px-3 pt-1 text-center font-serif text-[18px] text-ink">"{scene.prompt}"</p>}
+      <div ref={box} className="relative min-h-0 flex-1">
+        {w > 0 && (
+          <svg width={w} height={h} className="block" role="img" aria-label={scene.prompt ?? 'Denoising'} opacity={focus.length && !focus.includes('image') ? 0.6 : 1}>
+            <rect x={x0} y={y0} width={side} height={side} rx={16} fill="var(--surface)" stroke="var(--line)" />
+            <Glyph name={scene.icon} cx={x0 + side / 2} cy={y0 + side / 2} size={side * 0.82} color={tone(scene.tone)} soft />
+            {/* each cell stays noisy until the steps clear it, in a fixed random order */}
+            <g>
+              {Array.from({ length: cells * cells }, (_, i) => {
+                if (hash(i) >= noise) return null;
+                const g = Math.round(90 + hash(i + 999) * 140);
+                return <rect key={i} x={x0 + (i % cells) * cell} y={y0 + Math.floor(i / cells) * cell} width={cell + 0.5} height={cell + 0.5} fill={`rgb(${g},${g},${g})`} />;
+              })}
+            </g>
+            <text x={w / 2} y={y0 + side + 30} textAnchor="middle" fontSize={16} fontWeight={700} fill="var(--ink)" fontFamily="var(--font-sans)">{(words.stepOf2 ?? ((n: number, t: number) => `step ${n} of ${t}`))(step, scene.steps)} · {(words.noiseLeft ?? ((p: number) => `${p}% noise`))(Math.round(noise * 100))}</text>
+          </svg>
+        )}
+      </div>
     </div>
   );
 }

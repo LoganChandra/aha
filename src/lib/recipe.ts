@@ -280,7 +280,27 @@ export const Reward = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward]);
+/** A loop drawn as a loop: stages round a circle, a dot travelling round, a live counter in the middle (panel, Kumar:
+ * "the loop is the whole trick" was said and never shown). Training loops, generating one word at a time, cycles. */
+export const Cycle = z.object({
+  type: z.literal('cycle'),
+  stages: Many(z.object({ id: Id, label: Short(24), icon: IconName, tone: Tone.optional() }), 3, 6),
+  speed: Num.optional(),
+  center: Short(40).optional(),
+  caption: Short(60).optional(),
+});
+/** Diffusion: a picture emerging from noise step by step. Noise left = 1 - step/steps, drawn in code. */
+export const Denoise = z.object({
+  type: z.literal('denoise'),
+  icon: IconName,
+  prompt: Short(60).optional(),
+  step: Num,
+  steps: z.number().int().min(2).max(100),
+  tone: Tone.optional(),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 
