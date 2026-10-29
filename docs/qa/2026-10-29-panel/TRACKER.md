@@ -43,7 +43,7 @@ Each row below still has its own status. These class fixes cover most of them; p
 | C17 pacing | fixed in code (at most 6 steps) + prompts | Writer rules (94ee08b) |
 | C18 language | fixed (zh/ta not yet checked by a native speaker) | i18n, language picker, plan follows the pick (2962e7f) |
 | C19 sliders | fixed | Named states, +/- buttons, full-width track, round steps (5de12c5) |
-| C20 Malay wording | improved | Language notes for the writer (94ee08b) |
+| C20 Malay wording | fixed in code for the flagged words + prompts | Language notes for the writer (94ee08b) |
 | C21 Expert depth | improved | Level brief (94ee08b) |
 | C24 progress / Continue | fixed | Step count; Continue explains (2962e7f) |
 | C26 home | fixed | Example topics; tap the title to type (2962e7f) |
