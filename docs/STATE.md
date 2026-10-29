@@ -25,7 +25,9 @@ last_updated: 2026-10-29
 - **Research step (df83fae).** Each lesson gets a web-grounded fact sheet (`research` in `engine.ts`, `RESEARCH_SYSTEM`). The writer must use at least 2 facts, enforced by a fact gate with one rewrite. A copy guard sends back scenes that copy the playbook. The sources show in the lesson list.
 - **Frank experiment.** `scripts/build-ai-bubble.ts` builds `src/content/library/ai-bubble.json`, a Claude-written Expert course. Prompt: "Tell me about the AI bubble".
 - **Money.** Write `\$` in lesson text. A bare `$` starts maths.
-- **Tests on prod.** Last full run (ed19bc7): API 26/26, UI 19/19. Unit: 37 tests.
+- **Templates (16).** attention, nextWord, tokens, embedding, descent, reward, cycle, denoise, convolve, spectrum, network, sky, rightTriangle, pipeline, iconArray, balance.
+- **Tracker.** 221 rows: 119 fixed, 102 improved. Improved means a prompt or checker rule, so verify it in walks.
+- **Tests on prod.** Last full run (80b5e61): API 26/26, UI 19/19. Unit: 42 tests.
 
 ## Resume prompt (paste into a fresh session)
 
