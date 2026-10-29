@@ -347,7 +347,22 @@ export const Fit = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle, Convolve, Sky, Fit]);
+/** Context windows, memory and RAG: a conversation of messages; only the last `window` fit in what the model reads.
+ * A fact outside the window is forgotten; with retrieval on, the matching document is fetched back in. Computed here. */
+export const Context = z.object({
+  type: z.literal('context'),
+  messages: Many(z.object({ id: Id, text: Short(60), who: z.enum(['you', 'ai', 'doc']).catch('you') }), 3, 12),
+  window: Num,
+  fact: Id,
+  question: Short(80),
+  rightAnswer: Short(60),
+  guess: Short(60),
+  docs: Many(z.object({ id: Id, text: Short(60) }), 0, 4).optional(),
+  retrieve: Num.optional(),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle, Convolve, Sky, Fit, Context]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

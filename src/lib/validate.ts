@@ -51,6 +51,7 @@ function sceneIds(scene: Scene): string[] {
     case 'convolve': return ['image', 'output'];
     case 'sky': return ['sun', 'eye', 'path'];
     case 'fit': return ['curve', 'train', 'test'];
+    case 'context': return [...scene.messages.map((m) => m.id), ...(scene.docs ?? []).map((d) => d.id), 'answer'];
     case 'denoise': return ['image'];
   }
 }
@@ -154,6 +155,9 @@ export function checkLesson(raw: unknown): Checked {
   } else if (scene.type === 'reward') {
     scene.options.forEach((x) => { checkExpr(`option "${x.id}" reward`, x.reward, withT, errors); if (x.icon && !ICONS[x.icon]) errors.push(`option "${x.id}": no icon "${x.icon}".`); });
     checkExpr('reward rounds', scene.rounds, withT, errors); checkExpr('reward explore', scene.explore, withT, errors);
+  } else if (scene.type === 'context') {
+    checkExpr('context window', scene.window, withT, errors); checkExpr('context retrieve', scene.retrieve, withT, errors);
+    if (!scene.messages.some((m) => m.id === scene.fact) && !(scene.docs ?? []).some((d) => d.id === scene.fact)) errors.push(`context: fact "${scene.fact}" must be a message id (or a doc id).`);
   } else if (scene.type === 'fit') {
     checkExpr('fit truth', scene.truth, new Set([...withT, 'x']), errors); checkExpr('fit degree', scene.degree, withT, errors); checkExpr('fit showTest', scene.showTest, withT, errors);
   } else if (scene.type === 'sky') {

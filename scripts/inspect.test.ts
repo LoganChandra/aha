@@ -123,3 +123,13 @@ describe('every scene can be tapped', () => {
     expect(missing).toEqual([]);
   });
 });
+
+import { contextView } from '../src/components/scene/AiTemplates';
+describe('context template logic', () => {
+  test('the fact falls out of a small window and retrieval brings it back', () => {
+    const ids = ['m1', 'm2', 'm3', 'm4'];
+    expect(contextView(ids, 4, 'm1', ['m1'], false).knows).toBe(true);
+    expect(contextView(ids, 2, 'm1', ['m1'], false).knows).toBe(false);
+    expect(contextView(ids, 2, 'm1', ['m1'], true).knows).toBe(true);
+  });
+});

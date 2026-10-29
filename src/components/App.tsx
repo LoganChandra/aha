@@ -916,6 +916,7 @@ function sceneIds(l: Lesson): string[] {
     case 'convolve': return ['image', 'output'];
     case 'sky': return ['sun', 'eye', 'path'];
     case 'fit': return ['curve', 'train', 'test'];
+    case 'context': return [...s.messages.map((m) => m.id), ...(s.docs ?? []).map((d) => d.id), 'answer'];
     case 'denoise': return ['image'];
   }
 }
@@ -938,6 +939,7 @@ function summarise(l: Lesson): string {
     case 'tokens': return `Tokens: ${s.pieces.map((p) => `[${p.text}]`).join('')}`.slice(0, 780);
     case 'embedding': return `Map of meaning: ${s.points.map((p) => `${p.label} (${p.x}, ${p.y})`).join(', ')}${s.query ? `; draggable "${s.query.label}"` : ''}`.slice(0, 780);
     case 'descent': return `Gradient descent on loss ${s.loss}, w = ${s.w}, learning rate ${s.lr}`.slice(0, 780);
+    case 'context': return `Context window: ${s.messages.length} messages, the model reads the last ${s.window}; key fact in ${s.fact}; question "${s.question}"`.slice(0, 780);
     case 'fit': return `Curve fitting: training dots and new-data squares from y = ${s.truth}; model complexity ${s.degree}`.slice(0, 780);
     case 'sky': return `Sky over a person; Sun height ${s.sun}°${s.dust !== undefined ? `, dust ${s.dust}` : ''}`.slice(0, 780);
     case 'convolve': return `Convolution: a ${s.image.length}-row image, a ${Array.isArray(s.kernel) ? 'custom' : s.kernel} filter${s.at ? `, window at (${s.at[0]}, ${s.at[1]})` : ''}`.slice(0, 780);

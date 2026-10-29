@@ -115,6 +115,10 @@ T17. FIT (overfitting, underfitting, training vs test data, generalisation):
    {"type":"fit","truth":"sin(2*pi*x)","degree":"deg","points":10,"noise":0.25,"showTest":"tst","xLabel":"input"}
    truth is the real pattern in x on [0, 1]; dots are sampled from it with noise. degree (a knob) is the model's complexity; the fit and both errors are computed. Tap ids: curve, train, test.
 
+T18. CONTEXT (context windows, forgetting, hallucination, RAG / retrieval):
+   {"type":"context","window":"win","fact":"m1","retrieve":"rag","question":"You: What time is my flight?","rightAnswer":"AI: 7:40 am.","guess":"AI: 9:00 am.","messages":[{"id":"m1","who":"you","text":"My flight is at 7:40 am."},{"id":"m2","who":"ai","text":"Noted!"}],"docs":[{"id":"m1","text":"Saved note: flight 7:40 am."}]}
+   3-12 messages, oldest first; the model reads only the last "window" messages. If the fact message is outside and retrieval is off, the answer shown is the confident wrong guess. Use your own chat on the lesson's topic. Tap ids: message ids, doc ids, answer.
+
 FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.

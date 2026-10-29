@@ -786,6 +786,39 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'what-it-remembers',
+    name: 'What it remembers',
+    use: 'Context windows, why a chatbot forgets earlier messages, hallucination (confident wrong answers), RAG / retrieval / looking things up, memory. Use the CONTEXT template (what the model can read is computed for you).',
+    moves: 'A long chat with one key fact early on → shrink the window and see the fact fall out → watch it answer with a confident guess (hallucination) → turn on retrieval and see the fact fetched back → state the rule.',
+    example: {
+      title: 'Why a chatbot forgets, and how lookup fixes it',
+      params: [
+        { id: 'win', label: 'Messages it can read', min: 1, max: 6, step: 1, value: 6 },
+        { id: 'rag', label: 'Look it up (retrieval)', min: 0, max: 1, step: 1, value: 0, choices: ['Off', 'On'] },
+      ],
+      scene: {
+        type: 'context', window: 'win', fact: 'm1', retrieve: 'rag', caption: 'A chat, oldest message at the top',
+        question: 'You: What time is my flight?', rightAnswer: 'AI: 7:40 am, from KLIA2.', guess: 'AI: Your flight is at 9:00 am.',
+        messages: [
+          { id: 'm1', who: 'you', text: 'My flight is at 7:40 am from KLIA2.' },
+          { id: 'm2', who: 'ai', text: 'Noted! Need a packing list?' },
+          { id: 'm3', who: 'you', text: 'Yes, for 3 days in Bangkok.' },
+          { id: 'm4', who: 'ai', text: 'Light clothes, adapter, sunscreen.' },
+          { id: 'm5', who: 'you', text: 'What should I eat there?' },
+          { id: 'm6', who: 'ai', text: 'Pad thai, mango sticky rice, khao soi.' },
+        ],
+        docs: [{ id: 'm1', text: 'Saved note: flight 7:40 am, KLIA2.' }],
+      },
+      steps: [
+        { say: 'A chatbot does not remember; it rereads the chat each time. Here it can read all 6 messages.', task: { kind: 'tap', target: 'm1', hint: 'Tap the message with the flight time.' }, after: 'It can see that message, so it answers correctly.' },
+        { say: 'Real chats get long, and the model can only read so much: its context window.', task: { kind: 'slide', param: 'win', goal: 'win<=3', hint: 'Shrink what it can read to 3 messages.' }, after: 'The flight time fell outside what it can read.' },
+        { say: 'Look at its answer now.', task: { kind: 'predict', question: 'Without the flight time, the chatbot…', choices: ['makes up a confident time', 'always says it does not know', 'refuses to answer'], answer: 0 }, after: 'A confident wrong answer: a hallucination. It fills the gap with something plausible.' },
+        { say: 'Retrieval looks up saved notes or documents and puts the right one back in front of the model.', task: { kind: 'slide', param: 'rag', goal: 'rag>=1', hint: 'Tap On.' }, after: 'The note is fetched back in, and the answer is right again.' },
+        { say: 'A model only knows what is in its window; retrieval (RAG) brings the right facts back in.', focus: ['answer'] },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */

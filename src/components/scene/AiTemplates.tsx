@@ -12,7 +12,7 @@ type NW = Extract<Scene, { type: 'nextWord' }>;
 type TK = Extract<Scene, { type: 'tokens' }>;
 type EM = Extract<Scene, { type: 'embedding' }>;
 type DS = Extract<Scene, { type: 'descent' }>;
-export type TemplateWords = { nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string; round?: (n: number) => string; noiseLeft?: (p: number) => string; stepOf2?: (n: number, t: number) => string; trainErr?: string; testErr?: string };
+export type TemplateWords = { nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string; round?: (n: number) => string; noiseLeft?: (p: number) => string; stepOf2?: (n: number, t: number) => string; trainErr?: string; testErr?: string; windowStart?: string; fetched?: string };
 const EN: TemplateWords = { nTokens: (n) => `${n} tokens`, slope: 'slope', offChart: 'off the chart', chancePick: 'chance it picks this', learned: 'what it has learned (| = truth)' };
 type Common = { env: Env; focus: string[]; callouts?: Record<string, string>; onTap?: (id: string) => void; words?: TemplateWords };
 
@@ -547,6 +547,50 @@ export function Fit({ scene, env, focus, onTap, words = EN }: { scene: FT } & Co
               {onTap && test.map(([x, y], i) => <circle key={`vh${i}`} cx={X(x)} cy={Y(y)} r={22} fill="transparent" />)}{test.map(([x, y], i) => <rect key={`v${i}`} x={X(x) - 6} y={Y(y) - 6} width={12} height={12} rx={2} fill="none" stroke="var(--t-accent)" strokeWidth={3} />)}</g>}
           </svg>
         )}
+      </div>
+    </div>
+  );
+}
+
+type CX = Extract<Scene, { type: 'context' }>;
+/** Which messages the model can read: the last `window`, plus the fact's document when retrieval is on. Exported for tests. */
+export function contextView(ids: string[], window: number, fact: string, docs: string[], retrieve: boolean) {
+  const w = Math.max(1, Math.round(window));
+  const seen = new Set(ids.slice(-w));
+  const fetched = retrieve && !seen.has(fact) && docs.includes(fact) ? fact : null;
+  return { seen, fetched, knows: seen.has(fact) || !!fetched };
+}
+
+export function Context({ scene, env, focus, onTap, words = EN }: { scene: CX } & Common) {
+  const win = evaluate(scene.window, env, scene.messages.length);
+  const retrieve = scene.retrieve !== undefined && evaluate(scene.retrieve, env, 0) >= 0.5;
+  const docIds = (scene.docs ?? []).map((d) => d.id);
+  const { seen, fetched, knows } = contextView(scene.messages.map((m) => m.id), win, scene.fact, docIds, retrieve);
+  const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.6 : 1);
+  const bubble = (id: string, text: string, who: string, inside: boolean, isFact: boolean) => (
+    <button key={id} type="button" disabled={!onTap} onClick={onTap ? () => onTap(id) : undefined}
+      className={`max-w-[85%] rounded-2xl px-3 py-1.5 text-left text-[15px] leading-snug transition-opacity ${who === 'ai' ? 'self-end bg-[var(--t-primary)] text-white' : who === 'doc' ? 'self-center border-2 border-dashed border-[var(--t-green)] bg-surface text-ink' : 'self-start bg-sunk text-ink'} ${isFact ? 'ring-2 ring-[var(--t-accent)]' : ''}`}
+      style={{ opacity: (inside ? 1 : 0.28) * dim(id) }}>{text}</button>
+  );
+  return (
+    <div className="absolute inset-0 flex select-none flex-col px-3 pb-1">
+      <Caption text={scene.caption} />
+      <div className="relative mt-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
+        {scene.messages.map((m, i) => {
+          const inside = seen.has(m.id);
+          const firstInside = inside && (i === 0 || !seen.has(scene.messages[i - 1].id));
+          return (
+            <div key={m.id} className="flex flex-col">
+              {firstInside && <div className="my-1 flex items-center gap-2 text-[13px] font-semibold text-[var(--t-accent)]"><span className="h-[2px] flex-1 bg-[var(--t-accent)]" />{words.windowStart ?? 'what the model can read'}<span className="h-[2px] flex-1 bg-[var(--t-accent)]" /></div>}
+              {bubble(m.id, m.text, m.who, inside, m.id === scene.fact)}
+            </div>
+          );
+        })}
+        {fetched && (() => { const d = scene.docs!.find((x) => x.id === fetched)!; return <div className="mt-1 flex flex-col"><div className="mb-1 text-center text-[13px] font-semibold text-[var(--t-green)]">{words.fetched ?? 'looked up and added'}</div>{bubble(d.id, d.text, 'doc', true, true)}</div>; })()}
+      </div>
+      <div className="mt-1 shrink-0 rounded-2xl border border-line bg-surface p-2.5" style={{ opacity: dim('answer') }} onClick={onTap ? () => onTap('answer') : undefined}>
+        <div className="text-[14px] font-semibold text-ink-2">{scene.question}</div>
+        <div className={`mt-0.5 text-[16px] font-bold ${knows ? 'text-[var(--t-green)]' : 'text-[var(--t-red)]'}`}>{knows ? scene.rightAnswer : scene.guess}</div>
       </div>
     </div>
   );
