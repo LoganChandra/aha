@@ -323,7 +323,17 @@ export const Convolve = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle, Convolve]);
+/** The sky over a person: sun height drives the sky colour, the light's path through the air and how much blue is
+ * scattered away, all computed here (blind panel 2026-10-29, Lim: the sunset never turned red, readouts were blank). */
+export const Sky = z.object({
+  type: z.literal('sky'),
+  sun: Num,
+  dust: Num.optional(),
+  names: z.object({ sun: Short(20), eye: Short(20), path: Short(30), blueLeft: Short(30) }).optional(),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle, Convolve, Sky]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

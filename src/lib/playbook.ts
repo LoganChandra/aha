@@ -745,6 +745,26 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'watch-the-sky',
+    name: 'Watch the sky',
+    use: 'Why the sky is blue, sunsets, sunrise colours, haze and dust in the air. Use the SKY template (the path length and the light left are computed for you).',
+    moves: 'Sun high: blue sky, short path → lower the Sun and watch the path stretch and the blue drain away → predict what dust does → state the rule.',
+    example: {
+      title: 'Why sunsets are red',
+      params: [
+        { id: 'sun', label: 'Sun height', min: 1, max: 90, step: 1, value: 70, unit: '°' },
+        { id: 'du', label: 'Dust in the air', min: 0, max: 1, step: 1, value: 0, choices: ['Clean', 'Dusty'] },
+      ],
+      scene: { type: 'sky', sun: 'sun', dust: 'du', caption: 'Sunlight crossing the air to you' },
+      steps: [
+        { say: 'At midday the Sun is high and its light crosses only a thin layer of air to reach you.', task: { kind: 'tap', target: 'path', hint: 'Tap the path the sunlight takes.' }, after: 'A short path: most blue light survives, and air scatters it across the whole sky.' },
+        { say: 'Now let the Sun set.', task: { kind: 'slide', param: 'sun', goal: 'sun<=5', hint: 'Drag the Sun height down to 5° or less.' }, after: 'At {sun}° the light crosses about {round(1/(sin(sun*pi/180)+0.50572*(sun+6.07995)^(-1.6364)))} times more air: the blue is scattered away on the way, red and orange are left.' },
+        { say: 'Dust and smoke add more scattering.', task: { kind: 'predict', question: 'With dusty air at sunset, the sky…', choices: ['turns an even deeper red', 'turns blue again', 'does not change'], answer: 0, reveal: { set: { du: 1 } } }, after: 'More scattering strips even more blue: dusty evenings glow deep red.' },
+        { say: 'Sunsets are red because their light crosses much more air, which scatters the blue away before it reaches you.', set: { du: 0 } },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */

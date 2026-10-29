@@ -107,6 +107,10 @@ T15. CONVOLVE (how AI sees images: convolution, filters, edges, CNNs):
    {"type":"convolve","kernel":"vertical-edge","at":["cx","cy"],"image":["....####","....####","....####","....####","....####","....####"]}
    image rows: "#" dark, "." light (4-10 rows, same length). kernel: vertical-edge, horizontal-edge, blur, sharpen, or a 3x3 number grid. at moves the 3x3 window (knobs); the output map and the number under the window are computed. Tap ids: image, output.
 
+T16. SKY (why the sky is blue, sunsets, haze):
+   {"type":"sky","sun":"sun","dust":"du","names":{"sun":"Sun","eye":"you","path":"path through air","blueLeft":"blue light left"}}
+   sun is degrees above the horizon (a knob). The sky colour, the path length through air and the blue light left are computed. Write names in the lesson's language. Tap ids: sun, eye, path.
+
 FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.
@@ -222,7 +226,7 @@ Learner level: ${level}. ${LEVEL_BRIEF[level]}${langNotes(plan.lang)}
 Course outline:
 ${outline}
 
-Write lesson ${index + 1}: ${l.title}
+Write lesson ${index + 1}: ${l.title}${index === 0 ? `\nThis is the learner's first screen: step 1 names what they asked about in their own words ("${plan.topic}"), so they know they are in the right place.` : ''}
 Teaching pattern: ${l.pattern}${(() => { const p = PLAYBOOK.find((x) => x.id === l.pattern); return p ? ` (${p.name}). Steps: ${p.moves}${/Use the ([A-Z ]+) template/.exec(p.use) ? `\nScene: use the ${/Use the ([A-Z ]+) template/.exec(p.use)![1]} template exactly as documented (T1-T6); do not draw it freehand.` : ''}` : ' (choose the best-fitting pattern from the playbook)'; })()}${l.pattern === 'follow-the-flow' ? '' : '\nDo NOT use a diagram scene (boxes and arrows) for this lesson, whatever the planned visual says: draw the real thing (graph2d drawing with icons and shapes, or model3d).'}
 Goal: ${l.goal}
 The aha: ${l.aha}

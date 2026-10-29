@@ -130,6 +130,13 @@ function screen(l: Lesson, env: Env): string {
       body = `Learning from reward after ${rounds} rounds (explore ${r2(ex)}). For each option: true reward, learned estimate, chance of picking it now (computed): ${s.options.map((x, i) => `${x.label}: ${r2(rw[i])} / ${r2(est[i])} / ${Math.round(pk[i] * 100)}%`).join('; ')}.`;
       break;
     }
+    case 'sky': {
+      const d = Math.max(0, Math.min(90, n(s.sun, 60))), du = s.dust !== undefined ? Math.max(0, Math.min(1, n(s.dust, 0))) : 0;
+      const am = 1 / (Math.sin((d * Math.PI) / 180) + 0.50572 * Math.pow(d + 6.07995, -1.6364));
+      const bl = Math.exp(-(0.24 + 0.1 * du) * am);
+      body = `Sky over a person standing at the bottom centre. Sun ${Math.round(d)}° above the horizon. Readouts (computed): path through air ${r2(am)}× the overhead path; blue light left ${Math.round(bl * 100)}%. The sky colour is ${bl > 0.6 ? 'clear blue' : bl > 0.3 ? 'pale, turning warm near the horizon' : 'orange and red'}${du > 0.3 ? ', dusty' : ''}.`;
+      break;
+    }
     case 'convolve': {
       const kernels: Record<string, number[][]> = { 'vertical-edge': [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], 'horizontal-edge': [[-1, -1, -1], [0, 0, 0], [1, 1, 1]], blur: [[1, 1, 1], [1, 1, 1], [1, 1, 1]].map((r) => r.map((v) => v / 9)), sharpen: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] };
       const k = Array.isArray(s.kernel) ? s.kernel : kernels[s.kernel];

@@ -49,6 +49,7 @@ function sceneIds(scene: Scene): string[] {
     case 'cycle': return scene.stages.map((x) => x.id);
     case 'rightTriangle': return ['opp', 'adj', 'hyp', 'angle'];
     case 'convolve': return ['image', 'output'];
+    case 'sky': return ['sun', 'eye', 'path'];
     case 'denoise': return ['image'];
   }
 }
@@ -152,6 +153,8 @@ export function checkLesson(raw: unknown): Checked {
   } else if (scene.type === 'reward') {
     scene.options.forEach((x) => { checkExpr(`option "${x.id}" reward`, x.reward, withT, errors); if (x.icon && !ICONS[x.icon]) errors.push(`option "${x.id}": no icon "${x.icon}".`); });
     checkExpr('reward rounds', scene.rounds, withT, errors); checkExpr('reward explore', scene.explore, withT, errors);
+  } else if (scene.type === 'sky') {
+    checkExpr('sky sun', scene.sun, withT, errors); checkExpr('sky dust', scene.dust, withT, errors);
   } else if (scene.type === 'convolve') {
     if (scene.image.some((r) => r.length < 4)) errors.push('convolve: every image row needs at least 4 characters ("#" dark, "." light).');
     if (scene.at) { checkExpr('convolve at x', scene.at[0], withT, errors); checkExpr('convolve at y', scene.at[1], withT, errors); }

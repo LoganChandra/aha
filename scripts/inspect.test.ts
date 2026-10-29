@@ -79,3 +79,14 @@ describe('convolution template maths', () => {
     expect(out[0][5]).toBe(0);
   });
 });
+
+import { airMass, lightLeft } from '../src/components/scene/Sky';
+describe('sky template physics', () => {
+  test('air mass is 1 overhead and about 38 at the horizon; sunset loses most blue', () => {
+    expect(airMass(90)).toBeCloseTo(1, 2);
+    expect(airMass(0)).toBeGreaterThan(35);
+    expect(lightLeft(90).blue).toBeGreaterThan(0.7);
+    expect(lightLeft(2).blue).toBeLessThan(0.05);
+    expect(lightLeft(2).red).toBeGreaterThan(lightLeft(2).blue);
+  });
+});
