@@ -77,13 +77,6 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
             onPointerDown={(e) => { if (!knob) return; (e.target as Element).setPointerCapture(e.pointerId); dragging.current = true; move(e.clientX); }} />
           {/* where a slide task wants the marker */}
           {gx !== null && <rect className="pulse-ring" x={gx - 10} y={barY - 6} width={20} height={barH + 12} rx={8} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />}
-          {/* end labels: the words and the numbers, under each end */}
-          <g fontFamily="var(--font-sans)" fill="var(--ink)">
-            <text x={x0} y={barY + barH + 26} fontSize={17} fontWeight={700}>{scene.from.label}</text>
-            <text x={x0} y={barY + barH + 48} fontSize={15} fill="var(--ink-2)" fontWeight={600}>{formatNumber(a)}{unit}</text>
-            <text x={x1} y={barY + barH + 26} fontSize={17} fontWeight={700} textAnchor="end">{scene.to.label}</text>
-            <text x={x1} y={barY + barH + 48} fontSize={15} fill="var(--ink-2)" fontWeight={600} textAnchor="end">{formatNumber(b)}{unit}</text>
-          </g>
           {(scene.marks ?? []).map((m) => (
             <g key={m.id} opacity={dim(m.id)} onClick={onTap ? () => onTap(m.id) : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
               <line x1={X(m.at)} x2={X(m.at)} y1={barY + barH} y2={barY + barH + 74} stroke="var(--ink-3)" strokeWidth={1.5} strokeDasharray="3 3" />
@@ -92,6 +85,13 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
               {onTap && <circle className="pulse-ring" cx={X(m.at)} cy={barY + barH / 2} r={18} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />}
             </g>
           ))}
+          {/* end labels: the words and the numbers, under each end */}
+          <g fontFamily="var(--font-sans)" fill="var(--ink)" stroke="var(--paper)" strokeWidth={6} paintOrder="stroke" strokeLinejoin="round">
+            <text x={x0} y={barY + barH + 26} fontSize={17} fontWeight={700}>{scene.from.label}</text>
+            <text x={x0} y={barY + barH + 48} fontSize={15} fill="var(--ink-2)" fontWeight={600}>{formatNumber(a)}{unit}</text>
+            <text x={x1} y={barY + barH + 26} fontSize={17} fontWeight={700} textAnchor="end">{scene.to.label}</text>
+            <text x={x1} y={barY + barH + 48} fontSize={15} fill="var(--ink-2)" fontWeight={600} textAnchor="end">{formatNumber(b)}{unit}</text>
+          </g>
           {/* the marker: a line through the bar, a big handle, and its live value above */}
           <g opacity={dim('marker')} style={{ pointerEvents: knob ? undefined : 'none' }}>
             <line x1={mx} x2={mx} y1={barY - 10} y2={barY + barH + 10} stroke="var(--ink)" strokeWidth={3} />

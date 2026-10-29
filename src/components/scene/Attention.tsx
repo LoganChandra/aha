@@ -31,10 +31,14 @@ export default function Attention({ scene, env, focus, callouts = {}, onTap }: {
   const fr = scene.focusRow !== undefined ? Math.round(evaluate(scene.focusRow, env, -1)) : -1;
   // Room for the longest row label on the left and the "= 100%" on the right, so nothing is clipped on a phone.
   const longest = Math.max(...scene.tokens.map((t) => t.length));
-  const left = Math.min(w * 0.3, 16 + longest * 8.6), right = scene.show === 'scores' ? 8 : 58, top = 34;
-  const cell = Math.max(30, Math.min(84, (w - left - right) / n, (h - top - 12) / n));
+  const left = Math.min(w * 0.3, 16 + longest * 8.6), right = scene.show === 'scores' ? 8 : 58;
+  let cell = Math.max(30, Math.min(84, (w - left - right) / n, (h - 46) / n));
+  // Column heads that would not fit side by side are tilted, like a spreadsheet's (panel: words ran together).
+  const tilt = scene.tokens.some((t) => t.length * 7.6 > cell - 4);
+  const top = tilt ? 18 + Math.min(longest, 12) * 6.2 : 34;
+  cell = Math.max(30, Math.min(cell, (h - top - 12) / n));
   const gx = left + Math.max(0, (w - left - right - cell * n) / 2), gy = top;
-  const head = (t: string) => Math.max(11, Math.min(15, (cell - 4) / (t.length * 0.58)));
+  const head = (t: string) => (tilt ? 14 : Math.max(11, Math.min(15, (cell - 4) / (t.length * 0.58))));
   const maxS = Math.max(...scores.flat().map(Math.abs), 1e-9);
   const anchors: Record<string, [number, number]> = {};
   const dim = (id: string, i: number) => (focus.length && !focus.includes(id) && !focus.includes(`row${i}`) ? 0.45 : fr >= 0 && fr !== i ? 0.4 : 1);
@@ -47,7 +51,7 @@ export default function Attention({ scene, env, focus, callouts = {}, onTap }: {
         <svg width={w} height={h} className="block" role="img" aria-label={scene.caption ?? 'Attention weights'}>
           <g fontFamily="var(--font-sans)">
             {/* column heads: the words being looked at */}
-            {scene.tokens.map((t, j) => <text key={`c${j}`} x={gx + cell * (j + 0.5)} y={gy - 10} textAnchor="middle" fontSize={head(t)} fontWeight={700} fill="var(--ink)">{t}</text>)}
+            {scene.tokens.map((t, j) => <text key={`c${j}`} x={gx + cell * (j + 0.5)} y={gy - 10} textAnchor={tilt ? 'start' : 'middle'} transform={tilt ? `rotate(-40 ${gx + cell * (j + 0.5)} ${gy - 10})` : undefined} fontSize={head(t)} fontWeight={700} fill="var(--ink)">{t}</text>)}
             {scene.tokens.map((t, i) => {
               const rowId = `row${i}`;
               anchors[rowId] = [gx - 8, gy + cell * (i + 0.5)];
