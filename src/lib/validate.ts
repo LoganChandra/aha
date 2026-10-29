@@ -314,6 +314,8 @@ function g2Errors(it: G2Item, scene: Extract<Scene, { type: 'graph2d' }>, env: E
     if (!errors.length) for (const m of it.text.matchAll(/\{([^{}]+)\}/g)) {
       if (!Number.isFinite(evaluate(m[1], env, NaN))) errors.push(`${w}: the live value {${m[1]}} has no number at the start (it divides by zero, takes a log of 0, or uses a knob outside its range), so the readout shows a blank. Make it give a real number for every knob value.`);
     }
+    // A label that ends in a colon with nothing after it reads as a blank (walk: "answer:", "result:", "tool call:").
+    if (/:\s*$/.test(it.text.trim())) errors.push(`${w}: "${it.text}" ends with a colon and shows nothing after it. Put the value after the colon (a live value {…} or words), or drop the item.`);
     // One readout, one value: "buy: 5 sell: 5" on one line reads as noise.
     if ((it.text.match(/\{[^}]+\}/g) ?? []).length >= 2 && (it.text.match(/:/g) ?? []).length >= 2) errors.push(`${w}: "${it.text}" packs several values into one line; make one text item per value (e.g. "buy: {qd}" and "sell: {qs}"), stacked.`);
   } else if (it.type === 'icon') {
