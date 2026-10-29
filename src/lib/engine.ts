@@ -155,9 +155,12 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
       }
       // A template is routed at most twice per course: every lesson looking the same was Logan's 2/10 complaint.
       const used: Record<string, number> = {};
+      // AI ideas are not physical machines: no 3D toolboxes for tools or agents (walk 2026-10-29).
+      const aiTopic = AI_SAID.test(`${prompt} ${plan.topic}`) || aiSense(prompt) !== prompt;
       let last = '';
       plan.lessons = plan.lessons.map((l, i) => {
         let pattern = PATTERN_IDS.includes(l.pattern) ? l.pattern : 'act-it-out';
+        if (aiTopic && pattern === 'explode-the-machine') pattern = 'act-it-out';
         if (pattern === 'follow-the-flow' && (i === 0 || flows++ > 0)) pattern = 'act-it-out';
         // In an attention course, softmax, scaling and masking lessons belong on the attention grid, not next-word odds.
         const attentionCourse = /\b(attention|transformers?|queries|keys? and values?)\b/i.test(plan.topic);
