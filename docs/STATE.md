@@ -7,6 +7,23 @@ last_updated: 2026-10-29
 
 # ProfAI: resume point
 
+## Now (2026-10-29, afternoon)
+
+- **Name.** The engine and the app are AHA (Adaptive Hands-on Animator). Live at https://ahapoc.vercel.app (aha-poc was taken); profai-poc still works. Contract: `docs/ENGINE.md`.
+- **Loop.** We work the blind-panel reports with no reruns and deploy in batches (`docs/LOOP.md`, with a progress log). The tracker is `docs/qa/2026-10-29-panel/TRACKER.md`: 221 items, plus a status-by-class table.
+- **Engine additions.**
+  - Inspector pass, which compares what the lesson says with what the picture shows (`src/lib/inspect.ts`).
+  - i18n of the app's own words in en, ms, zh and ta (`src/lib/i18n.ts`). zh and ta are unverified.
+  - Code routing to templates, at most twice per course (`templateFor` in `engine.ts`).
+- **Templates.**
+  - General: spectrum, network.
+  - AI: attention, nextWord, tokens, embedding, descent and reward. They are in `src/components/scene/AiTemplates.tsx` and `Attention.tsx`, with the maths in code and unit-tested.
+- **Logan's focus: AI topics.** Next ideas:
+  - a diffusion template (noise to image steps);
+  - a training-loop template (data, model, loss, update);
+  - an end-to-end "how ChatGPT works" course check.
+- **Tests on prod.** Last full run: API 26/26, UI 19/19. Unit: 35 tests.
+
 ## Resume prompt (paste into a fresh session)
 
 > You are Frank. Continue ProfAI in ~/profai. Live at https://profai-poc.vercel.app (Vercel project `loganchandras-projects/profai`, region sin1; private repo LoganChandra/profai). First read:
