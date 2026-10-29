@@ -162,7 +162,7 @@ export function Embedding({ scene, env, params, onDrag, focus, callouts = {}, on
               <g opacity={dim('query')}>
                 <circle cx={X(q.x)} cy={Y(q.y)} r={22} fill="var(--t-red)" fillOpacity={0.15} />
                 <circle cx={X(q.x)} cy={Y(q.y)} r={12} fill="var(--t-red)" stroke="var(--surface)" strokeWidth={3} />
-                <text x={X(q.x) + 16} y={Y(q.y) - 12} fontSize={17} fontWeight={800} fill="var(--t-red)" stroke="var(--paper)" strokeWidth={4} paintOrder="stroke" fontFamily="var(--font-sans)">{scene.query.label}</text>
+                <text x={Math.max(40, Math.min(w - 40, X(q.x)))} y={Math.min(h - 6, Y(q.y) + 40)} textAnchor="middle" fontSize={17} fontWeight={800} fill="var(--t-red)" stroke="var(--paper)" strokeWidth={4} paintOrder="stroke" fontFamily="var(--font-sans)">{scene.query.label}</text>
                 {(qx || qy) && <circle cx={X(q.x)} cy={Y(q.y)} r={30} fill="transparent" style={{ cursor: 'grab', touchAction: 'none' }} role="slider" aria-label={`Drag ${scene.query.label}`} onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); dragging.current = true; }} />}
               </g>
             )}
