@@ -133,6 +133,10 @@ export function checkLesson(raw: unknown): Checked {
     scene.scores.flat().forEach((v) => checkExpr('attention score', v, withT, errors));
     checkExpr('attention scale', scene.scale, withT, errors); checkExpr('attention mask', scene.mask, withT, errors); checkExpr('attention focusRow', scene.focusRow, withT, errors);
   } else if (scene.type === 'nextWord') {
+    // The words are candidates for the blank at the end of the sentence, not facts or titles (walk: paper titles in the bars).
+    const long = scene.words.filter((x) => x.label.trim().split(/\s+/).length > 3 || x.label.length > 24);
+    if (long.length) errors.push(`nextWord: "${long[0].label}" is not a next word. Each word must be a short candidate (1-3 words) that could fill the blank after "${scene.context}".`);
+    if (/^the cat sat on the$/i.test(scene.context.trim()) && !scene.words.some((x) => /^(mat|sofa|floor|roof|rug)$/i.test(x.label.trim()))) errors.push('nextWord: the sentence and the candidate words do not belong together; write a sentence from this lesson\'s topic and words that could really come next.');
     scene.words.forEach((x) => checkExpr(`word "${x.id}" score`, x.score, withT, errors));
     checkExpr('nextWord temperature', scene.temperature, withT, errors); checkExpr('nextWord pick', scene.pick, withT, errors);
   } else if (scene.type === 'tokens') {

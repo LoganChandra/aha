@@ -290,7 +290,8 @@ export function factAnchors(facts: Fact[]): string[] {
 }
 /** How many fact anchors a lesson actually uses in what the learner reads or sees. */
 export function factsUsed(lesson: Lesson, anchors: string[]): number {
-  const text = JSON.stringify([lesson.steps.map((s) => [s.say, s.after, s.task]), lesson.scene]).replace(/,(?=\d{3})/g, '');
+  // Only what the learner reads counts: stuffing fact text into a template's labels is not using the facts.
+  const text = JSON.stringify([lesson.steps.map((s) => [s.say, s.after, s.task]), lesson.scene.type === 'graph2d' || lesson.scene.type === 'chart' ? lesson.scene : null]).replace(/,(?=\d{3})/g, '');
   return anchors.filter((a) => text.includes(a)).length;
 }
 
