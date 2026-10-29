@@ -113,3 +113,13 @@ describe('fit template maths', () => {
     expect(mse(high, test)).toBeGreaterThan(mse(mid, test));
   });
 });
+
+import { readFileSync } from 'node:fs';
+describe('every scene can be tapped', () => {
+  test('Stage passes onTap to every scene renderer (a tap task on a scene without it is impossible)', () => {
+    const src = readFileSync('src/components/Stage.tsx', 'utf8');
+    const cases = [...src.matchAll(/case '(\w+)': return <\w+ ([^\n]*)/g)];
+    const missing = cases.filter(([, , props]) => !props.includes('onTap={onTap}')).map(([, id]) => id);
+    expect(missing).toEqual([]);
+  });
+});

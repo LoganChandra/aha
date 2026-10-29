@@ -386,7 +386,7 @@ export function Cycle({ scene, env, focus, callouts = {}, onTap, t = 0, words = 
 type DN = Extract<Scene, { type: 'denoise' }>;
 /** Deterministic noise per cell, so the same step always looks the same. */
 const hash = (i: number) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-export function Denoise({ scene, env, focus, words = EN }: { scene: DN } & Common) {
+export function Denoise({ scene, env, focus, onTap, words = EN }: { scene: DN } & Common) {
   const [box, size] = useSize<HTMLDivElement>();
   const { w, h } = size;
   const step = Math.max(0, Math.min(scene.steps, Math.round(evaluate(scene.step, env, 0))));
@@ -399,7 +399,7 @@ export function Denoise({ scene, env, focus, words = EN }: { scene: DN } & Commo
       {scene.prompt && <p className="shrink-0 px-3 pt-1 text-center font-serif text-[18px] text-ink">"{scene.prompt}"</p>}
       <div ref={box} className="relative min-h-0 flex-1">
         {w > 0 && (
-          <svg width={w} height={h} className="block" role="img" aria-label={scene.prompt ?? 'Denoising'} opacity={focus.length && !focus.includes('image') ? 0.6 : 1}>
+          <svg onClick={onTap ? () => onTap('image') : undefined} style={onTap ? { cursor: 'pointer' } : undefined} width={w} height={h} className="block" role="img" aria-label={scene.prompt ?? 'Denoising'} opacity={focus.length && !focus.includes('image') ? 0.6 : 1}>
             <rect x={x0} y={y0} width={side} height={side} rx={16} fill="var(--surface)" stroke="var(--line)" />
             <Glyph name={scene.icon} cx={x0 + side / 2} cy={y0 + side / 2} size={side * 0.82} color={tone(scene.tone)} soft />
             {/* each cell stays noisy until the steps clear it, in a fixed random order */}
@@ -438,7 +438,7 @@ export function convolve(rows: string[], kernel: number[][]): { img: number[][];
   return { img, out };
 }
 
-export function Convolve({ scene, env, focus }: { scene: CV } & Common) {
+export function Convolve({ scene, env, focus, onTap }: { scene: CV } & Common) {
   const [box, size] = useSize<HTMLDivElement>();
   const { w, h } = size;
   const kernel = Array.isArray(scene.kernel) ? scene.kernel : KERNELS[scene.kernel] ?? KERNELS['vertical-edge'];
@@ -459,11 +459,11 @@ export function Convolve({ scene, env, focus }: { scene: CV } & Common) {
       <div ref={box} className="relative min-h-0 flex-1">
         {w > 0 && cell > 0 && (
           <svg width={w} height={h} className="block" role="img" aria-label={scene.caption ?? 'Convolution'}>
-            <g opacity={dimI}>
+            <g opacity={dimI} onClick={onTap ? () => onTap('image') : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
               {img.map((r, y) => r.map((v, x) => <rect key={`i${x}-${y}`} x={ix + x * cell} y={iy + y * cell} width={cell - 1} height={cell - 1} rx={2} fill={`rgb(${Math.round(250 - 215 * v)},${Math.round(248 - 213 * v)},${Math.round(242 - 207 * v)})`} />))}
               {px >= 0 && <rect x={ix + px * cell - 2} y={iy + py * cell - 2} width={cell * 3 + 3} height={cell * 3 + 3} rx={4} fill="none" stroke="var(--t-accent)" strokeWidth={3.5} />}
             </g>
-            <g opacity={dimO}>
+            <g opacity={dimO} onClick={onTap ? () => onTap('output') : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
               {out.map((r, y) => r.map((v, x) => {
                 const t = v / max;
                 const fill = t >= 0 ? `color-mix(in oklab, var(--t-primary) ${Math.round(Math.abs(t) * 90)}%, var(--surface))` : `color-mix(in oklab, var(--t-red) ${Math.round(Math.abs(t) * 90)}%, var(--surface))`;
@@ -508,7 +508,7 @@ export function polyFit(pts: [number, number][], degree: number): number[] {
 export const polyAt = (c: number[], x: number) => c.reduce((a, ci, i) => a + ci * (2 * x - 1) ** i, 0);
 export const mse = (c: number[], pts: [number, number][]) => pts.reduce((a, [x, y]) => a + (polyAt(c, x) - y) ** 2, 0) / pts.length;
 
-export function Fit({ scene, env, focus, words = EN }: { scene: FT } & Common) {
+export function Fit({ scene, env, focus, onTap, words = EN }: { scene: FT } & Common) {
   const [box, size] = useSize<HTMLDivElement>();
   const { w, h } = size;
   const truth = (x: number) => evaluate(scene.truth, { ...env, x }, 0);
@@ -537,9 +537,14 @@ export function Fit({ scene, env, focus, words = EN }: { scene: FT } & Common) {
             <defs><clipPath id="fit-clip"><rect x={padL} y={padT} width={w - padL - padR} height={h - padT - padB} /></clipPath></defs>
             <line x1={padL} x2={w - padR} y1={h - padB} y2={h - padB} stroke="var(--axis)" strokeWidth={1.4} />
             {scene.xLabel && <text x={w - padR} y={h - 8} textAnchor="end" fontSize={14} fontWeight={600} fill="var(--ink-2)" fontFamily="var(--font-sans)">{scene.xLabel} →</text>}
-            <path d={d} fill="none" stroke="var(--ink)" strokeWidth={3.5} strokeLinecap="round" clipPath="url(#fit-clip)" opacity={dim('curve')} />
-            <g opacity={dim('train')}>{train.map(([x, y], i) => <circle key={`t${i}`} cx={X(x)} cy={Y(y)} r={7} fill="var(--t-primary)" stroke="var(--surface)" strokeWidth={2} />)}</g>
-            {showTest && <g opacity={dim('test')}>{test.map(([x, y], i) => <rect key={`v${i}`} x={X(x) - 6} y={Y(y) - 6} width={12} height={12} rx={2} fill="none" stroke="var(--t-accent)" strokeWidth={3} />)}</g>}
+            <g onClick={onTap ? () => onTap('curve') : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
+              <path d={d} fill="none" stroke="var(--ink)" strokeWidth={3.5} strokeLinecap="round" clipPath="url(#fit-clip)" opacity={dim('curve')} />
+              {onTap && <path d={d} fill="none" stroke="transparent" strokeWidth={40} clipPath="url(#fit-clip)" />}
+            </g>
+            <g opacity={dim('train')} onClick={onTap ? () => onTap('train') : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
+              {onTap && train.map(([x, y], i) => <circle key={`th${i}`} cx={X(x)} cy={Y(y)} r={22} fill="transparent" />)}{train.map(([x, y], i) => <circle key={`t${i}`} cx={X(x)} cy={Y(y)} r={7} fill="var(--t-primary)" stroke="var(--surface)" strokeWidth={2} />)}</g>
+            {showTest && <g opacity={dim('test')} onClick={onTap ? () => onTap('test') : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
+              {onTap && test.map(([x, y], i) => <circle key={`vh${i}`} cx={X(x)} cy={Y(y)} r={22} fill="transparent" />)}{test.map(([x, y], i) => <rect key={`v${i}`} x={X(x) - 6} y={Y(y) - 6} width={12} height={12} rx={2} fill="none" stroke="var(--t-accent)" strokeWidth={3} />)}</g>}
           </svg>
         )}
       </div>

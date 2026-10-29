@@ -50,17 +50,17 @@ function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guid
     case 'balance': return <Balance scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'spectrum': return <Spectrum scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} guide={guide} />;
     case 'network': return <Network scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
-    case 'sky': return <Sky scene={s} env={e} focus={focus} callouts={callouts} />;
+    case 'sky': return <Sky scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'rightTriangle': return <RightTriangle scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} guide={guide} />;
     case 'attention': return <Attention scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'nextWord': return <NextWord scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
     case 'tokens': return <Tokens scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
     case 'embedding': return <Embedding scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'reward': return <Reward scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
-    case 'fit': return <Fit scene={s} env={e} focus={focus} words={words} />;
-    case 'convolve': return <Convolve scene={s} env={e} focus={focus} />;
+    case 'fit': return <Fit scene={s} env={e} focus={focus} onTap={onTap} words={words} />;
+    case 'convolve': return <Convolve scene={s} env={e} focus={focus} onTap={onTap} />;
     case 'cycle': return <Cycle scene={s} env={e} t={t} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
-    case 'denoise': return <Denoise scene={s} env={e} focus={focus} words={words} />;
+    case 'denoise': return <Denoise scene={s} env={e} focus={focus} onTap={onTap} words={words} />;
     case 'descent': return <Descent scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
   }
 }

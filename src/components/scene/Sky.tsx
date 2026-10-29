@@ -21,7 +21,7 @@ export function lightLeft(deg: number, dust = 0): { blue: number; red: number } 
   return { blue: Math.exp(-(0.24 + 0.1 * dust) * m), red: Math.exp(-(0.05 + 0.08 * dust) * m) };
 }
 
-export default function Sky({ scene, env, focus, callouts = {} }: { scene: SK; env: Env; focus: string[]; callouts?: Record<string, string> }) {
+export default function Sky({ scene, env, focus, callouts = {}, onTap }: { scene: SK; env: Env; focus: string[]; callouts?: Record<string, string>; onTap?: (id: string) => void }) {
   const [box, size] = useSize<HTMLDivElement>();
   const { w, h } = size;
   const deg = Math.max(0, Math.min(90, evaluate(scene.sun, env, 60)));
@@ -60,15 +60,19 @@ export default function Sky({ scene, env, focus, callouts = {} }: { scene: SK; e
             <rect x={8} y={4} width={w - 16} height={ground - 4} rx={18} fill="url(#sky-grad)" />
             <rect x={8} y={ground} width={w - 16} height={h - ground - 4} rx={10} fill="#5c7a3d" opacity={0.85} />
             {/* the slanted path of sunlight to the eye: longer near the horizon */}
-            <line x1={sx} y1={sy} x2={cx} y2={ground - 30} stroke={sunCol} strokeWidth={4} strokeDasharray="8 6" opacity={dim('path')} />
-            <g opacity={dim('sun')}>
+            <g onClick={onTap ? () => onTap('path') : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
+              <line x1={sx} y1={sy} x2={cx} y2={ground - 30} stroke={sunCol} strokeWidth={4} strokeDasharray="8 6" opacity={dim('path')} />
+              {onTap && <line x1={sx} y1={sy} x2={cx} y2={ground - 30} stroke="transparent" strokeWidth={44} />}
+            </g>
+            <g opacity={dim('sun')} onClick={onTap ? () => onTap('sun') : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
               <circle cx={sx} cy={sy} r={30} fill={sunCol} opacity={0.35} />
               <circle cx={sx} cy={sy} r={20} fill={sunCol} stroke="#fff" strokeWidth={2} />
               <text x={sx} y={sy - 30} textAnchor="middle" fontSize={15} fontWeight={800} fill="#fff" stroke="rgba(0,0,0,.35)" strokeWidth={3} paintOrder="stroke" fontFamily="var(--font-sans)">{n.sun}</text>
             </g>
             {/* the person looking up, standing at the bottom centre */}
-            <g opacity={dim('eye')} fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round">
+            <g opacity={dim('eye')} onClick={onTap ? () => onTap('eye') : undefined} style={onTap ? { cursor: 'pointer' } : undefined} fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round">
               <circle cx={cx} cy={ground - 44} r={9} fill="#fff" />
+              {onTap && <rect x={cx - 26} y={ground - 60} width={52} height={62} fill="transparent" stroke="none" />}
               <line x1={cx} y1={ground - 34} x2={cx} y2={ground - 10} />
               <line x1={cx - 10} y1={ground} x2={cx} y2={ground - 10} />
               <line x1={cx + 10} y1={ground} x2={cx} y2={ground - 10} />
