@@ -29,6 +29,8 @@ export function NextWord({ scene, env, focus, callouts = {}, onTap }: { scene: N
   const probs = nextWordProbs(scene.words.map((w) => evaluate(w.score, env, 0)), T);
   const pick = scene.pick !== undefined ? Math.round(evaluate(scene.pick, env, -1)) : -1;
   const top = probs.indexOf(Math.max(...probs));
+  // Phrases (not single words) get their own line above the bar instead of being cut to "using Mi...".
+  const long = scene.words.some((w) => w.label.length > 10);
   const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.45 : 1);
   return (
     <div className="absolute inset-0 flex select-none flex-col overflow-y-auto px-3 pb-2">
@@ -42,9 +44,9 @@ export function NextWord({ scene, env, focus, callouts = {}, onTap }: { scene: N
           <li key={w.id} style={{ opacity: dim(w.id) }}>
             <button
               type="button" disabled={!onTap} onClick={onTap ? () => onTap(w.id) : undefined}
-              className={`grid w-full grid-cols-[minmax(64px,28%)_1fr_56px] items-center gap-2 rounded-xl px-2 py-1 text-left ${onTap ? 'cursor-pointer ring-2 ring-[var(--t-primary)]/30' : ''} ${focus.includes(w.id) || i === pick ? 'bg-sunk' : ''}`}
+              className={`grid w-full ${long ? 'grid-cols-[1fr_56px]' : 'grid-cols-[minmax(64px,28%)_1fr_56px]'} items-center gap-x-2 rounded-xl px-2 py-1 text-left ${onTap ? 'cursor-pointer ring-2 ring-[var(--t-primary)]/30' : ''} ${focus.includes(w.id) || i === pick ? 'bg-sunk' : ''}`}
             >
-              <span className="truncate text-[17px] font-semibold text-ink">{w.label}{callouts[w.id] ? <span className="ml-1.5 text-[13px] font-medium text-ink-2">· {callouts[w.id]}</span> : null}</span>
+              <span className={`${long ? 'col-span-2' : 'truncate'} text-[17px] font-semibold text-ink`}>{w.label}{callouts[w.id] ? <span className="ml-1.5 text-[13px] font-medium text-ink-2">· {callouts[w.id]}</span> : null}</span>
               <span className="h-6 overflow-hidden rounded-full bg-sunk">
                 <span className="block h-full rounded-full transition-[width] duration-300" style={{ width: `${Math.max(1.5, probs[i] * 100)}%`, background: i === top ? 'var(--t-primary)' : 'color-mix(in oklab, var(--t-primary) 45%, var(--surface))' }} />
               </span>
