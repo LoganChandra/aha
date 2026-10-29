@@ -39,15 +39,15 @@ export function NextWord({ scene, env, focus, callouts = {}, onTap }: { scene: N
       <p className="mt-2 text-center font-serif text-[22px] leading-snug text-ink">
         {scene.context} <span className="inline-block min-w-[70px] rounded-lg border-2 border-dashed border-[var(--t-primary)] px-2 text-[var(--t-primary)]">{pick >= 0 && scene.words[pick] ? scene.words[pick].label : '?'}</span>
       </p>
-      <ul className="mx-auto mt-4 w-full max-w-[520px] space-y-2">
+      <ul className={`mx-auto w-full max-w-[520px] ${long ? 'mt-3 space-y-1' : 'mt-4 space-y-2'}`}>
         {scene.words.map((w, i) => (
           <li key={w.id} style={{ opacity: dim(w.id) }}>
             <button
               type="button" disabled={!onTap} onClick={onTap ? () => onTap(w.id) : undefined}
               className={`grid w-full ${long ? 'grid-cols-[1fr_56px]' : 'grid-cols-[minmax(64px,28%)_1fr_56px]'} items-center gap-x-2 rounded-xl px-2 py-1 text-left ${onTap ? 'cursor-pointer ring-2 ring-[var(--t-primary)]/30' : ''} ${focus.includes(w.id) || i === pick ? 'bg-sunk' : ''}`}
             >
-              <span className={`${long ? 'col-span-2' : 'truncate'} text-[17px] font-semibold text-ink`}>{w.label}{callouts[w.id] ? <span className="ml-1.5 text-[13px] font-medium text-ink-2">· {callouts[w.id]}</span> : null}</span>
-              <span className="h-6 overflow-hidden rounded-full bg-sunk">
+              <span className={`${long ? 'col-span-2 text-[15.5px] leading-tight' : 'truncate text-[17px]'} font-semibold text-ink`}>{w.label}{callouts[w.id] ? <span className="ml-1.5 text-[13px] font-medium text-ink-2">· {callouts[w.id]}</span> : null}</span>
+              <span className={`${long ? 'h-4' : 'h-6'} overflow-hidden rounded-full bg-sunk`}>
                 <span className="block h-full rounded-full transition-[width] duration-300" style={{ width: `${Math.max(1.5, probs[i] * 100)}%`, background: i === top ? 'var(--t-primary)' : 'color-mix(in oklab, var(--t-primary) 45%, var(--surface))' }} />
               </span>
               <span className="text-right text-[16px] font-bold tabular-nums text-ink">{Math.round(probs[i] * 100)}%</span>

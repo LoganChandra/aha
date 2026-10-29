@@ -231,7 +231,7 @@ export const Attention = z.object({
 export const NextWord = z.object({
   type: z.literal('nextWord'),
   context: Short(90),
-  words: Many(z.object({ id: Id, label: Short(18), score: Num }), 2, 7),
+  words: Many(z.object({ id: Id, label: Short(32), score: Num }), 2, 7),
   temperature: Num.optional(),
   pick: Num.optional(),
   caption: Short(60).optional(),

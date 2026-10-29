@@ -131,10 +131,15 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
       // Decided in code, not left to the prompt: the first lesson is never a boxes-and-arrows diagram (it is the
       // learner's first impression), at most one per course, and unknown patterns fall back to a drawn scene.
       let flows = 0;
+      // A template is routed at most twice per course: every lesson looking the same was Logan's 2/10 complaint.
+      const used: Record<string, number> = {};
       plan.lessons = plan.lessons.map((l, i) => {
         let pattern = PATTERN_IDS.includes(l.pattern) ? l.pattern : 'act-it-out';
         if (pattern === 'follow-the-flow' && (i === 0 || flows++ > 0)) pattern = 'act-it-out';
-        pattern = templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
+        const routed = templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
+        if (routed !== pattern && (used[routed] ?? 0) < 2) pattern = routed;
+        if ((used[pattern] ?? 0) >= 2) pattern = 'act-it-out';
+        used[pattern] = (used[pattern] ?? 0) + 1;
         return { ...l, pattern };
       });
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });
