@@ -40,7 +40,7 @@ Each row below still has its own status. These class fixes cover most of them; p
 | C12 Show me | fixed | Inside the task card; demonstrates without the green tick (2962e7f) |
 | C13 ending | fixed | Whole-course recap, share link, start again (2962e7f) |
 | C14 follow-up answers | improved | Tutor prompt (94ee08b) |
-| C17 pacing | improved | Writer rules (94ee08b) |
+| C17 pacing | fixed in code (at most 6 steps) + prompts | Writer rules (94ee08b) |
 | C18 language | fixed (zh/ta not yet checked by a native speaker) | i18n, language picker, plan follows the pick (2962e7f) |
 | C19 sliders | fixed | Named states, +/- buttons, full-width track, round steps (5de12c5) |
 | C20 Malay wording | improved | Language notes for the writer (94ee08b) |
