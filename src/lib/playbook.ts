@@ -239,12 +239,12 @@ export const PLAYBOOK: Pattern[] = [
       title: 'Text becomes tokens',
       params: [{ id: 'ids', label: 'Show the numbers', min: 0, max: 1, step: 1, value: 0, choices: ['Words', 'Numbers'] }],
       scene: {
-        type: 'tokens', showIds: 'ids', caption: 'What the model actually reads',
-        pieces: [{ text: 'Un', id: 1844 }, { text: 'believ', id: 32924 }, { text: 'able', id: 481 }, { text: ' cats', id: 19987 }, { text: ' love', id: 3021 }, { text: ' boxes', id: 23726 }, { text: '!', id: 0 }],
+        type: 'tokens', showIds: 'ids', caption: 'What the model reads (example numbers)',
+        pieces: [{ text: 'Un', id: 1844 }, { text: 'believ', id: 32924 }, { text: 'able', id: 481 }, { text: ' cats', id: 19987 }, { text: ' love', id: 3021 }, { text: ' boxes', id: 23726 }, { text: '!' }],
       },
       steps: [
         { say: 'A model never sees whole words. Text is cut into pieces called tokens.', task: { kind: 'tap', target: 't1', hint: 'Tap a piece that is not a whole word.' }, after: '"Unbelievable" became three pieces: rare words split into common parts.' },
-        { say: 'Each piece is really a number from a fixed list.', task: { kind: 'slide', param: 'ids', goal: 'ids>=1', hint: 'Switch to Numbers.' }, after: 'These numbers are all the model reads. The words are only for us.' },
+        { say: 'Each piece is really a number from the model\'s fixed list of pieces.', task: { kind: 'slide', param: 'ids', goal: 'ids>=1', hint: 'Tap Numbers.' }, after: 'Numbers like these are all the model reads (each model has its own list, so the exact numbers differ).' },
         { say: 'The dot marks a space: " cats" and "cats" are different tokens.', task: { kind: 'predict', question: 'A model\'s length limit counts…', choices: ['tokens', 'letters', 'sentences'], answer: 0 }, after: 'Limits and prices are in tokens, about three quarters of a word each in English.' },
         { say: 'Tokens are the model\'s alphabet: text in, numbers out, numbers back to text.' },
       ],

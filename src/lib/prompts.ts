@@ -79,7 +79,7 @@ T7. NEXT WORD (how a chatbot picks the next word, softmax, temperature):
    Give raw scores; the app shows softmax(score/T) as % bars, so the chances always add to 100. pick (optional) fills the blank with word index pick. Tap ids: word ids.
 T8. TOKENS (tokenisers, why text becomes numbers):
    {"type":"tokens","showIds":"ids","pieces":[{"text":"Un","id":1844},{"text":"believ","id":32924},{"text":"able","id":481},{"text":" cats","id":19987}]}
-   Pieces in order, with a leading space where the real token has one. showIds 1 shows the numbers. Tap ids: t0, t1, ...
+   Pieces in order, with a leading space where the real token has one. showIds 1 shows the numbers; they differ per model, so call them example numbers unless you are sure. Use your own sentence from the lesson, not the example's. Tap ids: t0, t1, ...
 T9. EMBEDDING (word vectors, similarity, semantic search):
    {"type":"embedding","points":[{"id":"king","label":"king","x":-1.6,"y":1.8,"group":"people"}],"query":{"label":"mango","x":"px","y":"py"},"arrows":[["man","woman"]],"nearest":2}
    3-16 points; groups colour them. The query point is draggable by its knobs and its nearest words are found by real distance. Tap ids: point ids and "query".
