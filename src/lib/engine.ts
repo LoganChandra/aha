@@ -274,7 +274,10 @@ export function factsUsed(lesson: Lesson, anchors: string[]): number {
 export async function makeLesson(plan: Plan, index: number, level: Level, sources: Source[], routes = index === 0 ? FIRST_LESSON_ROUTES : LESSON_ROUTES, deadline = Date.now() + 170_000): Promise<{ lesson: Lesson; meter: Meter; repaired: boolean; errors: string[]; facts: Fact[] }> {
   const m = meter();
   const t0 = Date.now();
-  const facts = await research(plan, index, level, m, index === 0 ? 10_000 : 16_000);
+  // Lesson 1 is waited for: when the planner already researched it (2+ concrete facts from its web search), use those
+  // and save about 6 s. Later lessons build in the background and always get their own research call.
+  const planned = (plan.lessons[index]?.facts ?? []).filter((f) => /\d/.test(f) || /\b[A-Z][a-z]{2,}/.test(f));
+  const facts = index === 0 && planned.length >= 2 ? planned.map((fact) => ({ fact })) : await research(plan, index, level, m, index === 0 ? 10_000 : 16_000);
   const user = lessonUser(plan, index, level, sources, facts);
   // Imperfect drafts from every route are kept; if no route writes a clean lesson, the least broken one is repaired.
   const drafts: Written[] = [];
