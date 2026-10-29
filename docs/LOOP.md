@@ -61,3 +61,4 @@ Logan, 2026-10-29 (voice note, verbatim): "Treat them like they are your custome
 - ~15:00 (988d8d6 to now): moved "improved" items into code checks: colour words must match a drawn colour, a tap task must not name something absent (C01); money and big-number claims must come from the fact sheet (C04); health claims (100%, "tidak sakit") must be hedged (C06). Measured cost per course: $0.016 / $0.024 / $0.033 (ChatGPT beginner / vaccines Malay / AI bubble expert), about $0.025 on average. Prod: API 26/26, UI 19/19.
 - ~15:30: code checks always run (only the model inspector is time-bound); at most 6 steps per lesson (C17). Prod: API 26/26, UI 19/19.
 - ~15:50: the Malay wording Nurul flagged is checked in code, and 'kekebalan' is corrected in plans (C20).
+- ~16:10: the tutor's health answers that promise certainty get one honest rewrite (tested on Nurul's question). Prod suites green.
