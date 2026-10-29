@@ -108,6 +108,7 @@ export function checkLesson(raw: unknown): Checked {
   } else if (scene.type === 'spectrum') {
     if (scene.from.value === scene.to.value) errors.push('spectrum: from and to need different values.');
     checkExpr('spectrum marker', scene.marker, withT, errors);
+    for (const r of scene.readouts ?? []) checkExpr(`spectrum readout "${r.label}"`, r.value, withT, errors);
     const lo = Math.min(scene.from.value, scene.to.value), hi = Math.max(scene.from.value, scene.to.value);
     for (const m of scene.marks ?? []) if (m.at < lo || m.at > hi) errors.push(`spectrum mark "${m.id}" at ${m.at} is off the scale (${lo} to ${hi}).`);
   } else if (scene.type === 'network') {

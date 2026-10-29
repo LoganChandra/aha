@@ -197,6 +197,8 @@ export const Spectrum = z.object({
   marker: Num,
   markerLabel: Short(24).optional(),
   marks: Many(z.object({ id: Id, at: z.number(), label: Short(24) }), 0, 6).optional(),
+  // Live numbers that follow the marker ("scattering: {...}"), shown big under the bar.
+  readouts: Many(z.object({ label: Short(24), value: Num, unit: Short(10).optional(), tone: Tone.optional() }), 0, 3).optional(),
   caption: Short(60).optional(),
 });
 /**

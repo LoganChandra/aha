@@ -61,8 +61,8 @@ T3. BALANCE (equations, trade-offs, supply vs demand, forces that cancel, budget
    The beam tips toward the heavier side and settles level when the weights are equal (perfect for "drag x until it balances").
 
 T4. SPECTRUM (anything on a scale: light wavelength and colour, pH, temperature, loudness, frequency):
-   {"type":"spectrum","caption":"Visible light","colors":"light","unit":"nm","marker":"lam","markerLabel":"your colour","from":{"value":700,"label":"red"},"to":{"value":400,"label":"violet"},"marks":[{"id":"blue","at":470,"label":"blue"}]}
-   colors: light (real wavelength colours, 380-750 nm), heat (cold blue to hot red), acid (pH colours), plain. marker is a param id (draggable along the bar) or an expression. The readout and the end labels always agree. Tap ids: marker and each mark id.
+   {"type":"spectrum","caption":"Visible light","colors":"light","unit":"nm","marker":"lam","markerLabel":"your colour","from":{"value":700,"label":"red"},"to":{"value":400,"label":"violet"},"marks":[{"id":"blue","at":470,"label":"blue"}],"readouts":[{"label":"scattering vs red","value":"(700/lam)^4","unit":"×"}]}
+   colors: light (real wavelength colours, 380-750 nm), heat (cold blue to hot red), acid (pH colours), plain. marker is a param id (draggable along the bar) or an expression. The readout and the end labels always agree. readouts (0-3) are live numbers that follow the marker, shown big under the scale. Tap ids: marker and each mark id.
 T5. NETWORK (a neuron, a small neural network, weighted evidence adding up):
    {"type":"network","caption":"Is this email spam?","layers":[[{"id":"x1","label":"free money","icon":"coins","value":1},{"id":"x2","label":"from a friend","icon":"user","value":1}],[{"id":"out","label":"spam?","icon":"mail","value":"1/(1+exp(-(w1+w2)))"}]],"links":[{"from":"x1","to":"out","weight":"w1"},{"from":"x2","to":"out","weight":"w2"}]}
    2-4 layers left to right, 1-6 nodes each. Link width shows |weight|, red means negative. A node value 0-1 lights it. Tap ids: node ids and "from->to".
@@ -173,7 +173,7 @@ Course outline:
 ${outline}
 
 Write lesson ${index + 1}: ${l.title}
-Teaching pattern: ${l.pattern}${(() => { const p = PLAYBOOK.find((x) => x.id === l.pattern); return p ? ` (${p.name}). Steps: ${p.moves}` : ' (choose the best-fitting pattern from the playbook)'; })()}${l.pattern === 'follow-the-flow' ? '' : '\nDo NOT use a diagram scene (boxes and arrows) for this lesson, whatever the planned visual says: draw the real thing (graph2d drawing with icons and shapes, or model3d).'}
+Teaching pattern: ${l.pattern}${(() => { const p = PLAYBOOK.find((x) => x.id === l.pattern); return p ? ` (${p.name}). Steps: ${p.moves}${/Use the ([A-Z ]+) template/.exec(p.use) ? `\nScene: use the ${/Use the ([A-Z ]+) template/.exec(p.use)![1]} template exactly as documented (T1-T6); do not draw it freehand.` : ''}` : ' (choose the best-fitting pattern from the playbook)'; })()}${l.pattern === 'follow-the-flow' ? '' : '\nDo NOT use a diagram scene (boxes and arrows) for this lesson, whatever the planned visual says: draw the real thing (graph2d drawing with icons and shapes, or model3d).'}
 Goal: ${l.goal}
 The aha: ${l.aha}
 Planned visual: ${l.visual}

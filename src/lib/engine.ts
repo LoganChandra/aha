@@ -77,6 +77,21 @@ async function hedge<T>(routes: Route[], delayMs: number, run: (route: Route) =>
 // Sources a learner can trust for the topic: never prompt-engineering pages, tool directories or code files
 // (the panel saw "concept-explainer/SKILL.md" and an MCP hub in German and Russian cited for trigonometry).
 const JUNK_SOURCE = /SKILL\.md|\bMCP\b|Model ?Context ?Protocol|Modellkontextprotokoll|Claude Skill|prompt engineering|agent-skills|github\.com|gitlab\.com|nngroup\.com/i;
+// Designed templates beat free drawing, and the cheap planner rarely picks them on its own. When a lesson is plainly
+// about one of these, its pattern is switched in code (blind panel 2026-10-29: hand-drawn rainbows ran backwards,
+// hand-drawn attention matrices never summed to 100%).
+const TEMPLATE_ROUTES: [RegExp, string][] = [
+  [/\b(self-?attention|attention|attends?|query|queries|keys? and values?|causal mask)\b|\bperhatian\b/i, 'who-looks-at-whom'],
+  [/\b(neuron|perceptron|neural net|weights? and bias|activation|hidden layer)\b|\bneuron\b/i, 'weigh-the-inputs'],
+  [/\b(wavelengths?|spectrum|rainbow|colou?rs? of light|visible light|(short|long)(er)? waves?|pH scale|acidity|panjang gelombang|pelangi)\b/i, 'slide-the-scale'],
+];
+const FREE_PATTERNS = new Set(['drag-to-discover', 'act-it-out', 'tipping-point', 'predict-reveal', 'map-of-meaning', 'add-the-pieces']);
+export function templateFor(text: string, pattern: string): string {
+  if (!FREE_PATTERNS.has(pattern)) return pattern;
+  for (const [re, id] of TEMPLATE_ROUTES) if (re.test(text) && PATTERN_IDS.includes(id)) return id;
+  return pattern;
+}
+
 export function usefulSources(list: Source[]): Source[] {
   const seen = new Set<string>();
   return list.map((s) => ({ ...s, title: s.title.replace(/\s+/g, ' ').trim() })).filter((s) => {
@@ -110,6 +125,7 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
       plan.lessons = plan.lessons.map((l, i) => {
         let pattern = PATTERN_IDS.includes(l.pattern) ? l.pattern : 'act-it-out';
         if (pattern === 'follow-the-flow' && (i === 0 || flows++ > 0)) pattern = 'act-it-out';
+        pattern = templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern);
         return { ...l, pattern };
       });
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });

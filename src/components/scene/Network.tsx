@@ -57,10 +57,11 @@ export default function Network({ scene, env, focus, callouts = {}, onTap }: { s
             const c = tone(n.tone);
             return (
               <g key={n.id} opacity={dim(n.id)} onClick={onTap ? () => onTap(n.id) : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
-                <circle cx={x} cy={y} r={r} fill="var(--surface)" stroke={c} strokeWidth={2.5} />
-                <circle cx={x} cy={y} r={r - 2} fill={c} fillOpacity={lit} />
-                {n.icon ? <Glyph name={n.icon} cx={x} cy={y} size={r * 1.3} color={lit > 0.6 ? 'var(--surface)' : c} />
-                  : val !== undefined && <text x={x} y={y + 6} textAnchor="middle" fontSize={Math.max(13, r * 0.55)} fontWeight={800} fill={lit > 0.55 ? 'var(--surface)' : 'var(--ink)'} fontFamily="var(--font-sans)">{formatNumber(val)}</text>}
+                {/* An icon node glows with its value; a plain node fills with it. */}
+                {n.icon && val !== undefined && <circle cx={x} cy={y} r={r + 7} fill={c} fillOpacity={0.3 * lit} />}
+                {n.icon ? <Glyph name={n.icon} cx={x} cy={y} size={r * 2} color={c} ring />
+                  : <><circle cx={x} cy={y} r={r} fill="var(--surface)" stroke={c} strokeWidth={2.5} /><circle cx={x} cy={y} r={r - 2} fill={c} fillOpacity={lit} /></>}
+                {!n.icon && val !== undefined && <text x={x} y={y + 6} textAnchor="middle" fontSize={Math.max(13, r * 0.55)} fontWeight={800} fill={lit > 0.55 ? 'var(--surface)' : 'var(--ink)'} fontFamily="var(--font-sans)">{formatNumber(val)}</text>}
                 <text x={x} y={y + r + 20} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--ink)" fontFamily="var(--font-sans)">{n.label}</text>
                 {n.icon && val !== undefined && <text x={x} y={y + r + 40} textAnchor="middle" fontSize={14} fontWeight={700} fill="var(--ink-2)" fontFamily="var(--font-sans)">{formatNumber(val)}</text>}
                 {onTap && <circle className="pulse-ring" cx={x} cy={y} r={r + 6} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />}

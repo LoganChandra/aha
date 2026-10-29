@@ -29,26 +29,31 @@ export default function Attention({ scene, env, focus, callouts = {}, onTap }: {
   const mask = scene.mask !== undefined ? evaluate(scene.mask, env, 0) >= 0.5 : false;
   const weights = attentionWeights(scores, scale, mask);
   const fr = scene.focusRow !== undefined ? Math.round(evaluate(scene.focusRow, env, -1)) : -1;
-  const top = (scene.caption ? 40 : 10) + 30, left = 74, right = 54;
-  const cell = Math.max(34, Math.min(84, (w - left - right) / n, (h - top - 40) / n));
+  // Room for the longest row label on the left and the "= 100%" on the right, so nothing is clipped on a phone.
+  const longest = Math.max(...scene.tokens.map((t) => t.length));
+  const left = Math.min(w * 0.3, 16 + longest * 8.6), right = scene.show === 'scores' ? 8 : 58, top = 34;
+  const cell = Math.max(30, Math.min(84, (w - left - right) / n, (h - top - 12) / n));
   const gx = left + Math.max(0, (w - left - right - cell * n) / 2), gy = top;
+  const head = (t: string) => Math.max(11, Math.min(15, (cell - 4) / (t.length * 0.58)));
   const maxS = Math.max(...scores.flat().map(Math.abs), 1e-9);
   const anchors: Record<string, [number, number]> = {};
   const dim = (id: string, i: number) => (focus.length && !focus.includes(id) && !focus.includes(`row${i}`) ? 0.45 : fr >= 0 && fr !== i ? 0.4 : 1);
   return (
-    <div ref={box} className="absolute inset-0 select-none">
+    <div className="absolute inset-0 flex select-none flex-col">
+      {/* The caption wraps as text instead of running off a narrow screen. */}
+      {scene.caption && <p className="shrink-0 px-3 pt-1 text-center text-[15px] font-semibold leading-snug text-ink-2">{scene.caption}</p>}
+      <div ref={box} className="relative min-h-0 flex-1">
       {w > 0 && (
         <svg width={w} height={h} className="block" role="img" aria-label={scene.caption ?? 'Attention weights'}>
           <g fontFamily="var(--font-sans)">
-            {scene.caption && <text x={w / 2} y={24} textAnchor="middle" fontSize={16} fontWeight={600} fill="var(--ink-2)">{scene.caption}</text>}
             {/* column heads: the words being looked at */}
-            {scene.tokens.map((t, j) => <text key={`c${j}`} x={gx + cell * (j + 0.5)} y={gy - 10} textAnchor="middle" fontSize={15} fontWeight={700} fill="var(--ink)">{t}</text>)}
+            {scene.tokens.map((t, j) => <text key={`c${j}`} x={gx + cell * (j + 0.5)} y={gy - 10} textAnchor="middle" fontSize={head(t)} fontWeight={700} fill="var(--ink)">{t}</text>)}
             {scene.tokens.map((t, i) => {
               const rowId = `row${i}`;
               anchors[rowId] = [gx - 8, gy + cell * (i + 0.5)];
               return (
                 <g key={`r${i}`} opacity={dim(rowId, i)}>
-                  <text x={gx - 10} y={gy + cell * (i + 0.5) + 5} textAnchor="end" fontSize={15} fontWeight={700} fill="var(--ink)">{t}</text>
+                  <text x={gx - 10} y={gy + cell * (i + 0.5) + 5} textAnchor="end" fontSize={Math.min(15, (left - 14) / (t.length * 0.56))} fontWeight={700} fill="var(--ink)">{t}</text>
                   {scene.tokens.map((_, j) => {
                     const id = `cell${i}_${j}`;
                     const masked = mask && j > i;
@@ -74,6 +79,7 @@ export default function Attention({ scene, env, focus, callouts = {}, onTap }: {
           <Pins w={w} h={h} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
         </svg>
       )}
+      </div>
     </div>
   );
 }

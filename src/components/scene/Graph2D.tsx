@@ -602,9 +602,12 @@ function placeLabels(labels: Label[], w: number, h: number, reserved: Box[] = []
     const x0 = l.anchor === 'end' ? l.x - tw : l.anchor === 'middle' ? l.x - tw / 2 : l.x;
     // Below, above, then beside where it belongs, then further out: a label stays next to its thing instead of
     // drifting down the page (panel: "Kuman B" ended up far from its germ). Box top-left; text baseline is +15.
-    const tries: [number, number][] = [];
-    for (const d of [0, 20, 40, 60]) tries.push([x0, l.y - 15 + d], [x0, l.y - 15 - d]);
-    for (const d of [tw / 2 + 14, tw / 2 + 40]) tries.push([x0 + d, l.y - 15], [x0 - d, l.y - 15], [x0 + d, l.y - 35], [x0 - d, l.y - 35]);
+    const tries: [number, number][] = [[x0, l.y - 15]];
+    // Next to its thing first (beside, then just above), only then further down or up.
+    for (const d of [tw / 2 + 14, tw / 2 + 34]) tries.push([x0 + d, l.y - 15], [x0 - d, l.y - 15]);
+    tries.push([x0, l.y - 15 - 20]);
+    for (const d of [tw / 2 + 14, tw / 2 + 34]) tries.push([x0 + d, l.y - 35], [x0 - d, l.y - 35]);
+    for (const d of [20, 40, 60]) tries.push([x0, l.y - 15 + d], [x0, l.y - 15 - d - 20]);
     const [bx, by] = bestSpot(tries, tw, 19, w, h, boxes);
     boxes.push({ x0: bx, x1: bx + tw, y0: by, y1: by + 19 });
     const moved = Math.hypot(bx - x0, by - (l.y - 15)) > 26;

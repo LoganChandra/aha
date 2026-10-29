@@ -103,6 +103,20 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
               <text x={Math.max(70, Math.min(w - 70, mx))} y={barY - 42} fontSize={22} fontWeight={800} fill="var(--ink)">{formatNumber(v)}{unit}</text>
             </g>
           </g>
+          {/* readouts that follow the marker, big and centred under the scale */}
+          {(scene.readouts ?? []).length > 0 && (
+            <g fontFamily="var(--font-sans)" textAnchor="middle">
+              {(scene.readouts ?? []).map((r, i, all) => {
+                const cx = w * ((i + 0.5) / all.length), y = Math.min(h - 18, barY + barH + 140);
+                return (
+                  <g key={i}>
+                    <text x={cx} y={y - 26} fontSize={15} fontWeight={600} fill="var(--ink-2)">{r.label}</text>
+                    <text x={cx} y={y} fontSize={26} fontWeight={800} fill={r.tone ? `var(--t-${r.tone})` : 'var(--ink)'}>{formatNumber(evaluate(r.value, env, 0))}{r.unit ? ` ${r.unit}` : ''}</text>
+                  </g>
+                );
+              })}
+            </g>
+          )}
           <Pins w={w} h={h} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
         </svg>
       )}

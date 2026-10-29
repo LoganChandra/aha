@@ -88,7 +88,7 @@ function screen(l: Lesson, env: Env): string {
     case 'iconArray': body = `Grid of ${s.total} "${s.icon}" icons: ${s.groups.map((g) => `${g.id} "${g.label}" = ${n(g.count)}`).join(', ')}`; break;
     case 'spectrum': {
       const v = n(s.marker);
-      body = `Coloured scale. Left end: "${s.from.label}" ${s.from.value}${s.unit ?? ''}; right end: "${s.to.label}" ${s.to.value}${s.unit ?? ''}. Marker at ${v}${s.unit ?? ''}, ${Math.round(((v - s.from.value) / (s.to.value - s.from.value || 1)) * 100)}% of the way from left to right${s.markerLabel ? ` ("${s.markerLabel}")` : ''}.${(s.marks ?? []).length ? ` Marks: ${(s.marks ?? []).map((m) => `${m.id} "${m.label}" at ${m.at}`).join('; ')}.` : ''}`;
+      body = `Coloured scale. Left end: "${s.from.label}" ${s.from.value}${s.unit ?? ''}; right end: "${s.to.label}" ${s.to.value}${s.unit ?? ''}. Marker at ${v}${s.unit ?? ''}, ${Math.round(((v - s.from.value) / (s.to.value - s.from.value || 1)) * 100)}% of the way from left to right${s.markerLabel ? ` ("${s.markerLabel}")` : ''}.${(s.marks ?? []).length ? ` Marks: ${(s.marks ?? []).map((m) => `${m.id} "${m.label}" at ${m.at}`).join('; ')}.` : ''}${(s.readouts ?? []).length ? ` Readouts: ${(s.readouts ?? []).map((r) => `${r.label} ${n(r.value)}${r.unit ?? ''}`).join('; ')}.` : ''}`;
       break;
     }
     case 'network': body = `Network, left to right: ${s.layers.map((l) => l.map((x) => `${x.id} "${x.label}"${x.value !== undefined ? ` = ${n(x.value)}` : ''}`).join(', ')).join(' | ')}. Links: ${s.links.map((l) => `${l.from}→${l.to} weight ${n(l.weight)}`).join('; ')}.`; break;
