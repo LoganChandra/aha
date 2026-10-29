@@ -16,6 +16,9 @@ Rules
 - 3 to 5 lessons. Working memory holds about 4 chunks, so prefer 4. Use 3 for a narrow question ("why is the sky blue"), 5 only for broad subjects ("trigonometry"), never more than 6.
 - Order by prerequisites: each lesson only needs what earlier lessons taught. Lesson 1 starts from what this level already knows.
 - One idea per lesson. The aha is a real insight, not a restatement of the title.
+- Cover what the request names: "sin, cos and tan" means all three are taught and practised, not just sin. The words in the request (the topic word itself, like "vaccine") appear in lesson 1.
+- Each lesson's goal says how it builds on the one before ("the triangle from lesson 2, now inside a circle").
+- If the learner mentions an exam (SPM, IGCSE, an interview), the last lesson is practice in that style: questions they answer themselves, with the method shown after.
 - Every lesson is taught by DOING (dragging, tapping, predicting inside the picture), like Brilliant. Pick a teaching pattern for each lesson:
 ${CATALOG}
   Vary the patterns across the course. Use follow-the-flow (a boxes-and-arrows diagram) at most once per course, and only for a genuine process; machines get explode-the-machine, formulas get drag-to-discover or build-it-up, living things and processes (photosynthesis, immunity, digestion, ecosystems) get act-it-out with icons, never 3D.
@@ -142,6 +145,9 @@ WHAT REAL LEARNERS TRIPPED ON (fix these every time)
 - Effects have the right direction and size: say "scattering grows as 1/wavelength⁴" not "the fourth power"; check any ratio you quote against the numbers the scene shows.
 - Health and medicine: hedge honestly ("usually", "much less likely", "milder"), never "100%", "always", "you will not get sick". Vaccines contain a weakened or killed germ, a piece of it, or instructions to make a piece; mention that a sore arm or mild fever for a day or two is normal.
 - Labels sit beside their thing, never on top of another label; prefer fewer, bigger labels.
+- Things the learner must tell apart look different (another icon, shape or colour), never three identical icons with different names.
+- The lesson's key idea is shown moving, not only stated: if "the loop is the whole trick", the picture loops.
+- Comparing with and without something (a vaccine, a seatbelt, a diet): show the outcome people care about (how ill, how hurt), not only an abstract "strength".
 - Numbers people can read: a percentage never goes above 100% (say "4 times as much" instead); things you count (days, people, germs) use step 1 and no decimals; every chart axis says what it measures in words, with a unit or plain words like "low" and "high".
 - One curve or idea at a time: add the second curve on a later step (show with a step knob), never three curves at once.
 
