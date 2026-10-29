@@ -146,6 +146,7 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
       }
       // A template is routed at most twice per course: every lesson looking the same was Logan's 2/10 complaint.
       const used: Record<string, number> = {};
+      let last = '';
       plan.lessons = plan.lessons.map((l, i) => {
         let pattern = PATTERN_IDS.includes(l.pattern) ? l.pattern : 'act-it-out';
         if (pattern === 'follow-the-flow' && (i === 0 || flows++ > 0)) pattern = 'act-it-out';
@@ -154,9 +155,10 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
         const trigCourse = /\b(trigonometr\w*|trigonometri|sin|cos|kos|tan|SOH)\b/i.test(plan.topic);
         const routed = trigCourse && !/\b(circle|bulatan|graph|graf|wave|gelombang)\b/i.test(l.title) && /\b(sides?|angles?|ratios?|sisi|sudut|nisbah|sin|cos|kos|tan|missing|hilang|hypotenuse|hipotenus)\b/i.test(`${l.title} ${l.goal}`) ? 'name-the-sides'
           : attentionCourse && /\b(softmax|scal\w*|d_k|√d|temperature|mask\w*|heads?)\b/i.test(`${l.title} ${l.goal}`) ? 'who-looks-at-whom' : templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
-        if (routed !== pattern && (used[routed] ?? 0) < 2) pattern = routed;
+        if (routed !== pattern && (used[routed] ?? 0) < 2 && routed !== last) pattern = routed;
         if ((used[pattern] ?? 0) >= 2) pattern = 'act-it-out';
         used[pattern] = (used[pattern] ?? 0) + 1;
+        last = pattern;
         return { ...l, pattern };
       });
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });
@@ -214,6 +216,8 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
     }
     m.costUsd += r.costUsd;
     const checked = checkLesson(r.data);
+    // A copy is an error on every draft, so a repeat copy is never accepted as clean.
+    if (checked.lesson && copiesPlaybook(checked.lesson)) checked.errors.push(COPY_ERROR);
     m.calls.push({ model: route.model, ok: checked.errors.length === 0 && !!checked.lesson, costUsd: r.costUsd, ms: r.ms, note: checked.errors.slice(0, 3).join(' | ') || undefined });
     if (checked.lesson && checked.errors.length === 0) {
       // Clean by the rules: once per lesson, check the words against the picture before accepting it.
@@ -222,9 +226,7 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
       // The code checks below are instant and always run; only the model inspector is skipped when lesson 1 is slow.
       const slow = Date.now() - started > inspectWithin;
       // A copy of a playbook example is not a lesson about this topic (walk: "Unbelievable cats love boxes" again).
-      const near = (a: string, b: string) => { const wa = new Set(a.toLowerCase().match(/\w+/g) ?? []), wb = b.toLowerCase().match(/\w+/g) ?? []; return wb.length > 4 && wb.filter((x) => wa.has(x)).length / wb.length >= 0.8; };
-      const copied = PLAYBOOK.some((p) => p.example.steps.filter((es) => checked.lesson!.steps.some((st) => near(st.say, es.say))).length >= 2 || JSON.stringify(p.example.scene) === JSON.stringify(checked.lesson!.scene) || sameWords(p.example.scene, checked.lesson!.scene) || (p.example.scene.type === 'nextWord' && checked.lesson!.scene.type === 'nextWord' && p.example.scene.context === checked.lesson!.scene.context) || (p.example.scene.type === 'tokens' && checked.lesson!.scene.type === 'tokens' && JSON.stringify(p.example.scene.pieces.map((x) => x.text)) === JSON.stringify(checked.lesson!.scene.pieces.slice(0, p.example.scene.pieces.length).map((x) => x.text))))
-        ? ['The scene copies the playbook example. Write your own content from this lesson\'s topic and fact sheet.'] : [];
+      const copied: string[] = [];
       // A lesson that ignores its fact sheet is generic; the inspector's repair turn also asks for the facts.
       const anchors = ctx.anchors ?? [];
       // Health topics never promise certainty (panel, Nurul: "pertahanan: 100%", "Anda tidak sakit").
@@ -270,6 +272,15 @@ export async function research(plan: Plan, index: number, level: Level, m: Meter
     return [];
   }
 }
+
+/** True when a draft copies a playbook example instead of teaching this topic (walk: verbatim "The cat sat on the"). */
+export function copiesPlaybook(l: Lesson): boolean {
+  const near = (a: string, b: string) => { const wa = new Set(a.toLowerCase().match(/\w+/g) ?? []), wb = b.toLowerCase().match(/\w+/g) ?? []; return wb.length > 4 && wb.filter((x) => wa.has(x)).length / wb.length >= 0.8; };
+  return PLAYBOOK.some((p) => p.example.steps.filter((es) => l.steps.some((st) => near(st.say, es.say))).length >= 2 || JSON.stringify(p.example.scene) === JSON.stringify(l.scene) || sameWords(p.example.scene, l.scene)
+    || (p.example.scene.type === 'nextWord' && l.scene.type === 'nextWord' && p.example.scene.context === l.scene.context)
+    || (p.example.scene.type === 'tokens' && l.scene.type === 'tokens' && JSON.stringify(p.example.scene.pieces.map((x) => x.text)) === JSON.stringify(l.scene.pieces.slice(0, p.example.scene.pieces.length).map((x) => x.text))));
+}
+const COPY_ERROR = 'The lesson copies the playbook example (its sentence, words or steps). Write your own content from this lesson\'s topic and fact sheet.';
 
 /** True when a scene reuses most of a playbook example's words (labels and texts), i.e. it was copied, not written. */
 function sameWords(a: unknown, b: unknown): boolean {
