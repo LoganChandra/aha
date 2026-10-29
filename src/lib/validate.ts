@@ -173,6 +173,7 @@ export function checkLesson(raw: unknown): Checked {
     checkExpr('triangle angle', scene.angle, withT, errors); checkExpr('triangle hyp', scene.hyp, withT, errors);
     for (const k of ['showNames', 'showLengths', 'showRatios'] as const) checkExpr(`triangle ${k}`, scene[k], withT, errors);
   } else if (scene.type === 'cycle') {
+    if (scene.center && /[{}*]|\bt\b/.test(scene.center)) errors.push('cycle center is plain words (the app already counts the rounds); remove expressions from it.');
     scene.stages.forEach((x) => { if (!ICONS[x.icon]) errors.push(`stage "${x.id}": no icon "${x.icon}".`); });
     checkExpr('cycle speed', scene.speed, withT, errors);
   } else if (scene.type === 'denoise') {

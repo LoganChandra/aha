@@ -25,7 +25,8 @@ export function nextWordProbs(scores: number[], temperature: number): number[] {
   return e.map((v) => v / sum);
 }
 
-const Caption = ({ text }: { text?: string }) => (text ? <p className="shrink-0 px-3 pt-1 text-center text-[15px] font-semibold leading-snug text-ink-2">{text}</p> : null);
+// Side padding leaves room for the play/pause button at the top right of moving scenes.
+const Caption = ({ text }: { text?: string }) => (text ? <p className="shrink-0 px-12 pt-1 text-center text-[15px] font-semibold leading-snug text-ink-2">{text}</p> : null);
 
 export function NextWord({ scene, env, focus, callouts = {}, onTap }: { scene: NW } & Common) {
   const T = scene.temperature !== undefined ? evaluate(scene.temperature, env, 1) : 1;
@@ -345,7 +346,7 @@ export function Cycle({ scene, env, focus, callouts = {}, onTap, t = 0, words = 
     <div className="absolute inset-0 flex select-none flex-col">
       <Caption text={scene.caption} />
       {/* On a small circle the centre note moves under the caption instead of colliding with the stages. */}
-      {scene.center && <p className="shrink-0 px-3 text-center text-[14px] font-medium text-ink-2">{scene.center}</p>}
+      {scene.center && !/[{}()*]/.test(scene.center) && <p className="shrink-0 px-12 text-center text-[14px] font-medium text-ink-2">{scene.center}</p>}
       <div ref={box} className="relative min-h-0 flex-1">
         {w > 0 && (
           <svg width={w} height={h} className="block" role="img" aria-label={scene.caption ?? 'Cycle'}>
@@ -375,7 +376,7 @@ export function Cycle({ scene, env, focus, callouts = {}, onTap, t = 0, words = 
               {false && scene.center && <text x={cx} y={cy - 6} fontSize={14} fontWeight={600} fill="var(--ink-2)">{scene.center}</text>}
               <text x={cx} y={cy + 8} fontSize={22} fontWeight={800} fill="var(--ink)">{(words.round ?? ((r: number) => `round ${r}`))(round)}</text>
             </g>
-            <Pins w={w} h={h} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
+            <Pins w={w} h={h} avoid={scene.stages.map((_, k) => { const [x, y] = at(k); return { x0: x - node - 50, x1: x + node + 50, y0: y - node, y1: y + node + 52 }; })} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
           </svg>
         )}
       </div>
