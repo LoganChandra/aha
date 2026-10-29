@@ -209,8 +209,10 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
     m.calls.push({ model: route.model, ok: checked.errors.length === 0 && !!checked.lesson, costUsd: r.costUsd, ms: r.ms, note: checked.errors.slice(0, 3).join(' | ') || undefined });
     if (checked.lesson && checked.errors.length === 0) {
       // Clean by the rules: once per lesson, check the words against the picture before accepting it.
-      if (inspected || attempt === 2 || Date.now() - started > inspectWithin) return { lesson: checked.lesson, errors: [] };
+      if (inspected || attempt === 2) return { lesson: checked.lesson, errors: [] };
       inspected = true;
+      // The code checks below are instant and always run; only the model inspector is skipped when lesson 1 is slow.
+      const slow = Date.now() - started > inspectWithin;
       // A copy of a playbook example is not a lesson about this topic (walk: "Unbelievable cats love boxes" again).
       const copied = PLAYBOOK.some((p) => p.example.steps.filter((es) => checked.lesson!.steps.some((st) => st.say.trim() === es.say.trim())).length >= 2 || JSON.stringify(p.example.scene) === JSON.stringify(checked.lesson!.scene) || sameWords(p.example.scene, checked.lesson!.scene) || (p.example.scene.type === 'nextWord' && checked.lesson!.scene.type === 'nextWord' && p.example.scene.context === checked.lesson!.scene.context) || (p.example.scene.type === 'tokens' && checked.lesson!.scene.type === 'tokens' && JSON.stringify(p.example.scene.pieces.map((x) => x.text)) === JSON.stringify(checked.lesson!.scene.pieces.slice(0, p.example.scene.pieces.length).map((x) => x.text))))
         ? ['The scene copies the playbook example. Write your own content from this lesson\'s topic and fact sheet.'] : [];
@@ -225,7 +227,7 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
       const unsourced = anchors.length >= 3 ? [...new Set(checked.lesson.steps.flatMap((st) => `${st.say} ${st.after ?? ''}`.replace(/\{[^}]*\}/g, '').match(/\$?\d[\d,.]*\s?(?:bn|billion|trillion|tn|million|m\b)/gi) ?? []))]
         .filter((x) => { const n = x.replace(/[^\d.]/g, ''); return n && !sheet.includes(n) && !JSON.stringify(checked.lesson!.scene).includes(n); }) : [];
       const factGap = [...(unsourced.length ? [`These figures are not in the FACT SHEET: ${unsourced.slice(0, 4).join(', ')}. Use the sheet's numbers or remove them.`] : []), ...(anchors.length >= 3 && factsUsed(checked.lesson, anchors) < 2 ? ['The lesson uses none of the FACT SHEET: rebuild it around at least 2 of those facts (their numbers, names or dates) and show them in the picture.'] : [])];
-      const issues = [...copied, ...healthGap, ...factGap, ...(await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
+      const issues = [...copied, ...healthGap, ...factGap, ...(slow ? [] : await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
       if (!issues.length) return { lesson: checked.lesson, errors: [] };
       best = { lesson: checked.lesson, errors: [] }; // already usable; the repair can only improve it
       messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(issues.map((x) => `Inspector: ${x}`)) });
