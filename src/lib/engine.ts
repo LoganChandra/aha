@@ -216,12 +216,16 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
         ? ['The scene copies the playbook example. Write your own content from this lesson\'s topic and fact sheet.'] : [];
       // A lesson that ignores its fact sheet is generic; the inspector's repair turn also asks for the facts.
       const anchors = ctx.anchors ?? [];
+      // Health topics never promise certainty (panel, Nurul: "pertahanan: 100%", "Anda tidak sakit").
+      const health = /\b(vaccin\w*|vaksin|medicin\w*|ubat|disease|penyakit|immun\w*|imun\w*|virus|infection|jangkitan|cancer|kanser|diabetes|drug|dose|dos)\b/i.test(`${ctx.plan.topic} ${ctx.plan.lessons[ctx.index]?.title ?? ''}`);
+      const absolute = health ? [...new Set(JSON.stringify([checked.lesson.steps, checked.lesson.scene]).match(/\b(100 ?%|always|never get sick|completely safe|totally safe|guaranteed|cannot get sick|won'?t get sick|tidak akan sakit|tidak sakit|pasti selamat|sentiasa|selamat sepenuhnya)\b/gi) ?? [])] : [];
+      const healthGap = absolute.length ? [`Health claims must be honest and hedged: replace ${absolute.slice(0, 3).map((x) => `"${x}"`).join(', ')} with "usually", "much less likely", "milder", or a real figure from the FACT SHEET.`] : [];
       // Money and big-number claims must come from the fact sheet or the knobs, never from thin air (C04).
       const sheet = (ctx.anchors ?? []).join(' ');
       const unsourced = anchors.length >= 3 ? [...new Set(checked.lesson.steps.flatMap((st) => `${st.say} ${st.after ?? ''}`.replace(/\{[^}]*\}/g, '').match(/\$?\d[\d,.]*\s?(?:bn|billion|trillion|tn|million|m\b)/gi) ?? []))]
         .filter((x) => { const n = x.replace(/[^\d.]/g, ''); return n && !sheet.includes(n) && !JSON.stringify(checked.lesson!.scene).includes(n); }) : [];
       const factGap = [...(unsourced.length ? [`These figures are not in the FACT SHEET: ${unsourced.slice(0, 4).join(', ')}. Use the sheet's numbers or remove them.`] : []), ...(anchors.length >= 3 && factsUsed(checked.lesson, anchors) < 2 ? ['The lesson uses none of the FACT SHEET: rebuild it around at least 2 of those facts (their numbers, names or dates) and show them in the picture.'] : [])];
-      const issues = [...copied, ...factGap, ...(await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
+      const issues = [...copied, ...healthGap, ...factGap, ...(await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
       if (!issues.length) return { lesson: checked.lesson, errors: [] };
       best = { lesson: checked.lesson, errors: [] }; // already usable; the repair can only improve it
       messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(issues.map((x) => `Inspector: ${x}`)) });
