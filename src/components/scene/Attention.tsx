@@ -32,11 +32,11 @@ export default function Attention({ scene, env, focus, callouts = {}, onTap }: {
   // Room for the longest row label on the left and the "= 100%" on the right, so nothing is clipped on a phone.
   const longest = Math.max(...scene.tokens.map((t) => t.length));
   const left = Math.min(w * 0.3, 16 + longest * 8.6), right = scene.show === 'scores' ? 8 : 58;
-  let cell = Math.max(30, Math.min(84, (w - left - right) / n, (h - 46) / n));
+  let cell = Math.max(24, Math.min(84, (w - left - right) / n, (h - 46) / n));
   // Column heads that would not fit side by side are tilted, like a spreadsheet's (panel: words ran together).
   const tilt = scene.tokens.some((t) => t.length * 7.6 > cell - 4);
   const top = tilt ? 18 + Math.min(longest, 12) * 6.2 : 34;
-  cell = Math.max(30, Math.min(cell, (h - top - 12) / n));
+  cell = Math.max(22, Math.min(cell, (h - top - 8) / n));
   const gx = left + Math.max(0, (w - left - right - cell * n) / 2), gy = top;
   const head = (t: string) => (tilt ? 14 : Math.max(11, Math.min(15, (cell - 4) / (t.length * 0.58))));
   const maxS = Math.max(...scores.flat().map(Math.abs), 1e-9);

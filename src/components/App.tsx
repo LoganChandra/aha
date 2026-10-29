@@ -517,7 +517,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   if (resv.current.li !== li) resv.current = { li, top: 0, bot: 0 };
   resv.current.top = Math.max(resv.current.top, answer ? 0 : topSize.h);
   resv.current.bot = Math.max(resv.current.bot, botSize.h);
-  const topRes = answer ? topSize.h : resv.current.top, botRes = botSize.h;
+  // Small changes are held (no 16px jumps); a much shorter caption gives its room back to the picture.
+  const topRes = answer || resv.current.top - topSize.h > 64 ? topSize.h : resv.current.top, botRes = botSize.h;
   const stepsDone = lesson ? lesson.steps.filter((_, i) => i < si || (i === si && done)).length : 0;
 
   return (

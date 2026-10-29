@@ -39,7 +39,13 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
   const a = scene.from.value, b = scene.to.value;
   const v = evaluate(scene.marker, env, a);
   const t = Math.max(0, Math.min(1, (v - a) / (b - a || 1)));
-  const pad = 28, x0 = pad, x1 = w - pad, barH = Math.min(64, Math.max(44, h * 0.12)), barY = h * 0.42;
+  const pad = 28, x0 = pad, x1 = w - pad, barH = Math.min(64, Math.max(40, h * 0.12));
+  // Stack top to bottom (readout, bar, end labels, marks, readouts) and centre the stack, so nothing collides when a
+  // tall task card leaves little room (panel walk: the readout ran into the caption).
+  const hasMarks = (scene.marks ?? []).length > 0, hasReads = (scene.readouts ?? []).length > 0;
+  const stackH = 76 + barH + 54 + (hasMarks ? 36 : 0) + (hasReads ? 66 : 0);
+  const barY = Math.max(4, (h - stackH) / 2) + 76;
+  const marksY = barY + barH + 54 + 22, readY = barY + barH + 54 + (hasMarks ? 36 : 0) + 52;
   const X = (val: number) => x0 + ((val - a) / (b - a || 1)) * (x1 - x0);
   const mx = x0 + t * (x1 - x0);
   // The marker is draggable when it is a knob itself.
@@ -59,7 +65,9 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
   const dim = (id: string) => (focus.length && !focus.includes(id) ? 0.5 : 1);
   const gx = guide && knob && guide.param === knob.id ? X(guide.target) : null;
   return (
-    <div ref={box} className="absolute inset-0 select-none">
+    <div className="absolute inset-0 flex select-none flex-col">
+      {scene.caption && <p className="shrink-0 px-3 pt-1 text-center text-[15px] font-semibold leading-snug text-ink-2">{scene.caption}</p>}
+      <div ref={box} className="relative min-h-0 flex-1">
       {w > 0 && (
         <svg
           ref={svg} width={w} height={h} className="block" role="img" aria-label={scene.caption ?? `${scene.from.label} to ${scene.to.label}`}
@@ -70,7 +78,6 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
               {stops.map((s) => <stop key={s} offset={`${s * 100}%`} stopColor={colorAt(scene.colors, s, a + s * (b - a))} />)}
             </linearGradient>
           </defs>
-          {scene.caption && <text x={w / 2} y={28} textAnchor="middle" fontSize={16} fontWeight={600} fill="var(--ink-2)" fontFamily="var(--font-sans)">{scene.caption}</text>}
           {/* the bar: full-strength colours, a touch of depth */}
           <rect x={x0} y={barY} width={x1 - x0} height={barH} rx={14} fill="url(#spec-grad)" stroke="var(--line-2)" strokeWidth={1}
             style={{ cursor: knob ? 'pointer' : undefined, touchAction: 'none' }}
@@ -79,8 +86,8 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
           {gx !== null && <rect className="pulse-ring" x={gx - 10} y={barY - 6} width={20} height={barH + 12} rx={8} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />}
           {(scene.marks ?? []).map((m) => (
             <g key={m.id} opacity={dim(m.id)} onClick={onTap ? () => onTap(m.id) : undefined} style={onTap ? { cursor: 'pointer' } : undefined}>
-              <line x1={X(m.at)} x2={X(m.at)} y1={barY + barH} y2={barY + barH + 74} stroke="var(--ink-3)" strokeWidth={1.5} strokeDasharray="3 3" />
-              <text x={X(m.at)} y={barY + barH + 92} textAnchor="middle" fontSize={15} fontWeight={650} fill="var(--ink)" fontFamily="var(--font-sans)">{m.label}</text>
+              <line x1={X(m.at)} x2={X(m.at)} y1={barY + barH} y2={marksY - 16} stroke="var(--ink-3)" strokeWidth={1.5} strokeDasharray="3 3" />
+              <text x={X(m.at)} y={marksY} textAnchor="middle" fontSize={15} fontWeight={650} fill="var(--ink)" fontFamily="var(--font-sans)">{m.label}</text>
               {onTap && <circle cx={X(m.at)} cy={barY + barH / 2} r={26} fill="transparent" />}
               {onTap && <circle className="pulse-ring" cx={X(m.at)} cy={barY + barH / 2} r={18} fill="none" stroke="var(--t-primary)" strokeWidth={3} style={{ pointerEvents: 'none' }} />}
             </g>
@@ -107,7 +114,7 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
           {(scene.readouts ?? []).length > 0 && (
             <g fontFamily="var(--font-sans)" textAnchor="middle">
               {(scene.readouts ?? []).map((r, i, all) => {
-                const cx = w * ((i + 0.5) / all.length), y = Math.min(h - 18, barY + barH + 140);
+                const cx = w * ((i + 0.5) / all.length), y = readY;
                 return (
                   <g key={i}>
                     <text x={cx} y={y - 26} fontSize={15} fontWeight={600} fill="var(--ink-2)">{r.label}</text>
@@ -120,6 +127,7 @@ export default function Spectrum({ scene, env, params, onDrag, focus, callouts =
           <Pins w={w} h={h} pins={Object.entries(callouts).filter(([id]) => anchors[id]).map(([id, text]) => ({ id, text, at: anchors[id] }))} />
         </svg>
       )}
+      </div>
       <span className="sr-only" aria-live="polite">{`${formatNumber(v)}${unit}`}</span>
     </div>
   );
