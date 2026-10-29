@@ -44,6 +44,7 @@ type Dict = {
   cont: string; finish: string; nextLesson: string; praise: string[]; close: string; lessons: string; level: string; sources: string;
   disclaimer: string; drawing: (n: number) => string; drawingWait: string; doFirst: string; courseDone: string; startOver: string; share: string; copied: string;
   thinking: string; setForYou: (what: string) => string; youTapped: (what: string) => string; answerIs: (what: string) => string; keepMore: string; keepLess: string;
+  nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string;
 };
 
 export const UI: Record<UiLang, Dict> = {
@@ -58,7 +59,7 @@ export const UI: Record<UiLang, Dict> = {
     cont: 'Continue', finish: 'Finish lesson', nextLesson: 'Next lesson', praise: ['Exactly.', 'Nice.', 'Right.', 'Spot on.', 'Yes.', "That's it."], close: 'Close', lessons: 'Lessons', level: 'Level', sources: 'Sources',
     disclaimer: 'AHA writes each lesson with AI. It can get things wrong, so check anything important against the sources.',
     drawing: (n) => `Drawing lesson ${n}`, drawingWait: 'Usually 10 to 20 seconds. Read what it covers meanwhile.', doFirst: 'Do the step above first, or tap Show me.',
-    courseDone: 'Course done', startOver: 'Start again', share: 'Share', copied: 'Link copied', thinking: 'Thinking', youTapped: (w) => `That's ${w}.`, answerIs: (w) => `Not quite: it's "${w}".`, keepMore: 'Nearly. Keep going a little further.', keepLess: 'Nearly. Go back a little.', setForYou: (w) => `This step set ${w} for you.`,
+    courseDone: 'Course done', startOver: 'Start again', share: 'Share', copied: 'Link copied', thinking: 'Thinking', youTapped: (w) => `That's ${w}.`, answerIs: (w) => `Not quite: it's "${w}".`, keepMore: 'Nearly. Keep going a little further.', keepLess: 'Nearly. Go back a little.', nTokens: (n) => `${n} tokens`, slope: 'slope', offChart: 'off the chart', chancePick: 'chance it picks this', learned: 'what it has learned (| = truth)', setForYou: (w) => `This step set ${w} for you.`,
   },
   ms: {
     title: 'Apa yang anda mahu fahami?', yourLevel: 'Tahap anda', levelNote: (l) => `${l} dipilih. Ketik yang lain untuk menukar, sekarang atau nanti.`,
@@ -71,7 +72,7 @@ export const UI: Record<UiLang, Dict> = {
     cont: 'Teruskan', finish: 'Tamat pelajaran', nextLesson: 'Pelajaran seterusnya', praise: ['Betul!', 'Tepat sekali.', 'Bagus.', 'Ya, betul.', 'Syabas.', 'Itulah dia.'], close: 'Tutup', lessons: 'Pelajaran', level: 'Tahap', sources: 'Sumber',
     disclaimer: 'Pelajaran ini ditulis oleh AI dan mungkin ada kesilapan. Semak perkara penting dengan sumber di bawah, atau tanya orang yang pakar.',
     drawing: (n) => `Melukis pelajaran ${n}`, drawingWait: 'Biasanya 10 hingga 20 saat. Baca isi pelajaran sementara menunggu.', doFirst: 'Selesaikan langkah di atas dahulu, atau ketik Tunjukkan.',
-    courseDone: 'Kursus selesai', startOver: 'Mula semula', share: 'Kongsi', copied: 'Pautan disalin', thinking: 'Sedang berfikir', youTapped: (w) => `Itu ${w}.`, answerIs: (w) => `Belum tepat: jawapannya "${w}".`, keepMore: 'Hampir. Teruskan sedikit lagi.', keepLess: 'Hampir. Undur sedikit.', setForYou: (w) => `Langkah ini menetapkan ${w} untuk anda.`,
+    courseDone: 'Kursus selesai', startOver: 'Mula semula', share: 'Kongsi', copied: 'Pautan disalin', thinking: 'Sedang berfikir', youTapped: (w) => `Itu ${w}.`, answerIs: (w) => `Belum tepat: jawapannya "${w}".`, keepMore: 'Hampir. Teruskan sedikit lagi.', keepLess: 'Hampir. Undur sedikit.', nTokens: (n) => `${n} token`, slope: 'kecerunan', offChart: 'terkeluar dari carta', chancePick: 'peluang ia memilih ini', learned: 'apa yang telah dipelajari (| = sebenar)', setForYou: (w) => `Langkah ini menetapkan ${w} untuk anda.`,
   },
   zh: {
     title: '你想弄懂什么？', yourLevel: '你的程度', levelNote: (l) => `已选“${l}”。现在或之后都可以点别的来更改。`,
@@ -84,7 +85,7 @@ export const UI: Record<UiLang, Dict> = {
     cont: '继续', finish: '完成本课', nextLesson: '下一课', praise: ['完全正确。', '很好。', '对了。', '没错。', '是的。', '就是这样。'], close: '关闭', lessons: '课程', level: '程度', sources: '资料来源',
     disclaimer: 'AHA 用 AI 编写每一课，可能会出错。重要的内容请对照资料来源核实。',
     drawing: (n) => `正在绘制第 ${n} 课`, drawingWait: '通常 10 到 20 秒。可以先看看这一课讲什么。', doFirst: '请先完成上面的步骤，或点“示范给我看”。',
-    courseDone: '课程完成', startOver: '重新开始', share: '分享', copied: '链接已复制', thinking: '思考中', youTapped: (w) => `那是${w}。`, answerIs: (w) => `还不对：答案是“${w}”。`, keepMore: '差一点，再往前一些。', keepLess: '差一点，往回一些。', setForYou: (w) => `这一步已为你设置${w}。`,
+    courseDone: '课程完成', startOver: '重新开始', share: '分享', copied: '链接已复制', thinking: '思考中', youTapped: (w) => `那是${w}。`, answerIs: (w) => `还不对：答案是“${w}”。`, keepMore: '差一点，再往前一些。', keepLess: '差一点，往回一些。', nTokens: (n) => `${n} 个词元`, slope: '斜率', offChart: '超出图表', chancePick: '选中它的概率', learned: '已学到的（| = 真实值）', setForYou: (w) => `这一步已为你设置${w}。`,
   },
   ta: {
     title: 'நீங்கள் எதைப் புரிந்துகொள்ள விரும்புகிறீர்கள்?', yourLevel: 'உங்கள் நிலை', levelNote: (l) => `${l} தேர்ந்தெடுக்கப்பட்டது. மாற்ற வேறொன்றைத் தட்டுங்கள்.`,
@@ -97,6 +98,6 @@ export const UI: Record<UiLang, Dict> = {
     cont: 'தொடர்', finish: 'பாடத்தை முடி', nextLesson: 'அடுத்த பாடம்', praise: ['சரியாகச் சொன்னீர்கள்.', 'அருமை.', 'சரி.', 'மிகச் சரி.', 'ஆம்.', 'அதுதான்.'], close: 'மூடு', lessons: 'பாடங்கள்', level: 'நிலை', sources: 'ஆதாரங்கள்',
     disclaimer: 'AHA ஒவ்வொரு பாடத்தையும் AI மூலம் எழுதுகிறது. தவறுகள் இருக்கலாம்; முக்கியமானவற்றை ஆதாரங்களுடன் சரிபாருங்கள்.',
     drawing: (n) => `பாடம் ${n} வரையப்படுகிறது`, drawingWait: 'பொதுவாக 10 முதல் 20 வினாடிகள். அதுவரை இந்தப் பாடம் எதைப் பற்றியது என்று படியுங்கள்.', doFirst: 'முதலில் மேலே உள்ள படியைச் செய்யுங்கள், அல்லது காட்டு என்பதைத் தட்டுங்கள்.',
-    courseDone: 'பாடநெறி முடிந்தது', startOver: 'மீண்டும் தொடங்கு', share: 'பகிர்', copied: 'இணைப்பு நகலெடுக்கப்பட்டது', thinking: 'யோசிக்கிறது', youTapped: (w) => `அது ${w}.`, answerIs: (w) => `சரியில்லை: பதில் "${w}".`, keepMore: 'கிட்டத்தட்ட. இன்னும் கொஞ்சம் நகர்த்துங்கள்.', keepLess: 'கிட்டத்தட்ட. கொஞ்சம் பின்னால் நகர்த்துங்கள்.', setForYou: (w) => `இந்தப் படி ${w} ஐ உங்களுக்காக அமைத்தது.`,
+    courseDone: 'பாடநெறி முடிந்தது', startOver: 'மீண்டும் தொடங்கு', share: 'பகிர்', copied: 'இணைப்பு நகலெடுக்கப்பட்டது', thinking: 'யோசிக்கிறது', youTapped: (w) => `அது ${w}.`, answerIs: (w) => `சரியில்லை: பதில் "${w}".`, keepMore: 'கிட்டத்தட்ட. இன்னும் கொஞ்சம் நகர்த்துங்கள்.', keepLess: 'கிட்டத்தட்ட. கொஞ்சம் பின்னால் நகர்த்துங்கள்.', nTokens: (n) => `${n} டோக்கன்கள்`, slope: 'சாய்வு', offChart: 'வரைபடத்துக்கு வெளியே', chancePick: 'இதைத் தேர்வு செய்யும் வாய்ப்பு', learned: 'கற்றுக்கொண்டது (| = உண்மை)', setForYou: (w) => `இந்தப் படி ${w} ஐ உங்களுக்காக அமைத்தது.`,
   },
 };

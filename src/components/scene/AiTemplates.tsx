@@ -11,7 +11,9 @@ type NW = Extract<Scene, { type: 'nextWord' }>;
 type TK = Extract<Scene, { type: 'tokens' }>;
 type EM = Extract<Scene, { type: 'embedding' }>;
 type DS = Extract<Scene, { type: 'descent' }>;
-type Common = { env: Env; focus: string[]; callouts?: Record<string, string>; onTap?: (id: string) => void };
+export type TemplateWords = { nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string };
+const EN: TemplateWords = { nTokens: (n) => `${n} tokens`, slope: 'slope', offChart: 'off the chart', chancePick: 'chance it picks this', learned: 'what it has learned (| = truth)' };
+type Common = { env: Env; focus: string[]; callouts?: Record<string, string>; onTap?: (id: string) => void; words?: TemplateWords };
 
 /** softmax(score / T); exported for tests. */
 export function nextWordProbs(scores: number[], temperature: number): number[] {
@@ -61,7 +63,7 @@ export function NextWord({ scene, env, focus, callouts = {}, onTap }: { scene: N
 }
 
 const CHIP_TONES = ['primary', 'accent', 'green', 'cool', 'warm', 'red'];
-export function Tokens({ scene, env, focus, callouts = {}, onTap }: { scene: TK } & Common) {
+export function Tokens({ scene, env, focus, callouts = {}, onTap, words = EN }: { scene: TK } & Common) {
   const ids = scene.showIds !== undefined ? evaluate(scene.showIds, env, 0) >= 0.5 : false;
   return (
     <div className="absolute inset-0 flex select-none flex-col overflow-y-auto px-3 pb-2">
@@ -82,7 +84,7 @@ export function Tokens({ scene, env, focus, callouts = {}, onTap }: { scene: TK 
           );
         })}
       </div>
-      <p className="mt-4 text-center text-[17px] font-bold tabular-nums text-ink">{scene.pieces.length} tokens</p>
+      <p className="mt-4 text-center text-[17px] font-bold tabular-nums text-ink">{words.nTokens(scene.pieces.length)}</p>
     </div>
   );
 }
@@ -189,7 +191,7 @@ export function descentPath(loss: (w: number) => number, w: number, lr: number, 
   return path;
 }
 
-export function Descent({ scene, env, params, onDrag, focus, callouts = {}, onTap }: { scene: DS; params: Param[]; onDrag: (v: Record<string, number>) => void } & Common) {
+export function Descent({ scene, env, params, onDrag, focus, callouts = {}, onTap, words = EN }: { scene: DS; params: Param[]; onDrag: (v: Record<string, number>) => void } & Common) {
   const [box, size] = useSize<HTMLDivElement>();
   const { w, h } = size;
   const svg = useRef<SVGSVGElement>(null);
@@ -242,7 +244,7 @@ export function Descent({ scene, env, params, onDrag, focus, callouts = {}, onTa
                 return (
                   <g key={i}>
                     <path d={`M${x1},${y1} Q${(x1 + ex) / 2},${padT - 4} ${ex},${padT + 6}`} fill="none" stroke="var(--t-red)" strokeWidth={2.5} strokeDasharray="5 4" />
-                    <text x={ex + (p > from ? -4 : 4)} y={padT + 24} textAnchor={p > from ? 'end' : 'start'} fontSize={14} fontWeight={800} fill="var(--t-red)" fontFamily="var(--font-sans)">{p > from ? 'off the chart →' : '← off the chart'}</text>
+                    <text x={ex + (p > from ? -4 : 4)} y={padT + 24} textAnchor={p > from ? 'end' : 'start'} fontSize={14} fontWeight={800} fill="var(--t-red)" fontFamily="var(--font-sans)">{p > from ? `${words.offChart} →` : `← ${words.offChart}`}</text>
                   </g>
                 );
               }
@@ -263,7 +265,7 @@ export function Descent({ scene, env, params, onDrag, focus, callouts = {}, onTa
       </div>
       <div className="flex shrink-0 flex-wrap justify-center gap-1.5 px-2 pb-1">
         <span className="rounded-full border border-line bg-surface px-3 py-1 text-[15px] font-semibold tabular-nums">{scene.yLabel ?? 'loss'}: {formatNumber(L(wv))}</span>
-        <span className="rounded-full border border-line bg-surface px-3 py-1 text-[15px] font-semibold tabular-nums">slope: {formatNumber(slope)}</span>
+        <span className="rounded-full border border-line bg-surface px-3 py-1 text-[15px] font-semibold tabular-nums">{words.slope}: {formatNumber(slope)}</span>
       </div>
     </div>
   );
@@ -283,7 +285,7 @@ export function rewardPolicy(rewards: number[], rounds: number, explore: number)
   return { est, pick };
 }
 
-export function Reward({ scene, env, focus, callouts = {}, onTap }: { scene: RW } & Common) {
+export function Reward({ scene, env, focus, callouts = {}, onTap, words = EN }: { scene: RW } & Common) {
   const rewards = scene.options.map((o) => evaluate(o.reward, env, 0.5));
   const rounds = Math.round(evaluate(scene.rounds, env, 0)), explore = scene.explore !== undefined ? evaluate(scene.explore, env, 0.1) : 0.1;
   const { est, pick } = rewardPolicy(rewards, rounds, explore);
@@ -293,8 +295,8 @@ export function Reward({ scene, env, focus, callouts = {}, onTap }: { scene: RW 
     <div className="absolute inset-0 flex select-none flex-col overflow-y-auto px-3 pb-2">
       <Caption text={scene.caption} />
       <p className="mt-1 flex flex-wrap justify-center gap-x-4 text-[13.5px] font-medium text-ink-2">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-5 rounded-full bg-[var(--t-primary)]" />{scene.pickLabel ?? 'chance it picks this'}</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-5 rounded-full bg-[var(--t-green)]/70" />{scene.learnedLabel ?? 'what it has learned (| = truth)'}</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-5 rounded-full bg-[var(--t-primary)]" />{scene.pickLabel ?? words.chancePick}</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-5 rounded-full bg-[var(--t-green)]/70" />{scene.learnedLabel ?? words.learned}</span>
       </p>
       <ul className="mx-auto mt-2 w-full max-w-[540px] space-y-3">
         {scene.options.map((o, i) => (

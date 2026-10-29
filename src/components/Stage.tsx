@@ -15,7 +15,7 @@ import Pipeline from './scene/Pipeline';
 import Spectrum from './scene/Spectrum';
 import Network from './scene/Network';
 import Attention from './scene/Attention';
-import { Descent, Embedding, NextWord, Reward, Tokens } from './scene/AiTemplates';
+import { Descent, Embedding, NextWord, Reward, Tokens, type TemplateWords } from './scene/AiTemplates';
 
 // three.js is only downloaded when a lesson actually has a 3D model.
 const Model3D = dynamic(() => import('./scene/Model3D'), { ssr: false, loading: () => <div className="shimmer absolute inset-6 rounded-[var(--radius)]" /> });
@@ -29,9 +29,11 @@ type Props = {
   callouts?: Record<string, string>;
   onTap?: (id: string) => void;
   guide?: { param: string; target: number };
+  /** The app's own words, in the learner's language, for labels a template draws itself. */
+  words?: TemplateWords;
 };
 
-function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guide }: Props) {
+function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guide, words }: Props) {
   const t = useClock(playing);
   const e = { ...env, t };
   const s = lesson.scene;
@@ -47,11 +49,11 @@ function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guid
     case 'spectrum': return <Spectrum scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} guide={guide} />;
     case 'network': return <Network scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'attention': return <Attention scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
-    case 'nextWord': return <NextWord scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
-    case 'tokens': return <Tokens scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
+    case 'nextWord': return <NextWord scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
+    case 'tokens': return <Tokens scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
     case 'embedding': return <Embedding scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} />;
-    case 'reward': return <Reward scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
-    case 'descent': return <Descent scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} />;
+    case 'reward': return <Reward scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
+    case 'descent': return <Descent scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
   }
 }
 

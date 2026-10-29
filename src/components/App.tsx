@@ -554,7 +554,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
             <div className="absolute inset-x-0" style={{ top: topRes ? topRes + 16 : 0, bottom: botRes ? botRes + 16 : 0, transition: reduced ? undefined : 'top 220ms ease, bottom 220ms ease' }}>
               <SceneBoundary key={`${course.planId}-${li}`}>
                 <div className="contents" onClick={onStageClick}>
-                <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} callouts={callouts} onTap={task?.kind === 'tap' && !sp.done ? onTap : undefined} guide={guide} />
+                <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} callouts={callouts} onTap={task?.kind === 'tap' && !sp.done ? onTap : undefined} guide={guide} words={tx} />
                 </div>
               </SceneBoundary>
               {moving && (
