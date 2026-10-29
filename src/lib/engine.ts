@@ -4,7 +4,7 @@ import { AiError, chatJson, type Msg, type Route } from './ai';
 import { ASK_SYSTEM, CHECK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, RESEARCH_SYSTEM, checkUser, lessonUser, planBrief, planUser, repairUser, researchUser } from './prompts';
 import { describeSteps } from './inspect';
 import { detectLanguage } from './intent';
-import { PATTERN_IDS } from './playbook';
+import { PATTERN_IDS, PLAYBOOK } from './playbook';
 import { Plan, type Lesson, type Level, type Source } from './recipe';
 import { checkLesson, repair } from './validate';
 
@@ -204,10 +204,13 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
       // Clean by the rules: once per lesson, check the words against the picture before accepting it.
       if (inspected || attempt === 2 || Date.now() - started > inspectWithin) return { lesson: checked.lesson, errors: [] };
       inspected = true;
+      // A copy of a playbook example is not a lesson about this topic (walk: "Unbelievable cats love boxes" again).
+      const copied = PLAYBOOK.some((p) => JSON.stringify(p.example.scene) === JSON.stringify(checked.lesson!.scene) || (p.example.scene.type === 'tokens' && checked.lesson!.scene.type === 'tokens' && JSON.stringify(p.example.scene.pieces.map((x) => x.text)) === JSON.stringify(checked.lesson!.scene.pieces.slice(0, p.example.scene.pieces.length).map((x) => x.text))))
+        ? ['The scene copies the playbook example. Write your own content from this lesson\'s topic and fact sheet.'] : [];
       // A lesson that ignores its fact sheet is generic; the inspector's repair turn also asks for the facts.
       const anchors = ctx.anchors ?? [];
       const factGap = anchors.length >= 3 && factsUsed(checked.lesson, anchors) < 2 ? ['The lesson uses none of the FACT SHEET: rebuild it around at least 2 of those facts (their numbers, names or dates) and show them in the picture.'] : [];
-      const issues = [...factGap, ...(await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
+      const issues = [...copied, ...factGap, ...(await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
       if (!issues.length) return { lesson: checked.lesson, errors: [] };
       best = { lesson: checked.lesson, errors: [] }; // already usable; the repair can only improve it
       messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(issues.map((x) => `Inspector: ${x}`)) });
