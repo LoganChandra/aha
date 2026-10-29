@@ -7,8 +7,8 @@ const sans = Inter({ variable: '--font-sans', subsets: ['latin'] });
 const serif = Source_Serif_4({ variable: '--font-serif', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'ProfAI',
-  description: 'Type anything you want to understand. ProfAI teaches it with visuals you can play with.',
+  title: 'AHA',
+  description: 'Type anything you want to understand. AHA teaches it with visuals you can play with.',
 };
 
 export const viewport: Viewport = {

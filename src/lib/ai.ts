@@ -38,7 +38,7 @@ export async function chatJson<T = unknown>(
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://profai-poc.vercel.app',
-        'X-Title': 'ProfAI',
+        'X-Title': 'AHA',
       },
       body: JSON.stringify({
         model: route.model,

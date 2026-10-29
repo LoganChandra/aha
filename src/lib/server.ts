@@ -4,7 +4,7 @@ import { getCache } from '@vercel/functions';
 import type { Level, Plan, Source } from './recipe';
 
 // Bump when prompts or the recipe format change, so old cached lessons are not served against new renderers.
-export const CACHE_VERSION = 'v20';
+export const CACHE_VERSION = 'v21';
 const DAY = 86_400;
 
 const cache = () => getCache({ namespace: `profai-${CACHE_VERSION}` });
@@ -58,7 +58,7 @@ export async function addSpend(usd: number): Promise<void> {
   const spent = (await cacheGet<number>(key)) ?? 0;
   await cacheSet(key, spent + usd, 2 * DAY);
 }
-export const RESTING = 'ProfAI has taught a lot today and is resting until tomorrow. Courses others started are still open.';
+export const RESTING = 'AHA has taught a lot today and is resting until tomorrow. Courses others started are still open.';
 
 export const hash = (s: string) => createHash('sha256').update(s).digest('base64url').slice(0, 24);
 

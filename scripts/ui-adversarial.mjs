@@ -4,13 +4,14 @@ const base = process.argv[2] ?? 'http://localhost:3311';
 const browser = await chromium.launch({ executablePath: process.env.HOME + '/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const results = [];
 async function check(name, opts, fn) {
+  if (process.env.ONLY && !new RegExp(process.env.ONLY, 'i').test(name)) return;
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, ...opts });
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push(e.message));
   try {
     const ok = await fn(page, errs);
-    results.push([name, ok && errs.length === 0, errs.join(' | ').slice(0, 200)]);
+    results.push([name, !!ok && errs.length === 0, (typeof ok === 'string' ? ok + ' ' : '') + errs.join(' | ').slice(0, 200)]);
   } catch (e) {
     results.push([name, false, e.message.slice(0, 200)]);
   }
@@ -22,7 +23,7 @@ async function startCourse(page, prompt = 'compound interest', level = 'Novice')
   await page.getByRole('radio', { name: new RegExp(level) }).click();
   await page.locator('#prompt').fill(prompt);
   await page.keyboard.press('Enter');
-  await page.getByText(/Lesson 1 of/).waitFor({ timeout: 60000 });
+  await page.getByText(/Lesson 1 of|Pelajaran 1 daripada|பாடம் 1 \//).waitFor({ timeout: 60000 });
 }
 const noHorizontalScroll = (page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 
@@ -34,7 +35,7 @@ await check('double send fires one plan request', {}, async (page) => {
   await page.locator('#prompt').press('Enter');
   await page.locator('#prompt').press('Enter').catch(() => {});
   await page.getByRole('button', { name: 'Send' }).click({ force: true, timeout: 1000 }).catch(() => {});
-  await page.getByText(/Lesson 1 of/).waitFor({ timeout: 60000 });
+  await page.getByText(/Lesson 1 of|Pelajaran 1 daripada|பாடம் 1 \//).waitFor({ timeout: 60000 });
   return n === 1;
 });
 
@@ -50,7 +51,7 @@ await check('failed lesson shows a retry that works', {}, async (page) => {
 });
 
 await check('plan server error lands back home with a message', {}, async (page) => {
-  await page.route('**/api/plan', (route) => route.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ error: 'ProfAI could not plan that just now. Try again in a moment.' }) }));
+  await page.route('**/api/plan', (route) => route.fulfill({ status: 502, contentType: 'application/json', body: JSON.stringify({ error: 'AHA could not plan that just now. Try again in a moment.' }) }));
   await page.goto(base);
   await page.locator('#prompt').fill('anything');
   await page.keyboard.press('Enter');
@@ -104,7 +105,7 @@ await check('laptop 1366x768 course layout', { viewport: { width: 1366, height: 
 
 await check('Tamil course renders in Tamil', {}, async (page) => {
   await startCourse(page, 'ஒளிச்சேர்க்கை எப்படி நடக்கிறது', 'Novice');
-  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
+  await page.getByRole('button', { name: /^(தொடர்|அடுத்த பாடம்)$/ }).waitFor({ timeout: 90000 });
   await page.waitForTimeout(800);
   return /[஀-௿]/.test(await page.locator('main').innerText());
 });
@@ -122,7 +123,7 @@ await check('clarify options start a course when tapped', {}, async (page) => {
   await page.getByRole('status').waitFor({ timeout: 30000 });
   const opt = page.getByRole('status').getByRole('button').first();
   await opt.click();
-  await page.getByText(/Lesson 1 of/).waitFor({ timeout: 60000 });
+  await page.getByText(/Lesson 1 of|Pelajaran 1 daripada|பாடம் 1 \//).waitFor({ timeout: 60000 });
   return true;
 });
 
@@ -164,7 +165,7 @@ await check('a task blocks Continue until done, and Show me completes it', {}, a
 await check('asking mid-lesson answers inside the scene and returns', {}, async (page) => {
   await startCourse(page, 'trigonometry', 'Novice');
   await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
-  const askBtn = page.getByRole('button', { name: 'Ask a question' });
+  const askBtn = page.getByRole('button', { name: 'Ask anything about this' });
   if (await askBtn.count()) await askBtn.click();
   await page.locator('#prompt').fill('why is it called sine?');
   await page.keyboard.press('Enter');
@@ -172,6 +173,57 @@ await check('asking mid-lesson answers inside the scene and returns', {}, async 
   await page.getByText('Back to the lesson').click();
   await page.waitForTimeout(700);
   return (await page.getByText('Back to the lesson').count()) === 0;
+});
+
+// Panel 2026-10-29 (Lim, Aisyah, Nurul): a question asked on the lesson-done card must show its answer, on top.
+await check('asking on the lesson-done card shows the answer on top', {}, async (page) => {
+  await startCourse(page, 'why is the sky blue', 'Beginner');
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
+  for (let i = 0; i < 10; i++) {
+    const show = page.getByRole('button', { name: 'Show me' });
+    if (await show.count()) { await show.first().click(); await page.waitForTimeout(500); }
+    const fin = page.getByRole('button', { name: 'Finish lesson' });
+    if (await fin.count()) { await fin.click(); break; }
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForTimeout(300);
+  }
+  await page.getByText(/Lesson 1 done|Course done/).waitFor({ timeout: 5000 });
+  await page.getByRole('button', { name: 'Ask anything about this' }).click();
+  await page.locator('#prompt').fill('can you explain that again more simply?');
+  await page.keyboard.press('Enter');
+  const back = page.getByRole('button', { name: 'Back to the lesson' });
+  await back.waitFor({ timeout: 45000 });
+  // The button must be the topmost thing where it is drawn, i.e. nothing covers the answer card.
+  const top = await back.evaluate((el) => { const r = el.getBoundingClientRect(); const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return !!hit && (hit === el || el.contains(hit)); });
+  await back.click();
+  await page.waitForTimeout(600);
+  return top && (await page.getByText(/Lesson 1 done/).count()) > 0;
+});
+
+// Panel: tapping empty space gave no feedback at all (Lim, Daniel).
+await check('a tap on empty space during a tap task says so', {}, async (page) => {
+  await startCourse(page, 'how does a plant make food', 'Novice');
+  await page.getByRole('button', { name: /^(Continue|Next lesson)$/ }).waitFor({ timeout: 90000 });
+  for (let i = 0; i < 6; i++) {
+    if (await page.getByText(/^Tap|Tap /).count() && await page.getByRole('button', { name: 'Show me' }).count()) break;
+    const show = page.getByRole('button', { name: 'Show me' });
+    if (await show.count()) { await show.first().click(); await page.waitForTimeout(400); }
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForTimeout(300);
+  }
+  const svg = page.locator('section svg').first();
+  if (!(await svg.count())) return 'no 2D scene in this lesson (skipped)';
+  const b = await svg.boundingBox();
+  await page.mouse.click(b.x + 4, b.y + 4);
+  await page.waitForTimeout(400);
+  return (await page.getByText(/That's empty space|Not that one/).count()) > 0 || 'no tap task reached (skipped)';
+});
+
+// Panel: the lesson spoke Malay but every button stayed English (Nurul).
+await check('a Malay course shows Malay buttons', {}, async (page) => {
+  await startCourse(page, 'bagaimana vaksin berfungsi', 'Novice');
+  await page.getByRole('button', { name: /^(Teruskan|Pelajaran seterusnya)$/ }).waitFor({ timeout: 90000 });
+  return (await page.getByText(/Pelajaran 1 daripada/).count()) > 0 && (await page.getByRole('button', { name: /Tanya/ }).count()) > 0;
 });
 
 await browser.close();

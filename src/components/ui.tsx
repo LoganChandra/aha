@@ -77,8 +77,24 @@ export function Knob({ p, value, onChange, toward }: { p: Param; value: number; 
       </div>
     );
   }
-  const step = p.step ?? (p.max - p.min) / 200;
-  const value_ = <span className="min-w-[44px] shrink-0 whitespace-nowrap text-right text-[16px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>;
+  // Named states: one button per state, the value is its index from min (panel: Nurul, "0" and "1" meant nothing).
+  if (p.choices?.length) {
+    const at = Math.round(value - p.min);
+    return (
+      <div className="pt-1 select-none">
+        <div className="text-[15.5px] font-semibold leading-tight text-ink">{p.label}</div>
+        <div role="radiogroup" aria-label={p.label} className="mt-1.5 flex flex-wrap gap-1.5">
+          {p.choices.map((c, i) => (
+            <button key={i} role="radio" aria-checked={at === i} onClick={() => onChange(Math.min(p.max, p.min + i))}
+              className={`min-h-[44px] flex-1 rounded-xl border-2 px-3 py-2 text-[15.5px] font-semibold ${at === i ? 'border-ink bg-ink text-paper' : 'border-line bg-surface text-ink'} ${toward !== undefined && Math.round(toward - p.min) === i && at !== i ? 'border-[var(--t-primary)]' : ''}`}>{c}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  const step = p.step ?? niceStep(p.max - p.min);
+  const clamp = (v: number) => Math.min(p.max, Math.max(p.min, Math.round((v - p.min) / step) * step + p.min));
+  const value_ = <span className="shrink-0 whitespace-nowrap text-right text-[16px] font-semibold tabular-nums text-ink">{formatNumber(value)}{p.unit ? ` ${p.unit}` : ''}</span>;
   const input = (
     <input
       id={`k-${p.id}`} type="range" className={`knob ${toward !== undefined ? 'guide' : ''}`} min={p.min} max={p.max} step={step} value={value}
@@ -92,23 +108,25 @@ export function Knob({ p, value, onChange, toward }: { p: Param; value: number; 
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d={toward > value ? 'M9 6l6 6-6 6' : 'M15 6l-6 6 6 6'} /></svg>
     </span>
   ) : null;
-  // A long name gets its own line rather than being cut off.
-  if (p.label.length > 16 || (p.unit?.length ?? 0) > 6) {
-    return (
-      <div className="pt-1">
-        <div className="flex items-baseline justify-between gap-3">
-          <label htmlFor={`k-${p.id}`} className="text-[15.5px] font-semibold leading-tight text-ink">{p.label}</label>
-          {value_}
-        </div>
-        <div className="flex items-center gap-1.5">{arrow && toward! < value && arrow}<div className="flex-1">{input}</div>{arrow && toward! > value && arrow}</div>
-      </div>
-    );
-  }
+  // Fine control without a steady thumb: big - and + at the ends (panel: Aisyah overshot the slider three times).
+  const nudge = (d: number) => onChange(clamp(value + d * step * Math.max(1, Math.round((p.max - p.min) / step / 40))));
+  const btn = (d: number, label: string) => (
+    <button type="button" aria-label={`${p.label} ${label}`} onClick={() => nudge(d)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-[20px] font-semibold leading-none text-ink">{d < 0 ? '−' : '+'}</button>
+  );
+  // Label and value on one line, the full-width track under it: the track never resizes as the number changes.
   return (
-    <div className="grid min-h-[48px] grid-cols-[minmax(0,34%)_1fr_auto] items-center gap-3">
-      <label htmlFor={`k-${p.id}`} className="text-[15.5px] font-semibold leading-tight text-ink">{p.label}</label>
-      <div className="flex items-center gap-1.5">{arrow && toward! < value && arrow}<div className="flex-1">{input}</div>{arrow && toward! > value && arrow}</div>
-      {value_}
+    <div className="select-none pt-1">
+      <div className="flex items-baseline justify-between gap-3">
+        <label htmlFor={`k-${p.id}`} className="text-[15.5px] font-semibold leading-tight text-ink">{p.label}</label>
+        {value_}
+      </div>
+      <div className="flex items-center gap-2">{btn(-1, 'down')}{arrow && toward! < value && arrow}<div className="flex-1">{input}</div>{arrow && toward! > value && arrow}{btn(1, 'up')}</div>
     </div>
   );
+}
+
+/** A round step size: about 1/100 of the range, snapped to 1, 2 or 5 times a power of ten. */
+function niceStep(range: number): number {
+  const raw = range / 100, p10 = 10 ** Math.floor(Math.log10(raw)), m = raw / p10;
+  return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p10;
 }

@@ -37,6 +37,6 @@ export async function POST(req: Request) {
     return json({ answer });
   } catch (e) {
     console.error(JSON.stringify({ ev: 'ask-failed', err: (e as Error).message }));
-    return json({ error: 'ProfAI could not answer just now. Try asking again.' }, 502);
+    return json({ error: 'AHA could not answer just now. Try asking again.' }, 502);
   }
 }

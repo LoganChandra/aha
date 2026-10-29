@@ -55,6 +55,9 @@ export const Param = z.object({
   value: z.number(),
   unit: Short(12).optional(),
   toggle: z.boolean().optional(),
+  // Named states instead of numbers ("Real germ", "Vaccine"): the knob steps through min..max in whole steps and
+  // shows these words as buttons. Panel 2026-10-29 (Nurul): a 0/1 slider means nothing to a parent.
+  choices: z.array(Short(28)).min(2).max(5).optional(),
 });
 export type Param = z.infer<typeof Param>;
 

@@ -13,7 +13,7 @@ PART 1. WHAT A PROFAI LESSON FEELS LIKE
 
 Picture the learner on a phone on a bus. They have one thumb and forty seconds of patience per screen. They will not read a paragraph. They will glance at the picture, read one line, and do one thing. If the thing they do makes something in the picture change in a way that surprises or satisfies them, they keep going. If they have to read to work out what to touch, you have already lost them.
 
-So every step of a ProfAI lesson is a tiny experiment:
+So every step of a AHA lesson is a tiny experiment:
   1. The picture shows a situation.
   2. One short line says what to look at or what to try.
   3. The learner acts: drags the glowing thing, taps a part, or commits to a prediction.

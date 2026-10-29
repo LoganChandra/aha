@@ -43,7 +43,7 @@ type Dict = {
   emptySpace: string; notThat: string; tryAgain: string; prevStep: string; ask: string; askPlaceholder: string; showMe: string; shownNote: string;
   cont: string; finish: string; nextLesson: string; praise: string[]; close: string; lessons: string; level: string; sources: string;
   disclaimer: string; drawing: (n: number) => string; drawingWait: string; doFirst: string; courseDone: string; startOver: string; share: string; copied: string;
-  thinking: string;
+  thinking: string; setForYou: (what: string) => string;
 };
 
 export const UI: Record<UiLang, Dict> = {
@@ -56,9 +56,9 @@ export const UI: Record<UiLang, Dict> = {
     pause: 'Pause', play: 'Play', lessonDone: (n) => `Lesson ${n} done`, next: 'Next:', youAsked: 'You asked:', backToLesson: 'Back to the lesson', notQuite: 'Not quite.',
     emptySpace: "That's empty space.", notThat: 'Not that one.', tryAgain: 'Try again', prevStep: 'Previous step', ask: 'Ask', askPlaceholder: 'Ask anything about this', showMe: 'Show me', shownNote: 'Shown for you.',
     cont: 'Continue', finish: 'Finish lesson', nextLesson: 'Next lesson', praise: ['Exactly.', 'Nice.', 'Right.', 'Spot on.', 'Yes.', "That's it."], close: 'Close', lessons: 'Lessons', level: 'Level', sources: 'Sources',
-    disclaimer: 'ProfAI writes each lesson with AI. It can get things wrong, so check anything important against the sources.',
+    disclaimer: 'AHA writes each lesson with AI. It can get things wrong, so check anything important against the sources.',
     drawing: (n) => `Drawing lesson ${n}`, drawingWait: 'Usually 10 to 20 seconds. Read what it covers meanwhile.', doFirst: 'Do the step above first, or tap Show me.',
-    courseDone: 'Course done', startOver: 'Start again', share: 'Share', copied: 'Link copied', thinking: 'Thinking',
+    courseDone: 'Course done', startOver: 'Start again', share: 'Share', copied: 'Link copied', thinking: 'Thinking', setForYou: (w) => `This step set ${w} for you.`,
   },
   ms: {
     title: 'Apa yang anda mahu fahami?', yourLevel: 'Tahap anda', levelNote: (l) => `${l} dipilih. Ketik yang lain untuk menukar, sekarang atau nanti.`,
@@ -71,7 +71,7 @@ export const UI: Record<UiLang, Dict> = {
     cont: 'Teruskan', finish: 'Tamat pelajaran', nextLesson: 'Pelajaran seterusnya', praise: ['Betul!', 'Tepat sekali.', 'Bagus.', 'Ya, betul.', 'Syabas.', 'Itulah dia.'], close: 'Tutup', lessons: 'Pelajaran', level: 'Tahap', sources: 'Sumber',
     disclaimer: 'Pelajaran ini ditulis oleh AI dan mungkin ada kesilapan. Semak perkara penting dengan sumber di bawah, atau tanya orang yang pakar.',
     drawing: (n) => `Melukis pelajaran ${n}`, drawingWait: 'Biasanya 10 hingga 20 saat. Baca isi pelajaran sementara menunggu.', doFirst: 'Selesaikan langkah di atas dahulu, atau ketik Tunjukkan.',
-    courseDone: 'Kursus selesai', startOver: 'Mula semula', share: 'Kongsi', copied: 'Pautan disalin', thinking: 'Sedang berfikir',
+    courseDone: 'Kursus selesai', startOver: 'Mula semula', share: 'Kongsi', copied: 'Pautan disalin', thinking: 'Sedang berfikir', setForYou: (w) => `Langkah ini menetapkan ${w} untuk anda.`,
   },
   zh: {
     title: '你想弄懂什么？', yourLevel: '你的程度', levelNote: (l) => `已选“${l}”。现在或之后都可以点别的来更改。`,
@@ -82,9 +82,9 @@ export const UI: Record<UiLang, Dict> = {
     pause: '暂停', play: '播放', lessonDone: (n) => `第 ${n} 课完成`, next: '下一课：', youAsked: '你问：', backToLesson: '回到课程', notQuite: '还不对。',
     emptySpace: '那里是空白处。', notThat: '不是那个。', tryAgain: '再试一次', prevStep: '上一步', ask: '提问', askPlaceholder: '关于这个，问什么都可以', showMe: '示范给我看', shownNote: '已为你示范。',
     cont: '继续', finish: '完成本课', nextLesson: '下一课', praise: ['完全正确。', '很好。', '对了。', '没错。', '是的。', '就是这样。'], close: '关闭', lessons: '课程', level: '程度', sources: '资料来源',
-    disclaimer: 'ProfAI 用 AI 编写每一课，可能会出错。重要的内容请对照资料来源核实。',
+    disclaimer: 'AHA 用 AI 编写每一课，可能会出错。重要的内容请对照资料来源核实。',
     drawing: (n) => `正在绘制第 ${n} 课`, drawingWait: '通常 10 到 20 秒。可以先看看这一课讲什么。', doFirst: '请先完成上面的步骤，或点“示范给我看”。',
-    courseDone: '课程完成', startOver: '重新开始', share: '分享', copied: '链接已复制', thinking: '思考中',
+    courseDone: '课程完成', startOver: '重新开始', share: '分享', copied: '链接已复制', thinking: '思考中', setForYou: (w) => `这一步已为你设置${w}。`,
   },
   ta: {
     title: 'நீங்கள் எதைப் புரிந்துகொள்ள விரும்புகிறீர்கள்?', yourLevel: 'உங்கள் நிலை', levelNote: (l) => `${l} தேர்ந்தெடுக்கப்பட்டது. மாற்ற வேறொன்றைத் தட்டுங்கள்.`,
@@ -95,8 +95,8 @@ export const UI: Record<UiLang, Dict> = {
     pause: 'இடைநிறுத்து', play: 'இயக்கு', lessonDone: (n) => `பாடம் ${n} முடிந்தது`, next: 'அடுத்தது:', youAsked: 'நீங்கள் கேட்டது:', backToLesson: 'பாடத்துக்குத் திரும்பு', notQuite: 'சரியில்லை.',
     emptySpace: 'அது வெற்று இடம்.', notThat: 'அது இல்லை.', tryAgain: 'மீண்டும் முயலுங்கள்', prevStep: 'முந்தைய படி', ask: 'கேள்', askPlaceholder: 'இதைப் பற்றி எதையும் கேளுங்கள்', showMe: 'காட்டு', shownNote: 'உங்களுக்காகக் காட்டப்பட்டது.',
     cont: 'தொடர்', finish: 'பாடத்தை முடி', nextLesson: 'அடுத்த பாடம்', praise: ['சரியாகச் சொன்னீர்கள்.', 'அருமை.', 'சரி.', 'மிகச் சரி.', 'ஆம்.', 'அதுதான்.'], close: 'மூடு', lessons: 'பாடங்கள்', level: 'நிலை', sources: 'ஆதாரங்கள்',
-    disclaimer: 'ProfAI ஒவ்வொரு பாடத்தையும் AI மூலம் எழுதுகிறது. தவறுகள் இருக்கலாம்; முக்கியமானவற்றை ஆதாரங்களுடன் சரிபாருங்கள்.',
+    disclaimer: 'AHA ஒவ்வொரு பாடத்தையும் AI மூலம் எழுதுகிறது. தவறுகள் இருக்கலாம்; முக்கியமானவற்றை ஆதாரங்களுடன் சரிபாருங்கள்.',
     drawing: (n) => `பாடம் ${n} வரையப்படுகிறது`, drawingWait: 'பொதுவாக 10 முதல் 20 வினாடிகள். அதுவரை இந்தப் பாடம் எதைப் பற்றியது என்று படியுங்கள்.', doFirst: 'முதலில் மேலே உள்ள படியைச் செய்யுங்கள், அல்லது காட்டு என்பதைத் தட்டுங்கள்.',
-    courseDone: 'பாடநெறி முடிந்தது', startOver: 'மீண்டும் தொடங்கு', share: 'பகிர்', copied: 'இணைப்பு நகலெடுக்கப்பட்டது', thinking: 'யோசிக்கிறது',
+    courseDone: 'பாடநெறி முடிந்தது', startOver: 'மீண்டும் தொடங்கு', share: 'பகிர்', copied: 'இணைப்பு நகலெடுக்கப்பட்டது', thinking: 'யோசிக்கிறது', setForYou: (w) => `இந்தப் படி ${w} ஐ உங்களுக்காக அமைத்தது.`,
   },
 };

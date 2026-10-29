@@ -1,5 +1,5 @@
 'use client';
-// ProfAI: one prompt in, a lesson path out, each lesson taught by a visual you can play with.
+// AHA: one prompt in, a lesson path out, each lesson taught by a visual you can play with.
 // Home -> planning -> course. In a course the prompt bar is for questions: stop anywhere and ask.
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -90,7 +90,7 @@ export default function App() {
         return;
       }
       if (r.plan.status === 'refuse') {
-        setHomeMsg({ kind: 'refuse', text: r.plan.reason || 'ProfAI cannot help with that one.' });
+        setHomeMsg({ kind: 'refuse', text: r.plan.reason || 'AHA cannot help with that one.' });
         setPrompt('');
         setView('home');
         return;
@@ -124,7 +124,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The phone's back gesture leaves a course for the home screen instead of leaving ProfAI.
+  // The phone's back gesture leaves a course for the home screen instead of leaving AHA.
   useEffect(() => {
     const onPop = () => { coursePlanId.current = ''; setView((v) => (v === 'course' ? 'home' : v)); setCourse(null); setSlots([]); setHomeMsg(null); };
     window.addEventListener('popstate', onPop);
@@ -164,7 +164,7 @@ function Home({ prompt, setPrompt, level, setLevel, lang, setLang, planning, msg
   return (
     <main className="mx-auto flex h-[100dvh] max-w-[760px] flex-col px-4 sm:px-6">
       <header className="flex h-14 shrink-0 items-center justify-between gap-2">
-        <span className="text-[17px] font-semibold tracking-[-0.01em] text-ink">ProfAI</span>
+        <span className="text-[17px] font-semibold tracking-[-0.01em] text-ink">AHA</span>
         <label className="relative flex items-center gap-1 rounded-full border border-line bg-surface px-3 py-1.5 text-[14px] font-medium text-ink-2">
           <span className="sr-only">Language</span>
           <select value={lang} onChange={(e) => setLang(e.target.value as UiLang)} className="cursor-pointer appearance-none bg-transparent pr-4 text-ink outline-none">
@@ -300,6 +300,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const askSeq = useRef(0);
   const [sheet, setSheet] = useState(false);
   const [asking, setAsking] = useState(false);
+  // Knobs a step moved on its own, named on screen so nothing seems to move by itself (panel: Lim, Aisyah).
+  const [movedBy, setMovedBy] = useState<string[]>([]);
   // Lessons finished: their recap card is showing (or was shown).
   const [wrapped, setWrapped] = useState<Record<number, boolean>>({});
   // What happened on each step: done, the predict choice, a wrong tap (for the nudge).
@@ -358,7 +360,11 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     setSi(n);
     const st = lesson.steps[n];
     setInstant(false);
-    if (st.set) setValues((v) => ({ ...v, [li]: { ...(v[li] ?? startValues(lesson)), ...clampSet(lesson, st.set!) } }));
+    if (st.set) {
+      const cur = values[li] ?? startValues(lesson), next = clampSet(lesson, st.set);
+      setMovedBy(lesson.params.filter((p) => next[p.id] !== undefined && Math.abs(next[p.id] - (cur[p.id] ?? p.value)) > (p.max - p.min) / 200).map((p) => p.label));
+      setValues((v) => ({ ...v, [li]: { ...(v[li] ?? startValues(lesson)), ...next } }));
+    } else setMovedBy([]);
     if (st.play !== undefined && !reduced) setPlaying(st.play);
   }
 
@@ -367,6 +373,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     resetAsk();
     setLi(n);
     setSi(0);
+    setMovedBy([]);
     setHistory([]);
     setSheet(false);
     loadLesson(course, n);
@@ -399,7 +406,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
     if (i === task.answer) celebrate();
     const r = task.reveal;
     setInstant(false);
-    if (r?.set) setValues((v) => ({ ...v, [li]: { ...(v[li] ?? startValues(lesson)), ...clampSet(lesson, r.set!) } }));
+    if (r?.set) { setMovedBy(lesson.params.filter((p) => r.set![p.id] !== undefined).map((p) => p.label)); setValues((v) => ({ ...v, [li]: { ...(v[li] ?? startValues(lesson)), ...clampSet(lesson, r.set!) } })); }
     if (r?.play && !reduced) setPlaying(true);
   }
 
@@ -486,6 +493,13 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   }, [slideKnob, task, done, env]);
   // Knobs only appear when the step is about them: during a tap or a prediction they would steal the picture's space.
   const freeKnobs = lesson && (!task || done) ? lesson.params.filter((p) => p.id !== slideKnob?.id) : [];
+  // The picture's room only grows within a lesson, so it does not jump up and down between steps (panel: Lim, Daniel).
+  // While asking, the answer has the room it needs.
+  const resv = useRef({ li: -1, top: 0, bot: 0 });
+  if (resv.current.li !== li) resv.current = { li, top: 0, bot: 0 };
+  resv.current.top = Math.max(resv.current.top, answer ? 0 : topSize.h);
+  resv.current.bot = Math.max(resv.current.bot, botSize.h);
+  const topRes = answer ? topSize.h : resv.current.top, botRes = asking || answer ? botSize.h : resv.current.bot;
   const stepsDone = lesson ? lesson.steps.filter((_, i) => i < si || (i === si && done)).length : 0;
 
   return (
@@ -518,7 +532,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
       <section className="stage relative mx-3 min-h-[300px] flex-1 overflow-hidden rounded-[var(--radius)] border border-line lg:mx-4">
         {lesson && step ? (
           <>
-            <div className="absolute inset-x-0" style={{ top: topSize.h ? topSize.h + 16 : 0, bottom: botSize.h ? botSize.h + 16 : 0, transition: reduced ? undefined : 'top 220ms ease, bottom 220ms ease' }}>
+            <div className="absolute inset-x-0" style={{ top: topRes ? topRes + 16 : 0, bottom: botRes ? botRes + 16 : 0, transition: reduced ? undefined : 'top 220ms ease, bottom 220ms ease' }}>
               <SceneBoundary key={`${course.planId}-${li}`}>
                 <div className="contents" onClick={onStageClick}>
                 <Stage lesson={lesson} env={shownEnv} focus={focus} playing={playing} onDrag={onDrag} callouts={callouts} onTap={task?.kind === 'tap' && !sp.done ? onTap : undefined} guide={guide} />
@@ -628,7 +642,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
 
             {/* the task and the knobs, also inside the picture */}
             <div ref={botRef} className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-start gap-2 lg:inset-x-4 lg:bottom-4">
-              {task?.kind === 'predict' && !answer && (
+              {task?.kind === 'predict' && !answer && !asking && (
                 <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 p-4 shadow-[var(--shadow)] backdrop-blur">
                   <div className="mb-2.5 flex items-start gap-2"><p className="flex-1 text-[17px] font-semibold leading-snug text-ink"><RichText text={task.question} /></p>{sp.pick === undefined && <ShowMe onClick={showMe} label={tx.showMe} />}</div>
                   <div className="grid gap-1.5 sm:grid-cols-2">
@@ -647,7 +661,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   </div>
                 </div>
               )}
-              {task?.kind === 'tap' && !done && !answer && (
+              {task?.kind === 'tap' && !done && !answer && !asking && (
                 <motion.div
                   key={`miss-${sp.miss ?? 0}`}
                   initial={reduced || !sp.miss ? false : { x: [0, -6, 6, -4, 4, 0] }} animate={{ x: 0 }} transition={{ duration: 0.32 }}
@@ -659,7 +673,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   <span className="ml-auto"><ShowMe onClick={showMe} label={tx.showMe} /></span>
                 </motion.div>
               )}
-              {(taskKnob || freeKnobs.length > 0) && !answer && task?.kind !== 'predict' && (
+              {(taskKnob || freeKnobs.length > 0) && !answer && !asking && task?.kind !== 'predict' && (
                 <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 px-4 py-2.5 shadow-[var(--shadow)] backdrop-blur">
                   {taskKnob && task?.kind === 'slide' && (
                     <>
@@ -668,6 +682,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                     </>
                   )}
                   {freeKnobs.map((p) => <Knob key={p.id} p={p} value={env[p.id] ?? p.value} onChange={(v) => setKnob(p.id, v)} />)}
+                  {movedBy.length > 0 && <p className="pb-1 text-[14px] text-ink-2">{tx.setForYou(movedBy.join(', '))}</p>}
                 </div>
               )}
             </div>

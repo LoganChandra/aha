@@ -46,6 +46,6 @@ export async function POST(req: Request) {
     return json({ ...out, level, planId, askToken: askToken(planId), cached: false });
   } catch (e) {
     console.error(JSON.stringify({ ev: 'plan-failed', err: (e as Error).message }));
-    return json({ error: 'ProfAI could not plan that just now. Try again in a moment.' }, 502);
+    return json({ error: 'AHA could not plan that just now. Try again in a moment.' }, 502);
   }
 }
