@@ -342,9 +342,16 @@ ${history.length ? `Earlier in this lesson:\n${history.slice(-3).map((h) => `Q: 
 Their question: """${question.slice(0, 500)}"""`;
   const answer = await hedge(routes, 6000, async (route) => {
     try {
-      const r = await chatJson<Answer>(route, [{ role: 'system', content: ASK_SYSTEM }, { role: 'user', content: user }], { timeoutMs: 20_000, temperature: 0.3 });
+      let r = await chatJson<Answer>(route, [{ role: 'system', content: ASK_SYSTEM }, { role: 'user', content: user }], { timeoutMs: 20_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });
+      // Health answers never promise certainty (panel, Nurul: "Vaksin selamat" said flatly): one honest rewrite.
+      const health = /\b(vaccin\w*|vaksin|medicin\w*|ubat|disease|penyakit|imun\w*|immun\w*|virus|demam|fever|dose|dos)\b/i.test(`${ctx.topic} ${question}`);
+      const flat = typeof r.data?.answer === 'string' ? r.data.answer.match(/\b(100 ?%|completely safe|totally safe|always safe|guaranteed|no side effects|vaksin (adalah )?selamat\b(?! (diuji|dipantau))|tiada kesan sampingan|pasti selamat)/i) : null;
+      if (health && flat) {
+        const again = await chatJson<Answer>(route, [{ role: 'system', content: ASK_SYSTEM }, { role: 'user', content: user }, { role: 'assistant', content: r.text.slice(0, 2000) }, { role: 'user', content: `Rewrite: "${flat[0]}" is a certainty no health professional would promise. Say it honestly (tested and monitored, usually, rarely) and say when to see a nurse or doctor. Same JSON.` }], { timeoutMs: 15_000, temperature: 0.3 }).catch(() => null);
+        if (again && typeof again.data?.answer === 'string') { r = again; m.costUsd += again.costUsd; m.calls.push({ model: `${route.model} (honest rewrite)`, ok: true, costUsd: again.costUsd, ms: again.ms }); }
+      }
       const a = r.data;
       if (typeof a?.answer !== 'string' || !a.answer.trim()) throw new AiError('empty answer');
       const ids = new Set(ctx.params.map((p) => p.id));
