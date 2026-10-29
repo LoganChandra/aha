@@ -250,7 +250,7 @@ export async function research(plan: Plan, index: number, level: Level, m: Meter
 
 /** True when a scene reuses most of a playbook example's words (labels and texts), i.e. it was copied, not written. */
 function sameWords(a: unknown, b: unknown): boolean {
-  const words = (v: unknown): string[] => (typeof v === 'string' ? [] : Array.isArray(v) ? v.flatMap(words) : v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => (['label', 'text', 'context', 'caption'].includes(k) && typeof x === 'string' ? [x.toLowerCase().trim()] : words(x))) : []);
+  const words = (v: unknown): string[] => (typeof v === 'string' ? [] : Array.isArray(v) ? v.flatMap(words) : v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => (['label', 'text', 'context', 'caption'].includes(k) && typeof x === 'string' ? [x.toLowerCase().trim()] : k === 'image' && Array.isArray(x) ? x.map((r, i) => `${i}:${r}`) : words(x))) : []);
   const wa = new Set(words(a)), wb = words(b);
   if (wa.size < 3 || !wb.length) return false;
   return wb.filter((w) => wa.has(w)).length / Math.min(wa.size, wb.length) >= 0.6;
