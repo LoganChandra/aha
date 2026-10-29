@@ -175,6 +175,7 @@ REAL CASES BEAT ABSTRACTIONS (the difference between a forgettable lesson and a 
 WHAT REAL LEARNERS TRIPPED ON (fix these every time)
 - A tap task asks for a thing by its role or property ("Tap the energy source"), never by reading its label, and no callout sits on the thing to find. Never print an answer before the learner works it out.
 - One task per step. Never add a second question to a step that already asks them to drag.
+- "say" and "after": at most 2 short sentences, under 140 characters, so the picture keeps its room on a phone.
 - Every step adds something new. Never a step that only repeats the last one, and no filler steps: fewer, richer steps beat many tiny ones.
 - Wrong choices in a prediction are real misconceptions people hold, never throwaways that can be ruled out by elimination.
 - Slide goals are ranges and the hint says so: "Drag to about 50° (45-55)". Never "exactly", never "all the way round".
