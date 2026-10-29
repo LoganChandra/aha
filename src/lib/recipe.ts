@@ -300,7 +300,21 @@ export const Denoise = z.object({
   caption: Short(60).optional(),
 });
 
-export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise]);
+/** A right triangle for trigonometry: the angle (degrees) and hypotenuse drive it; side lengths and sin/cos/tan are
+ * computed here. Side names come from the lesson (any language) and can stay hidden until tapped (panel: Aisyah). */
+export const RightTriangle = z.object({
+  type: z.literal('rightTriangle'),
+  angle: Num,
+  hyp: Num.optional(),
+  unit: Short(8).optional(),
+  names: z.object({ opp: Short(20), adj: Short(20), hyp: Short(20), angle: Short(12).optional() }),
+  showNames: Num.optional(),
+  showLengths: Num.optional(),
+  showRatios: Num.optional(),
+  caption: Short(60).optional(),
+});
+
+export const Scene = z.discriminatedUnion('type', [Graph2D, Diagram, Model3D, Chart, Timeline, Pipeline, IconArray, Balance, Spectrum, Network, Attention, NextWord, Tokens, Embedding, Descent, Reward, Cycle, Denoise, RightTriangle]);
 export type Scene = z.infer<typeof Scene>;
 export type SceneType = Scene['type'];
 

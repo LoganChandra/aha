@@ -84,6 +84,7 @@ const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(self-?attention|attention|attends?|query|queries|keys? and values?|causal mask)\b|\bperhatian\b/i, 'who-looks-at-whom'],
   [/\b(neuron|perceptron|neural net|weights? and bias|activation|hidden layer)\b|\bneuron\b/i, 'weigh-the-inputs'],
   [/\b(reinforcement|rewards?|RLHF|human feedback|explor(e|ation) (vs|versus|and) exploit|exploit|thumbs[- ]up)\b/i, 'learn-from-reward'],
+  [/\b(trigonometr\w*|trigonometri|sines?|cosines?|tangents?|hypotenuse|hipotenus|SOH.?CAH.?TOA|sin, cos|sin cos|right[- ]angled? triangles?|segi tiga tegak)\b/i, 'name-the-sides'],
   [/\b(diffusion|denois\w*|image generat\w*|stable diffusion|midjourney|dall-?e)\b/i, 'out-of-the-noise'],
   [/\b(training loop|one (word|token) at a time|loop|epochs?|iterat\w+)\b/i, 'go-round-the-loop'],
   [/\b(next[- ]word|temperature|sampling|softmax|predicts? the next)\b/i, 'odds-and-temperature'],
@@ -92,7 +93,7 @@ const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(gradient descent|learning rate|loss (curve|function)|minimi[sz]e the (error|loss)|overshoot)\b/i, 'find-the-minimum'],
   [/\b(wavelengths?|spectrum|rainbow|colou?rs? of light|visible light|(short|long)(er)? waves?|pH scale|acidity|panjang gelombang|pelangi)\b/i, 'slide-the-scale'],
 ];
-const FREE_PATTERNS = new Set(['drag-to-discover', 'act-it-out', 'tipping-point', 'predict-reveal', 'map-of-meaning', 'add-the-pieces', 'find-the-minimum', 'trace-the-path']);
+const FREE_PATTERNS = new Set(['shape-stays-true', 'drag-to-discover', 'act-it-out', 'tipping-point', 'predict-reveal', 'map-of-meaning', 'add-the-pieces', 'find-the-minimum', 'trace-the-path']);
 export function templateFor(text: string, pattern: string, title = ''): string {
   // The title is the strongest signal ("Tokens become meaning (embeddings)" is about embeddings); then everything.
   for (const t of [title, text]) {
@@ -140,7 +141,9 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
         if (pattern === 'follow-the-flow' && (i === 0 || flows++ > 0)) pattern = 'act-it-out';
         // In an attention course, softmax, scaling and masking lessons belong on the attention grid, not next-word odds.
         const attentionCourse = /\b(attention|transformers?|queries|keys? and values?)\b/i.test(plan.topic);
-        const routed = attentionCourse && /\b(softmax|scal\w*|d_k|√d|temperature|mask\w*|heads?)\b/i.test(`${l.title} ${l.goal}`) ? 'who-looks-at-whom' : templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
+        const trigCourse = /\b(trigonometr\w*|trigonometri|sin|cos|kos|tan|SOH)\b/i.test(plan.topic);
+        const routed = trigCourse && !/\b(circle|bulatan|graph|graf|wave|gelombang)\b/i.test(l.title) && /\b(sides?|angles?|ratios?|sisi|sudut|nisbah|sin|cos|kos|tan|missing|hilang|hypotenuse|hipotenus)\b/i.test(`${l.title} ${l.goal}`) ? 'name-the-sides'
+          : attentionCourse && /\b(softmax|scal\w*|d_k|√d|temperature|mask\w*|heads?)\b/i.test(`${l.title} ${l.goal}`) ? 'who-looks-at-whom' : templateFor(`${l.title} ${l.goal} ${l.aha}`, pattern, l.title);
         if (routed !== pattern && (used[routed] ?? 0) < 2) pattern = routed;
         if ((used[pattern] ?? 0) >= 2) pattern = 'act-it-out';
         used[pattern] = (used[pattern] ?? 0) + 1;

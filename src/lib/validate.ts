@@ -47,6 +47,7 @@ function sceneIds(scene: Scene): string[] {
     case 'descent': return ['ball', ...Array.from({ length: 12 }, (_, i) => `step${i + 1}`)];
     case 'reward': return scene.options.map((o) => o.id);
     case 'cycle': return scene.stages.map((x) => x.id);
+    case 'rightTriangle': return ['opp', 'adj', 'hyp', 'angle'];
     case 'denoise': return ['image'];
   }
 }
@@ -150,6 +151,9 @@ export function checkLesson(raw: unknown): Checked {
   } else if (scene.type === 'reward') {
     scene.options.forEach((x) => { checkExpr(`option "${x.id}" reward`, x.reward, withT, errors); if (x.icon && !ICONS[x.icon]) errors.push(`option "${x.id}": no icon "${x.icon}".`); });
     checkExpr('reward rounds', scene.rounds, withT, errors); checkExpr('reward explore', scene.explore, withT, errors);
+  } else if (scene.type === 'rightTriangle') {
+    checkExpr('triangle angle', scene.angle, withT, errors); checkExpr('triangle hyp', scene.hyp, withT, errors);
+    for (const k of ['showNames', 'showLengths', 'showRatios'] as const) checkExpr(`triangle ${k}`, scene[k], withT, errors);
   } else if (scene.type === 'cycle') {
     scene.stages.forEach((x) => { if (!ICONS[x.icon]) errors.push(`stage "${x.id}": no icon "${x.icon}".`); });
     checkExpr('cycle speed', scene.speed, withT, errors);

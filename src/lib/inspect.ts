@@ -130,6 +130,12 @@ function screen(l: Lesson, env: Env): string {
       body = `Learning from reward after ${rounds} rounds (explore ${r2(ex)}). For each option: true reward, learned estimate, chance of picking it now (computed): ${s.options.map((x, i) => `${x.label}: ${r2(rw[i])} / ${r2(est[i])} / ${Math.round(pk[i] * 100)}%`).join('; ')}.`;
       break;
     }
+    case 'rightTriangle': {
+      const d = Math.max(5, Math.min(85, n(s.angle, 35))), H = s.hyp !== undefined ? n(s.hyp, 10) : 10, t2 = (d * Math.PI) / 180;
+      const vis = (v: unknown) => (v === undefined ? true : n(v as Num, 1) >= 0.5);
+      body = `Right triangle, angle ${Math.round(d)}° at the bottom-left corner, right angle at the bottom-right. Hypotenuse (slanted, blue) ${r2(H)}, opposite (vertical right side, red) ${r2(H * Math.sin(t2))}, adjacent (bottom, green) ${r2(H * Math.cos(t2))}. Side names "${s.names.opp}", "${s.names.adj}", "${s.names.hyp}" are ${vis(s.showNames) ? 'SHOWN' : 'HIDDEN'}; lengths ${s.showLengths !== undefined && vis(s.showLengths) ? 'shown' : 'hidden'}; sin/cos/tan readouts ${s.showRatios !== undefined && vis(s.showRatios) ? `shown (sin ${r2(Math.sin(t2))}, cos ${r2(Math.cos(t2))}, tan ${r2(Math.tan(t2))})` : 'hidden'}. The top corner is DRAGGABLE when the angle is a knob.`;
+      break;
+    }
     case 'cycle': body = `A loop drawn as a circle: ${s.stages.map((x) => `${x.id} "${x.label}"`).join(' → ')} → back to the first. A dot travels round while playing and a "round N" counter in the middle counts the laps.${s.center ? ` Centre text: "${s.center}".` : ''}`; break;
     case 'denoise': { const st = Math.max(0, Math.min(s.steps, Math.round(n(s.step, 0)))); body = `Diffusion picture of a "${s.icon}" icon${s.prompt ? ` for the prompt "${s.prompt}"` : ''}: step ${st} of ${s.steps}, ${Math.round((1 - st / s.steps) * 100)}% of the picture still covered by grey noise.`; break; }
     case 'balance': body = `Balance: left ${s.left.id} "${s.left.label}" weight ${n(s.left.weight)} vs right ${s.right.id} "${s.right.label}" weight ${n(s.right.weight)}`; break;

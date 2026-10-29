@@ -15,6 +15,7 @@ import Pipeline from './scene/Pipeline';
 import Spectrum from './scene/Spectrum';
 import Network from './scene/Network';
 import Attention from './scene/Attention';
+import RightTriangle from './scene/RightTriangle';
 import { Cycle, Denoise, Descent, Embedding, NextWord, Reward, Tokens, type TemplateWords } from './scene/AiTemplates';
 
 // three.js is only downloaded when a lesson actually has a 3D model.
@@ -48,6 +49,7 @@ function StageInner({ lesson, env, focus, playing, onDrag, callouts, onTap, guid
     case 'balance': return <Balance scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'spectrum': return <Spectrum scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} guide={guide} />;
     case 'network': return <Network scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
+    case 'rightTriangle': return <RightTriangle scene={s} env={e} params={lesson.params} onDrag={onDrag} focus={focus} callouts={callouts} onTap={onTap} guide={guide} />;
     case 'attention': return <Attention scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} />;
     case 'nextWord': return <NextWord scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;
     case 'tokens': return <Tokens scene={s} env={e} focus={focus} callouts={callouts} onTap={onTap} words={words} />;

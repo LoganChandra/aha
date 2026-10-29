@@ -99,6 +99,10 @@ T13. DENOISE (diffusion, image generation from noise):
    {"type":"denoise","icon":"cat","prompt":"a cat","step":"st","steps":30,"tone":"warm"}
    step 0 is pure noise; as step reaches steps the picture clears. Tap id: image.
 
+T14. RIGHT TRIANGLE (trigonometry: opposite, adjacent, hypotenuse, sin, cos, tan, ladders and ramps):
+   {"type":"rightTriangle","angle":"a","hyp":"hl","unit":"m","names":{"opp":"opposite","adj":"adjacent","hyp":"hypotenuse","angle":"θ"},"showNames":"nm","showLengths":1,"showRatios":"rt"}
+   angle in degrees (a knob makes the top corner draggable), hyp the hypotenuse length. Names in the lesson's language; hide them (showNames 0) while asking the learner to find a side. Lengths and sin/cos/tan are computed. Tap ids: opp, adj, hyp, angle.
+
 FREE SCENES:
 1. {"type":"graph2d","x":[xmin,xmax],"y":[ymin,ymax],"xLabel":"","yLabel":"","equal":false,"piTicks":false,"items":[ITEM...]}
    equal:true keeps circles round (geometry, unit circle, vectors). piTicks:true labels x in multiples of pi.

@@ -699,6 +699,29 @@ export const PLAYBOOK: Pattern[] = [
       ],
     },
   },
+  {
+    id: 'name-the-sides',
+    name: 'Name the sides',
+    use: 'Right-triangle trigonometry: opposite, adjacent, hypotenuse, sin, cos, tan, SOH-CAH-TOA, finding a side or an angle. Use the RIGHT TRIANGLE template (lengths and ratios are computed for you).',
+    moves: 'Find the hypotenuse (names hidden) → reveal the names → drag the corner and watch the ratio stay fixed for a fixed angle → use the ratio to find a missing side → state the rule.',
+    example: {
+      title: 'Same angle, same ratio',
+      params: [
+        { id: 'a', label: 'Angle', min: 10, max: 80, step: 1, value: 35, unit: '°' },
+        { id: 'hl', label: 'Ladder length', min: 4, max: 12, step: 1, value: 6, unit: 'm' },
+        { id: 'nm', label: 'Side names', min: 0, max: 1, step: 1, value: 0, choices: ['Hidden', 'Shown'] },
+        { id: 'rt', label: 'Ratios', min: 0, max: 1, step: 1, value: 0, choices: ['Hidden', 'Shown'] },
+      ],
+      scene: { type: 'rightTriangle', angle: 'a', hyp: 'hl', unit: 'm', names: { opp: 'opposite', adj: 'adjacent', hyp: 'hypotenuse', angle: 'θ' }, showNames: 'nm', showLengths: 1, showRatios: 'rt', caption: 'A ladder leaning on a wall' },
+      steps: [
+        { say: 'A ladder leans on a wall: a right triangle. The longest side is always across from the square corner.', task: { kind: 'tap', target: 'hyp', hint: 'Tap the longest side.' }, after: 'That is the hypotenuse: the ladder itself, {hl} m.' },
+        { say: 'Now the names. They depend on which angle you stand at.', task: { kind: 'slide', param: 'nm', goal: 'nm>=1', hint: 'Tap Shown.' }, after: 'Opposite faces θ; adjacent touches θ (and is not the hypotenuse).' },
+        { say: 'Show the ratios, then make the ladder longer without changing the angle.', set: { rt: 1 }, task: { kind: 'slide', param: 'hl', goal: 'hl>=10', hint: 'Drag Ladder length up to 10 m.' }, after: 'Every side grew, but sin {a}° stayed {sin(a*pi/180)}: the ratio depends only on the angle.' },
+        { say: 'So with the angle and one side you can find any other side.', task: { kind: 'predict', question: 'A 10 m ladder at 30° reaches how high up the wall?', choices: ['5 m (10 × sin 30°)', '8.7 m (10 × cos 30°)', '10 m'], answer: 0, reveal: { set: { a: 30, hl: 10 } } }, after: 'Height = hypotenuse × sin θ = 10 × 0.5 = 5 m.' },
+        { say: 'sin = opposite ÷ hypotenuse, cos = adjacent ÷ hypotenuse, tan = opposite ÷ adjacent: fixed by the angle alone.', focus: ['opp', 'hyp'] },
+      ],
+    },
+  },
 ];
 
 /** The playbook as prompt text: every pattern's use and moves, plus each example lesson in full. */
