@@ -27,12 +27,12 @@ Each row below still has its own status. These class fixes cover most of them; p
 
 | Class | State | Fix (commit) |
 |---|---|---|
-| C01 text vs render | fixed in code, verify per lesson | Inspector pass plus repair; checker rules for blank readouts and quoting a fixed goal value (450af6e) |
+| C01 text vs render | fixed in code (inspector + colour, missing-name, blank-readout and fixed-number checks) | Inspector pass plus repair; checker rules for blank readouts and quoting a fixed goal value (450af6e) |
 | C02 taps | fixed | Duplicate items count; empty-space taps get a message; target lights up after a miss; 44px hit strokes (450af6e) |
 | C03 hidden answer | fixed, UI test added | Answer outranks the recap card; bigger card and back button (450af6e) |
-| C04 facts | improved | Inspector rule 7; writer rules on direction and size of effects; Expert brief (450af6e, 94ee08b) |
+| C04 facts | improved, partly in code (research fact sheet; unsourced money and big numbers rejected) | Inspector rule 7; writer rules on direction and size of effects; Expert brief (450af6e, 94ee08b) |
 | C05 sources | fixed | Search on the learner's words only; junk filter; disclaimer moved to the top and translated (2962e7f) |
-| C06 health | improved | Hedging rules in writer, inspector and tutor (2962e7f, 94ee08b) |
+| C06 health | fixed in code (absolute claims rejected for health topics) + prompts | Hedging rules in writer, inspector and tutor (2962e7f, 94ee08b) |
 | C07 labels | improved | Least-overlap placement with leader lines; readouts strip; no callout on a tap target (2962e7f) |
 | C08 waits | improved | Course outline and wait time shown while lesson 1 draws; time estimate on the planner (2962e7f, 94ee08b) |
 | C10 level picker | fixed | Check mark, plain note, translated labels (2962e7f) |
