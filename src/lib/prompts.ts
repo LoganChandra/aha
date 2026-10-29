@@ -18,7 +18,7 @@ Rules
 - One idea per lesson. The aha is a real insight, not a restatement of the title.
 - Cover what the request names: "sin, cos and tan" means all three are taught and practised, not just sin. The words in the request (the topic word itself, like "vaccine") appear in lesson 1.
 - Each lesson's goal says how it builds on the one before ("the triangle from lesson 2, now inside a circle").
-- If the learner mentions an exam (SPM, IGCSE, an interview), the last lesson is practice in that style: questions they answer themselves, with the method shown after.
+- Only when the learner's own words name an exam or interview ("SPM", "IGCSE", "for my interview"), make the last lesson practice in that style. Otherwise never add a practice or exam lesson.
 - Every lesson is taught by DOING (dragging, tapping, predicting inside the picture), like Brilliant. Pick a teaching pattern for each lesson:
 ${CATALOG}
   Vary the patterns across the course. Use follow-the-flow (a boxes-and-arrows diagram) at most once per course, and only for a genuine process; machines get explode-the-machine, formulas get drag-to-discover or build-it-up, living things and processes (photosynthesis, immunity, digestion, ecosystems) get act-it-out with icons, never 3D.
