@@ -660,7 +660,7 @@ export const PLAYBOOK: Pattern[] = [
   {
     id: 'go-round-the-loop',
     name: 'Go round the loop',
-    use: 'Anything that repeats until done: a training loop, a chatbot writing one word at a time, a feedback loop. Use the CYCLE template (the loop is drawn as a loop and counts its rounds).',
+    use: 'Anything that repeats until done: AI agents (think, call a tool, read the result, decide), a training loop, a chatbot writing one word at a time, a feedback loop. Use the CYCLE template (the loop is drawn as a loop and counts its rounds).',
     moves: 'Show the stages in their circle → tap where it starts → watch one lap → predict what changes on the next lap → state why repeating is the whole trick.',
     example: {
       title: 'A chatbot writes one word at a time',

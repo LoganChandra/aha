@@ -90,7 +90,7 @@ const TEMPLATE_ROUTES: [RegExp, string][] = [
   [/\b(trigonometr\w*|trigonometri|sines?|cosines?|tangents?|hypotenuse|hipotenus|SOH.?CAH.?TOA|sin, cos|sin cos|right[- ]angled? triangles?|segi tiga tegak)\b/i, 'name-the-sides'],
   [/\b(convolution\w*|CNNs?|filters? (slide|over)|edge detection|feature maps?|how (an? )?AI sees|computer vision|image recognition|pixels?|recognis\w* images|recogniz\w* images)\b/i, 'slide-the-filter'],
   [/\b(diffusion|denois\w*|image generat\w*|stable diffusion|midjourney|dall-?e)\b/i, 'out-of-the-noise'],
-  [/\b(training loop|one (word|token) at a time|loop|epochs?|iterat\w+)\b/i, 'go-round-the-loop'],
+  [/\b(training loop|one (word|token) at a time|loop|epochs?|iterat\w+|agents?|agentic|tool (use|calls?|calling)|function calling|reason(s|ing)?,? (and )?act|ReAct)\b/i, 'go-round-the-loop'],
   [/\b(next[- ](word|token)s?|temperature|sampling|softmax|predict\w* the next)\b/i, 'odds-and-temperature'],
   [/\b(embeddings?|word vectors?|vector space|semantic search|similar meanings?)\b/i, 'map-of-meaning'],
   [/\b(tokens?|tokeni[sz](er|ation)|subwords?)\b/i, 'chop-into-tokens'],
