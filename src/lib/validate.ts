@@ -256,6 +256,8 @@ export function checkLesson(raw: unknown): Checked {
       }
     });
   }
+  // Too many micro-steps tire people out (panel, Kumar: "5 lessons is really about 30 steps").
+  if (lesson.steps.length > 6) errors.push(`${lesson.steps.length} steps is too many: merge into at most 6, each adding something new.`);
   if (tasks < 2) errors.push(`only ${tasks} step(s) give the learner something to do. At least 3 steps need a task (slide, tap or predict).`);
   return { lesson, errors };
 }

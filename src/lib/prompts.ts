@@ -155,7 +155,7 @@ STEP: {"say":"...", "callouts":[{"at":"sceneId","text":"short label"}], "set":{"
      the learner taps the right scene part (any graph item, diagram node, 3D part, bar or event).
   {"kind":"predict","question":"What happens to the wave if you double the frequency?","choices":["Peaks get taller","Peaks get closer","Nothing"],"answer":1,"reveal":{"set":{"f":2},"play":true}}
      the learner commits to an answer BEFORE seeing it, then the reveal moves the knobs so they watch the truth play out.
-- 4 to 7 steps. Step 1 orients them on the picture (a tap task or no task). At least 3 steps have a task, and mix the kinds. The last step states the lesson's aha.
+- 4 to 6 steps. Step 1 orients them on the picture (a tap task or no task). At least 3 steps have a task, and mix the kinds. The last step states the lesson's aha.
 - Pace like a good teacher: one idea per step, each step builds on the last, the learner should feel clever.
 
 PARAMS: 1 to 3 knobs, each changing something that matters. Param ids are short names like a, theta, speed; never x, y, t, s, k or e (those are built in). Sensible min/max so the picture stays readable. Prefer tying a knob to a draggable point (dragX/dragY) so the learner moves the picture itself, not a slider. A knob that switches between named states ("Real germ" or "Vaccine", "Off"/"On") gets "choices":["Real germ","Vaccine"] with min 0, max = choices-1, step 1: the learner sees words, never 0 and 1, so a slide task on it says "Tap Vaccine", never "slide". Never show bare decimals for a quantity with no unit; give it a unit or use choices ("None","Some","Plenty").
