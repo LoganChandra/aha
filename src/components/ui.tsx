@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { formatNumber } from '@/lib/expr';
 import type { Param } from '@/lib/recipe';
 
-export function Icon({ name, size = 20 }: { name: 'arrow-up' | 'back' | 'play' | 'pause' | 'list' | 'close' | 'check' | 'reset' | 'link'; size?: number }) {
+export function Icon({ name, size = 20 }: { name: 'arrow-up' | 'back' | 'play' | 'pause' | 'list' | 'close' | 'check' | 'reset' | 'link' | 'down' | 'share' | 'chat'; size?: number }) {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
   switch (name) {
     case 'arrow-up': return <svg {...p}><path d="M12 19V5M5 12l7-7 7 7" /></svg>;
@@ -16,6 +16,9 @@ export function Icon({ name, size = 20 }: { name: 'arrow-up' | 'back' | 'play' |
     case 'check': return <svg {...p}><path d="M20 6L9 17l-5-5" /></svg>;
     case 'reset': return <svg {...p}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>;
     case 'link': return <svg {...p}><path d="M7 17L17 7M8 7h9v9" /></svg>;
+    case 'down': return <svg {...p}><path d="M6 9l6 6 6-6" /></svg>;
+    case 'share': return <svg {...p}><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" /></svg>;
+    case 'chat': return <svg {...p}><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></svg>;
   }
 }
 

@@ -8,16 +8,17 @@ const page = await (await browser.newContext({ viewport: { width: +w, height: +h
 const errs = [];
 page.on('pageerror', (e) => errs.push(e.message));
 await page.goto(base, { waitUntil: 'networkidle' });
+await page.screenshot({ path: `scripts/shots/walk-${tag}-home.png` });
 await page.getByRole('radio', { name: new RegExp(level) }).click();
 await page.locator('#prompt').fill(prompt);
 await page.keyboard.press('Enter');
-await page.getByRole('button', { name: /Continue|Next lesson/ }).waitFor({ timeout: 120000 });
+await page.getByRole('button', { name: /Continue|Next lesson|Teruskan/ }).waitFor({ timeout: 150000 });
 await page.waitForTimeout(1500);
 for (let i = 0; i < 8; i++) {
   await page.screenshot({ path: `scripts/shots/walk-${tag}-${i}a.png` });
-  const show = page.getByRole('button', { name: 'Show me' });
+  const show = page.getByRole('button', { name: /^(Show me|Tunjukkan)$/ });
   if (await show.count()) { await show.click(); await page.waitForTimeout(1100); await page.screenshot({ path: `scripts/shots/walk-${tag}-${i}b.png` }); }
-  const next = page.getByRole('button', { name: 'Continue' });
+  const next = page.getByRole('button', { name: /^(Continue|Teruskan)$/ });
   if (!(await next.count())) break;
   await next.click();
   await page.waitForTimeout(900);

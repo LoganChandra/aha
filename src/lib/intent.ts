@@ -32,7 +32,8 @@ export function preCheck(prompt: string): Plan | null {
 // The learner's language, decided in code from the prompt itself (a prompt rule alone was ignored: Chinese prompts
 // came back as English courses). Covers Malaysia's languages first, as Logan asked; anything else gets a hint for
 // the model to match the learner.
-const MALAY = /\b(apa|apakah|bagaimana|kenapa|mengapa|yang|dan|ialah|adalah|cara|untuk|dengan|tentang|belajar|terbentuk|berfungsi|ini|itu)\b/i;
+// Includes everyday chat Malay ("nak paham la"): a student typing that wants Malay (panel: Aisyah).
+const MALAY = /\b(apa|apakah|bagaimana|kenapa|mengapa|yang|dan|ialah|adalah|cara|untuk|dengan|tentang|belajar|terbentuk|berfungsi|ini|itu|nak|tak|faham|paham|macam|mana|camne|macamana|boleh|tolong|saya|aku|la|lah|ke|pun|sikit|sebab|guna)\b/i;
 export function detectLanguage(prompt: string): string {
   if (/[\u0B80-\u0BFF]/.test(prompt)) return 'Tamil';
   if (/[\u3040-\u30FF]/.test(prompt)) return 'Japanese';

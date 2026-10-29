@@ -4,7 +4,7 @@
 //         latency and cost. Outputs are saved as fixtures for the renderer.
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { chatJson, type Msg, type Route } from '../src/lib/ai';
-import { LESSON_SYSTEM, PLAN_SYSTEM, lessonUser, planUser, repairUser } from '../src/lib/prompts';
+import { LESSON_SYSTEM, PLAN_SYSTEM, lessonUser, planBrief, planUser, repairUser } from '../src/lib/prompts';
 import { Plan, type Level } from '../src/lib/recipe';
 import { checkLesson } from '../src/lib/validate';
 
@@ -63,7 +63,7 @@ async function planStage() {
   await pool(jobs, 12, async ({ m, c, i }) => {
     const r: Record<string, unknown> = { model: m, case: i, prompt: c.prompt, expect: c.expect };
     try {
-      const res = await chatJson(route(m, 3000), [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(c.prompt, c.level) }], { timeoutMs: 90_000, temperature: 0.3 });
+      const res = await chatJson(route(m, 3000), [{ role: 'system', content: PLAN_SYSTEM }, { role: 'system', content: planBrief(c.level) }, { role: 'user', content: planUser(c.prompt) }], { timeoutMs: 90_000, temperature: 0.3 });
       const p = Plan.safeParse(res.data);
       r.ms = res.ms; r.cost = res.costUsd;
       r.valid = p.success;

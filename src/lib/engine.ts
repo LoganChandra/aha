@@ -1,7 +1,7 @@
 // The engine: Score (plan the path) and Stage (write each lesson's scene), plus answers to mid-lesson questions.
 // Each stage walks a chain of models: the cheap strong one first, a different family as the fallback.
 import { AiError, chatJson, type Msg, type Route } from './ai';
-import { ASK_SYSTEM, CHECK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, checkUser, lessonUser, planUser, repairUser } from './prompts';
+import { ASK_SYSTEM, CHECK_SYSTEM, LESSON_SYSTEM, PLAN_SYSTEM, checkUser, lessonUser, planBrief, planUser, repairUser } from './prompts';
 import { describeSteps } from './inspect';
 import { detectLanguage } from './intent';
 import { PATTERN_IDS } from './playbook';
@@ -74,13 +74,30 @@ async function hedge<T>(routes: Route[], delayMs: number, run: (route: Route) =>
   });
 }
 
-export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTES, web = true): Promise<{ plan: Plan; sources: Source[]; meter: Meter }> {
+// Sources a learner can trust for the topic: never prompt-engineering pages, tool directories or code files
+// (the panel saw "concept-explainer/SKILL.md" and an MCP hub in German and Russian cited for trigonometry).
+const JUNK_SOURCE = /SKILL\.md|\bMCP\b|Model ?Context ?Protocol|Modellkontextprotokoll|Claude Skill|prompt engineering|agent-skills|github\.com|gitlab\.com|nngroup\.com/i;
+export function usefulSources(list: Source[]): Source[] {
+  const seen = new Set<string>();
+  return list.map((s) => ({ ...s, title: s.title.replace(/\s+/g, ' ').trim() })).filter((s) => {
+    if (!s.title || JUNK_SOURCE.test(`${s.title} ${s.url}`) || /[\u0400-\u04FF]/.test(s.title)) return false;
+    const k = s.url.replace(/[#?].*$/, '').replace(/^https?:\/\/(www\.)?/, '').toLowerCase();
+    if (seen.has(k) || seen.has(s.title.toLowerCase())) return false;
+    seen.add(k);
+    seen.add(s.title.toLowerCase());
+    return true;
+  });
+}
+
+export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTES, web = true, langPref?: string): Promise<{ plan: Plan; sources: Source[]; meter: Meter }> {
   const m = meter();
   const t0 = Date.now();
-  const lang = detectLanguage(prompt);
+  // What they typed in wins; English typing with Bahasa Melayu (or another language) picked in the app follows the pick.
+  const typed = detectLanguage(prompt);
+  const lang = typed === 'English' && langPref ? langPref : typed;
   const res = await hedge(routes, 12_000, async (route) => {
     try {
-      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'user', content: planUser(prompt, level, lang) }], { web, timeoutMs: 30_000, temperature: 0.3 });
+      const r = await chatJson(route, [{ role: 'system', content: PLAN_SYSTEM }, { role: 'system', content: planBrief(level, lang) }, { role: 'user', content: planUser(prompt) }], { web, timeoutMs: 30_000, temperature: 0.3 });
       m.costUsd += r.costUsd;
       const parsed = Plan.safeParse(r.data);
       if (!parsed.success) throw new AiError(`plan shape: ${parsed.error.issues[0]?.message}`);
@@ -96,7 +113,7 @@ export async function makePlan(prompt: string, level: Level, routes = PLAN_ROUTE
         return { ...l, pattern };
       });
       m.calls.push({ model: route.model, ok: true, costUsd: r.costUsd, ms: r.ms });
-      return { plan, sources: r.sources.slice(0, 6) };
+      return { plan, sources: usefulSources(r.sources).slice(0, 6) };
     } catch (e) {
       m.calls.push({ model: route.model, ok: false, costUsd: 0, ms: 0, note: (e as Error).message.slice(0, 160) });
       throw e;

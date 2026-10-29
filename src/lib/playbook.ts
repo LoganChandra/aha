@@ -69,7 +69,7 @@ export const PLAYBOOK: Pattern[] = [
         ],
       },
       steps: [
-        { say: 'A sound wave passing by. Each peak is a squeeze of air reaching your ear.', play: true, callouts: [{ at: 'wave', text: 'one wave' }], task: { kind: 'tap', target: 'wave', hint: 'Tap the wave.' }, after: 'Peaks arriving faster or slower is what your ear hears as pitch.' },
+        { say: 'A sound wave passing by. Each peak is a squeeze of air reaching your ear.', play: true, task: { kind: 'tap', target: 'wave', hint: 'Tap what carries the sound to your ear.' }, after: 'Peaks arriving faster or slower is what your ear hears as pitch.' },
         { say: 'Before you touch anything: what happens if the frequency doubles?', task: { kind: 'predict', question: 'Double the frequency and the peaks get…', choices: ['taller', 'closer together', 'both'], answer: 1, reveal: { set: { f: 2 }, play: true } }, after: 'Twice as many peaks fit in the same time. Height did not change at all.' },
         { say: 'Height is loudness, a different knob. Make the wave twice as loud, without changing its pitch.', set: { f: 2 }, task: { kind: 'slide', param: 'a', goal: 'a>1.2', hint: 'Use the Loudness knob.' }, after: 'Taller peaks, same spacing: louder, same note.' },
         { say: 'Now make the lowest note this speaker can play.', task: { kind: 'slide', param: 'f', goal: 'f<0.7', hint: 'Slide frequency all the way down.' }, after: 'Few peaks per second: a deep, low note.' },
@@ -95,7 +95,7 @@ export const PLAYBOOK: Pattern[] = [
         ],
       },
       steps: [
-        { say: 'We want the area under this curve, from 0 to 2. Start crude: 2 flat strips.', callouts: [{ at: 'strips', text: 'strips' }, { at: 'curve', text: 'the curve' }], task: { kind: 'tap', target: 'strips', hint: 'Tap the strips.' }, after: 'Each strip is a rectangle: easy area. Together they miss a lot.' },
+        { say: 'We want the area under this curve, from 0 to 2. Start crude: 2 flat strips.', callouts: [{ at: 'curve', text: 'the curve' }], task: { kind: 'tap', target: 'strips', hint: 'Tap the shapes whose area is easy to work out.' }, after: 'Each strip is a rectangle: easy area. Together they miss a lot.' },
         { say: 'Add strips until their total is within 0.2 of the true area.', focus: ['sum', 'exact'], task: { kind: 'slide', param: 'n', goal: 'abs(sum(k,0,n-1,(2*k/n)^2*2/n) - 2.6667) < 0.2', hint: 'Watch the two numbers close in.' }, after: 'More, thinner strips hug the curve better. The gap keeps shrinking.' },
         { say: 'If you could add infinitely many strips…', task: { kind: 'predict', question: 'the total would…', choices: ['grow forever', 'land exactly on 2.667', 'stop at 2.5'], answer: 1, reveal: { set: { n: 40 } } }, after: 'The total closes in on one number. That limit is the integral.' },
         { say: 'An integral is what the sum of thin strips settles on as they get infinitely thin.', focus: ['strips', 'curve'] },
@@ -126,7 +126,7 @@ export const PLAYBOOK: Pattern[] = [
         ],
       },
       steps: [
-        { say: 'Coffee. Buyers want less at high prices; sellers offer more.', callouts: [{ at: 'demand', text: 'buyers' }, { at: 'supply', text: 'sellers' }], task: { kind: 'tap', target: 'supply', hint: 'Tap the sellers\' line.' }, after: 'Higher price, more cups offered: that\'s the sellers\' line.' },
+        { say: 'Coffee. Buyers want less at high prices; sellers offer more.', callouts: [{ at: 'demand', text: 'buyers' }], task: { kind: 'tap', target: 'supply', hint: 'Which line belongs to the sellers? Tap it.' }, after: 'Higher price, more cups offered: that\'s the sellers\' line.' },
         { say: 'At $7.50, sellers bring far more than buyers want. The red gap is unsold coffee.', focus: ['gap', 'readout'], callouts: [{ at: 'gap', text: 'unsold' }] },
         { say: 'Move the price until nothing is left over and nobody goes without.', task: { kind: 'slide', param: 'p', goal: 'abs(p - (10 - p)) < 0.3', hint: 'Shrink the red gap to nothing.' }, after: 'At $5 the lines cross: the market clears. That\'s the equilibrium price.' },
         { say: 'A heatwave: everyone wants iced coffee.', set: { shift: 2, p: 5 }, task: { kind: 'predict', question: 'The new balance price will be…', choices: ['lower', 'the same', 'higher'], answer: 2, reveal: { set: { p: 6 } } }, after: 'More demand pushes the crossing up: $6 now clears the market.' },

@@ -1,6 +1,7 @@
 import { makePlan } from '@/lib/engine';
 import { preCheck } from '@/lib/intent';
 import { findCourse } from '@/lib/library';
+import { PLAN_LANG, type UiLang } from '@/lib/i18n';
 import { LEVELS, type Level, type Plan, type Source } from '@/lib/recipe';
 import { RESTING, addSpend, askToken, cacheGet, cacheSet, json, limited, normalisePrompt, overBudget, readJson, signPlan } from '@/lib/server';
 
@@ -12,6 +13,8 @@ export async function POST(req: Request) {
   const body = await readJson(req, 5000);
   const prompt = typeof body?.prompt === 'string' ? body.prompt.trim().slice(0, 600) : '';
   const level = (LEVELS as readonly string[]).includes(body?.level as string) ? (body!.level as Level) : 'beginner';
+  const ui = typeof body?.lang === 'string' && body.lang in PLAN_LANG ? (body.lang as UiLang) : 'en';
+  const langPref = ui === 'en' ? undefined : PLAN_LANG[ui];
   if (!prompt) return json({ error: 'Type what you want to understand.' }, 400);
 
   const early = preCheck(prompt);
@@ -26,14 +29,14 @@ export async function POST(req: Request) {
     return json({ ...out, level, planId, askToken: askToken(planId), cached: true, curated: true });
   }
 
-  const key = `plan:${level}:${normalisePrompt(prompt)}`;
+  const key = `plan:${level}:${ui}:${normalisePrompt(prompt)}`;
   const hit = await cacheGet<Cached>(key);
   if (hit) { const planId = signPlan({ ...hit, level }); return json({ ...hit, level, planId, askToken: askToken(planId), cached: true }); }
 
   if (limited(req, 'plan')) return json({ error: 'You have started a lot of courses in the last hour. Try again a little later.' }, 429);
   if (await overBudget()) return json({ error: RESTING }, 503);
   try {
-    const { plan, sources, meter } = await makePlan(prompt, level);
+    const { plan, sources, meter } = await makePlan(prompt, level, undefined, true, langPref);
     const out: Cached = { plan, sources };
     // Only finished courses are worth sharing; a clarifying question is cheap to ask again.
     if (plan.status === 'ok') await cacheSet(key, out);

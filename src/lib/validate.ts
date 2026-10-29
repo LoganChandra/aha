@@ -157,6 +157,8 @@ export function checkLesson(raw: unknown): Checked {
       else { vals[p.id] = hit[p.id]; if (other) vals[other.id] = hit[other.id]; }
     } else if (t.kind === 'tap') {
       if (!known.has(t.target)) errors.push(`${w}: tap target "${t.target}" is not a scene id.`);
+      // A callout on the thing to find gives the answer away before the learner looks (panel: Aisyah, Lim).
+      if ((st.callouts ?? []).some((c) => c.at === t.target)) errors.push(`${w}: a callout sits on the tap target "${t.target}", which gives the answer away. Remove it; put the name in "after" instead.`);
     } else if (t.kind === 'predict') {
       if (t.answer >= t.choices.length) errors.push(`${w}: predict answer index is past the last choice.`);
       for (const [k, v] of Object.entries(t.reveal?.set ?? {})) { if (!params.has(k)) errors.push(`${w}: reveal sets "${k}", which is not a param.`); else vals[k] = v; }

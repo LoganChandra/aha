@@ -159,6 +159,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   iconScale = Math.max(0.55, iconScale);
   const iconDiscs: Box[] = [];
   const labels: Label[] = [];
+  const readouts: { id: string; text: string; color: string }[] = [];
   // Where each item sits on screen: callouts pin here and tap targets centre here.
   const anchors: Record<string, [number, number]> = {};
 
@@ -326,6 +327,8 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
         );
       }
       case 'text': {
+        // Live readouts ("Kuman: {n}") live in a fixed strip above the picture, never on it (panel: Aisyah, Nurul).
+        if (it.text.includes('{')) { readouts.push({ id: it.id, text: fillTemplate(it.text, env), color: it.tone ? color : 'var(--ink)' }); return null; }
         anchors[it.id] = [X(ev(it.at[0])), Y(ev(it.at[1]))];
         labels.push({ x: X(ev(it.at[0])), y: Y(ev(it.at[1])), text: fillTemplate(it.text, env), color: it.tone ? color : 'var(--ink)', id: it.id, anchor: 'start' });
         return null;
@@ -369,6 +372,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
     if (!onTap || !el) return el;
     return <g key={`tap-${it.id}`} onClick={() => onTap(it.id)} style={{ cursor: 'pointer' }}>{el}</g>;
   });
+  const readoutItems = readouts;
   // A generous invisible target at each item, so thin lines are easy to tap with a thumb.
   const tapTargets = onTap ? Object.entries(anchors).map(([id, [x, y]]) => (
     <circle key={`hit-${id}`} cx={x} cy={y} r={28} fill="transparent" style={{ cursor: 'pointer' }} onClick={() => onTap(id)} role="button" aria-label={`Tap ${scene.items.find((i) => i.id === id)?.label ?? id}`} />
@@ -397,7 +401,15 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
   const placed = placeLabels(labels.filter((l) => !callouts[l.id] || scene.items.find((i) => i.id === l.id)?.type === 'text'), view.w, view.h, [...reserved, ...iconDiscs]);
 
   return (
-    <div ref={box} className="absolute inset-0 select-none">
+    <div className="absolute inset-0 flex select-none flex-col">
+      {readoutItems.length > 0 && (
+        <div className="flex shrink-0 flex-wrap gap-1.5 px-2 pb-1 pt-1" aria-live="polite">
+          {readoutItems.map((r) => (
+            <span key={r.id} className="rounded-full border border-line bg-surface/95 px-3 py-1 text-[15px] font-semibold tabular-nums shadow-sm" style={{ color: r.color }}>{r.text}</span>
+          ))}
+        </div>
+      )}
+      <div ref={box} className="relative min-h-0 flex-1">
       {size.w > 0 && (
         <svg
           ref={svg} width={view.w} height={view.h} className="block"
@@ -458,6 +470,11 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           ))}
           {tapTargets}
           <g fontFamily="var(--font-sans)" fontSize={LABEL_PX} fontWeight={650}>
+            {/* A label that had to move away from its thing keeps a thin line back to it. */}
+            {placed.filter((l) => l.from).map((l, i) => {
+              const tw = textWidth(l.text), cx = Math.max(l.x, Math.min(l.x + tw, l.from![0])), cy = l.from![1] < l.y - 15 ? l.y - 15 : l.y + 4;
+              return <line key={`lead-${l.id}${i}`} x1={l.from![0]} y1={l.from![1]} x2={cx} y2={cy} stroke={l.color} strokeWidth={1.2} opacity={0.55} />;
+            })}
             {placed.map((l, i) => (
               <text
                 key={`${l.id}${i}`} x={l.x} y={l.y} textAnchor={l.anchor ?? 'start'} fill={l.color} opacity={textIds.has(l.id) ? 1 : Math.max(0.55, dim(l.id))}
@@ -470,6 +487,7 @@ export default function Graph2D({ scene, env, focus, params, onDrag, callouts = 
           {pins.length > 0 && <Pins pins={pins} w={view.w} h={view.h} avoid={[...iconDiscs, ...placed.map((l) => ({ x0: l.x, x1: l.x + textWidth(l.text), y0: l.y - 16, y1: l.y + 5 }))]} />}
         </svg>
       )}
+      </div>
     </div>
   );
 }
@@ -483,17 +501,14 @@ export function Pins({ pins, w, h, avoid = [] }: { pins: { id: string; text: str
     <g fontFamily="var(--font-sans)" style={{ pointerEvents: 'none' }}>
       {pins.map((p) => {
         const tw = textWidth(p.text, 15) + 24, th = 32;
-        // Try above, below, right, left of the anchor; take the first spot that is inside the frame and free.
-        const tries: [number, number][] = [
-          [p.at[0] - tw / 2, p.at[1] - 56], [p.at[0] - tw / 2, p.at[1] + 26], [p.at[0] + 22, p.at[1] - th / 2], [p.at[0] - tw - 22, p.at[1] - th / 2],
-          [p.at[0] + 16, p.at[1] - 58], [p.at[0] - tw - 16, p.at[1] - 58], [p.at[0] + 16, p.at[1] + 28], [p.at[0] - tw - 16, p.at[1] + 28],
-        ];
-        let spot: [number, number] = tries[0];
-        for (const [x, y] of tries) {
-          const cx = Math.max(6, Math.min(w - tw - 6, x)), cy = Math.max(6, Math.min(h - th - 6, y));
-          spot = [cx, cy];
-          if (!placed.some((b) => cx < b.x1 && cx + tw > b.x0 && cy < b.y1 && cy + th > b.y0)) break;
-        }
+        // Around the anchor at two distances; the first free spot wins, else the least covered one (panel: callouts
+        // sat on each other and on the dots they named).
+        const tries: [number, number][] = [];
+        for (const k of [1, 1.9]) tries.push(
+          [p.at[0] - tw / 2, p.at[1] - 24 - th * k], [p.at[0] - tw / 2, p.at[1] + 26 * k], [p.at[0] + 22 * k, p.at[1] - th / 2], [p.at[0] - tw - 22 * k, p.at[1] - th / 2],
+          [p.at[0] + 16 * k, p.at[1] - 26 - th * k], [p.at[0] - tw - 16 * k, p.at[1] - 26 - th * k], [p.at[0] + 16 * k, p.at[1] + 28 * k], [p.at[0] - tw - 16 * k, p.at[1] + 28 * k],
+        );
+        const spot = bestSpot(tries, tw, th, w, h, placed);
         placed.push({ x0: spot[0], x1: spot[0] + tw, y0: spot[1], y1: spot[1] + th });
         const lx = Math.max(spot[0] + 10, Math.min(spot[0] + tw - 10, p.at[0])), ly = spot[1] > p.at[1] ? spot[1] : spot[1] + th;
         return (
@@ -509,13 +524,27 @@ export function Pins({ pins, w, h, avoid = [] }: { pins: { id: string; text: str
   );
 }
 
+/** Clamp each candidate into the frame; take the first that covers nothing, else the one that covers least. */
+function bestSpot(tries: [number, number][], tw: number, th: number, w: number, h: number, placed: Box[]): [number, number] {
+  let best: [number, number] = [0, 0], bestA = Infinity;
+  for (const [x, y] of tries) {
+    const cx = Math.max(6, Math.min(w - tw - 6, x)), cy = Math.max(6, Math.min(h - th - 6, y));
+    let a = 0;
+    for (const b of placed) a += Math.max(0, Math.min(cx + tw, b.x1) - Math.max(cx, b.x0)) * Math.max(0, Math.min(cy + th, b.y1) - Math.max(cy, b.y0));
+    if (a === 0) return [cx, cy];
+    if (a < bestA) { bestA = a; best = [cx, cy]; }
+  }
+  return best;
+}
+
 /** Bounding box of everything drawn, sampled at each knob's default, min and max (t = 0), with a margin. */
 function contentBounds(items: Item[], params: { id: string; min: number; max: number; value?: number }[], xr: [number, number], yr: [number, number]): [number, number, number, number] | null {
   const base: Env = { t: 0 };
   for (const p of params) base[p.id] = p.value ?? (p.min + p.max) / 2;
-  // Frame the starting picture plus a moderate reach around it (a quarter of each knob's range either way), not every
+  // Frame the starting picture plus a small reach around it (an eighth of each knob's range either way; the camera follows
+  // the rest), not every
   // extreme: framing for the largest possible shape left the starting one tiny with its labels piled on it.
-  const reach = (p: { min: number; max: number }, v: number, d: number) => Math.min(p.max, Math.max(p.min, v + d * (p.max - p.min) * 0.25));
+  const reach = (p: { min: number; max: number }, v: number, d: number) => Math.min(p.max, Math.max(p.min, v + d * (p.max - p.min) * 0.12));
   const envs: Env[] = [base, ...params.flatMap((p) => [{ ...base, [p.id]: reach(p, base[p.id], -1) }, { ...base, [p.id]: reach(p, base[p.id], 1) }])];
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   // Only what sits inside (or near) the scene's own range counts: things parked far away are meant to be hidden.
@@ -531,7 +560,7 @@ function contentBounds(items: Item[], params: { id: string; min: number; max: nu
       if ('show' in it && it.show !== undefined && !(v(it.show, 1) > 0)) continue;
       switch (it.type) {
         case 'point': add(v(it.x, NaN), v(it.y, NaN)); break;
-        case 'text': add(v(it.at[0], NaN), v(it.at[1], NaN)); break;
+        case 'text': if (!it.text.includes('{')) add(v(it.at[0], NaN), v(it.at[1], NaN)); break;
         case 'icon': add(v(it.at[0], NaN), v(it.at[1], NaN), it.size !== undefined ? v(it.size, 0.5) * 0.6 : 0); break;
         case 'segment': add(v(it.from[0], NaN), v(it.from[1], NaN)); add(v(it.to[0], NaN), v(it.to[1], NaN)); break;
         case 'polygon': case 'polyline': it.points.forEach(([a, b]) => add(v(a, NaN), v(b, NaN))); break;
@@ -551,7 +580,7 @@ function contentBounds(items: Item[], params: { id: string; min: number; max: nu
   return [x0 - mx, x1 + mx, y0 - my, y1 + my];
 }
 
-type Label = { x: number; y: number; text: string; color: string; id: string; anchor?: 'start' | 'end' | 'middle' };
+type Label = { x: number; y: number; text: string; color: string; id: string; anchor?: 'start' | 'end' | 'middle'; from?: [number, number] };
 
 /** Rough text width at 13px: wide for CJK, narrow for Latin. Good enough to keep labels apart. */
 const LABEL_PX = 15.5;
@@ -569,17 +598,16 @@ function placeLabels(labels: Label[], w: number, h: number, reserved: Box[] = []
   const out: Label[] = [];
   for (const l of labels) {
     const tw = textWidth(l.text);
-    let x0 = l.anchor === 'end' ? l.x - tw : l.anchor === 'middle' ? l.x - tw / 2 : l.x;
-    x0 = Math.max(4, Math.min(w - tw - 4, x0));
-    let y = Math.max(14, Math.min(h - 6, l.y));
-    const hit = (yy: number) => boxes.some((b) => x0 < b.x1 && x0 + tw > b.x0 && yy - 15 < b.y1 && yy + 4 > b.y0);
-    for (let k = 0; k < 8 && hit(y); k++) {
-      const down = y + 20 * (k + 1), up = y - 20 * (k + 1);
-      if (!hit(down) && down < h - 6) { y = down; break; }
-      if (!hit(up) && up > 17) { y = up; break; }
-    }
-    boxes.push({ x0, x1: x0 + tw, y0: y - 15, y1: y + 4 });
-    out.push({ ...l, x: x0, y, anchor: 'start' });
+    const x0 = l.anchor === 'end' ? l.x - tw : l.anchor === 'middle' ? l.x - tw / 2 : l.x;
+    // Below, above, then beside where it belongs, then further out: a label stays next to its thing instead of
+    // drifting down the page (panel: "Kuman B" ended up far from its germ). Box top-left; text baseline is +15.
+    const tries: [number, number][] = [];
+    for (const d of [0, 20, 40, 60]) tries.push([x0, l.y - 15 + d], [x0, l.y - 15 - d]);
+    for (const d of [tw / 2 + 14, tw / 2 + 40]) tries.push([x0 + d, l.y - 15], [x0 - d, l.y - 15], [x0 + d, l.y - 35], [x0 - d, l.y - 35]);
+    const [bx, by] = bestSpot(tries, tw, 19, w, h, boxes);
+    boxes.push({ x0: bx, x1: bx + tw, y0: by, y1: by + 19 });
+    const moved = Math.hypot(bx - x0, by - (l.y - 15)) > 26;
+    out.push({ ...l, x: bx, y: by + 15, anchor: 'start', from: moved ? [l.anchor === 'middle' ? l.x : x0, l.y - 6] : undefined });
   }
   return out;
 }
