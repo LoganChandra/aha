@@ -222,12 +222,15 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
       const health = /\b(vaccin\w*|vaksin|medicin\w*|ubat|disease|penyakit|immun\w*|imun\w*|virus|infection|jangkitan|cancer|kanser|diabetes|drug|dose|dos)\b/i.test(`${ctx.plan.topic} ${ctx.plan.lessons[ctx.index]?.title ?? ''}`);
       const absolute = health ? [...new Set(JSON.stringify([checked.lesson.steps, checked.lesson.scene]).match(/\b(100 ?%|never get sick|completely safe|totally safe|guaranteed|cannot get sick|won'?t get sick|tidak akan sakit|tidak sakit|pasti selamat|selamat sepenuhnya)\b/gi) ?? [])] : [];
       const healthGap = absolute.length ? [`Health claims must be honest and hedged: replace ${absolute.slice(0, 3).map((x) => `"${x}"`).join(', ')} with "usually", "much less likely", "milder", or a real figure from the FACT SHEET.`] : [];
+      // Malay wording a native-speaking nurse flagged (panel, Nurul): fixed in code, not left to the prompt.
+      const MALAY_FIX: [RegExp, string][] = [[/\bslaid\b/i, '"peluncur"'], [/\bpenjenayah\b/i, '"kuman" or "musuh"'], [/\bkebal\b/i, '"imun" or "berimuniti"'], [/\bhafal\b/i, '"ingat" or "mengenali"'], [/kekebalan kelompok/i, '"imuniti kelompok"'], [/\bTekan\b/, '"Ketik"']];
+      const malayGap = /^malay/i.test(ctx.plan.lang ?? '') ? MALAY_FIX.filter(([re]) => re.test(JSON.stringify([checked.lesson!.steps, checked.lesson!.scene, checked.lesson!.params]))).map(([re, use]) => `Malay wording: replace ${re.source.replace(/\\b/g, '')} with ${use}.`) : [];
       // Money and big-number claims must come from the fact sheet or the knobs, never from thin air (C04).
       const sheet = (ctx.anchors ?? []).join(' ');
       const unsourced = anchors.length >= 3 ? [...new Set(checked.lesson.steps.flatMap((st) => `${st.say} ${st.after ?? ''}`.replace(/\{[^}]*\}/g, '').match(/\$?\d[\d,.]*\s?(?:bn|billion|trillion|tn|million|m\b)/gi) ?? []))]
         .filter((x) => { const n = x.replace(/[^\d.]/g, ''); return n && !sheet.includes(n) && !JSON.stringify(checked.lesson!.scene).includes(n); }) : [];
       const factGap = [...(unsourced.length ? [`These figures are not in the FACT SHEET: ${unsourced.slice(0, 4).join(', ')}. Use the sheet's numbers or remove them.`] : []), ...(anchors.length >= 3 && factsUsed(checked.lesson, anchors) < 2 ? ['The lesson uses none of the FACT SHEET: rebuild it around at least 2 of those facts (their numbers, names or dates) and show them in the picture.'] : [])];
-      const issues = [...copied, ...healthGap, ...factGap, ...(slow ? [] : await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
+      const issues = [...copied, ...malayGap, ...healthGap, ...factGap, ...(slow ? [] : await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000)))];
       if (!issues.length) return { lesson: checked.lesson, errors: [] };
       best = { lesson: checked.lesson, errors: [] }; // already usable; the repair can only improve it
       messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(issues.map((x) => `Inspector: ${x}`)) });
