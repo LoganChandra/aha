@@ -167,6 +167,9 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
   const messages: Msg[] = [{ role: 'system', content: LESSON_SYSTEM }, { role: 'user', content: user }];
   let best: Written | null = null;
   let inspected = false;
+  // Lesson 1 is what the learner waits for: the inspector runs only if the draft came quickly (measured 2026-10-29:
+  // a slow draft plus inspection plus repair took 55 s). Later lessons build in the background and always get it.
+  const started = Date.now(), inspectWithin = ctx.index === 0 ? 14_000 : 50_000;
   for (let attempt = 0; attempt < 3; attempt++) {
     // Every call fits inside the function's time limit, so a slow first try cannot starve the others.
     const left = deadline - Date.now() - 2000;
@@ -183,9 +186,9 @@ async function writeWith(route: Route, user: string, m: Meter, deadline: number,
     m.calls.push({ model: route.model, ok: checked.errors.length === 0 && !!checked.lesson, costUsd: r.costUsd, ms: r.ms, note: checked.errors.slice(0, 3).join(' | ') || undefined });
     if (checked.lesson && checked.errors.length === 0) {
       // Clean by the rules: once per lesson, check the words against the picture before accepting it.
-      if (inspected || attempt === 2) return { lesson: checked.lesson, errors: [] };
+      if (inspected || attempt === 2 || Date.now() - started > inspectWithin) return { lesson: checked.lesson, errors: [] };
       inspected = true;
-      const issues = await inspect(checked.lesson, ctx, m, Math.min(25_000, deadline - Date.now() - 20_000));
+      const issues = await inspect(checked.lesson, ctx, m, Math.min(ctx.index === 0 ? 10_000 : 25_000, deadline - Date.now() - 20_000));
       if (!issues.length) return { lesson: checked.lesson, errors: [] };
       best = { lesson: checked.lesson, errors: [] }; // already usable; the repair can only improve it
       messages.push({ role: 'assistant', content: r.text.slice(0, 12000) }, { role: 'user', content: repairUser(issues.map((x) => `Inspector: ${x}`)) });
