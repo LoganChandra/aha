@@ -27,7 +27,10 @@ last_updated: 2026-10-29
 - **Money.** Write `\$` in lesson text. A bare `$` starts maths.
 - **Templates (16).** attention, nextWord, tokens, embedding, descent, reward, cycle, denoise, convolve, spectrum, network, sky, rightTriangle, pipeline, iconArray, balance.
 - **Tracker.** 221 rows: 119 fixed, 102 improved. Improved means a prompt or checker rule, so verify it in walks.
-- **Tests on prod.** Last full run (80b5e61): API 26/26, UI 19/19. Unit: 42 tests.
+- **Code checks (always run, in `writeWith`).** Copy guard, health absolutes, unsourced money and big figures, fact-sheet use, Malay wording. In `validate.ts`: colour words, tap tasks naming missing things, at most 6 steps, blank readouts, overlapping embedding points.
+- **Tutor.** Health answers that promise certainty get one honest rewrite.
+- **Cost (measured).** About $0.016 to $0.033 per full course, ~$0.025 average. Questions cost ~$0.0002.
+- **Tests on prod.** Last full run: API 26/26, UI 19/19. Unit: 44 tests.
 
 ## Resume prompt (paste into a fresh session)
 
