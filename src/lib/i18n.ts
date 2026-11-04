@@ -47,6 +47,11 @@ type Dict = {
   nTokens: (n: number) => string; slope: string; offChart: string; chancePick: string; learned: string;
   round: (n: number) => string; noiseLeft: (p: number) => string; stepOf2: (n: number, t: number) => string;
   lessonStages: [string, string, string]; trainErr: string; testErr: string; windowStart: string; fetched: string;
+  // First-time onboarding (Haknazar 2026-11-01: first-time visitors found it confusing). The home line says what
+  // the app does; the toy teaches the drag gesture before any lesson; the kicker names the gesture each task
+  // wants; the sheet section is help you can find again (NN/g: pull revelations, no memorisation).
+  tagline: string; gestures: { slide: string; tap: string; predict: string }; tryDrag: string; tryDragDone: string;
+  howItWorks: string; howBody: string;
 };
 
 export const UI: Record<UiLang, Dict> = {
@@ -62,6 +67,9 @@ export const UI: Record<UiLang, Dict> = {
     disclaimer: 'AHA writes each lesson with AI. It can get things wrong, so check anything important against the sources.',
     drawing: (n) => `Drawing lesson ${n}`, drawingWait: 'Usually 10 to 20 seconds. Read what it covers meanwhile.', doFirst: 'Do the step above first, or tap Show me.',
     courseDone: 'Course done', startOver: 'Start again', share: 'Share', copied: 'Link copied', thinking: 'Thinking', youTapped: (w) => `That's ${w}.`, answerIs: (w) => `Not quite: it's "${w}".`, keepMore: 'Nearly. Keep going a little further.', keepLess: 'Nearly. Go back a little.', nTokens: (n) => `${n} tokens`, slope: 'slope', offChart: 'off the chart', chancePick: 'chance it picks this', learned: 'what it has learned (| = truth)', round: (n) => `round ${n}`, noiseLeft: (p) => `${p}% noise left`, stepOf2: (n, t) => `step ${n} of ${t}`, windowStart: 'what the model can read', fetched: 'looked up and added', trainErr: 'training error', testErr: 'error on new data', lessonStages: ['Looking up the facts', 'Writing the lesson', 'Checking words against the picture'], setForYou: (w) => `This step set ${w} for you.`,
+    tagline: 'AHA builds you a short course with pictures you can play with — drag things, turn knobs, guess before you see.',
+    gestures: { slide: 'Slide', tap: 'Tap', predict: 'Pick your guess' }, tryDrag: 'Try it: slide me', tryDragDone: 'You did it! Lessons work the same way.',
+    howItWorks: 'How AHA works', howBody: 'Type a topic and AHA builds a short course. Every lesson is a picture you touch: slide the knobs, tap the parts, pick a guess before the answer plays. Stuck? Tap Show me, or Ask a question any time.',
   },
   ms: {
     title: 'Apa yang anda mahu fahami?', yourLevel: 'Tahap anda', levelNote: (l) => `${l} dipilih. Ketik yang lain untuk menukar, sekarang atau nanti.`,
@@ -75,6 +83,9 @@ export const UI: Record<UiLang, Dict> = {
     disclaimer: 'Pelajaran ini ditulis oleh AI dan mungkin ada kesilapan. Semak perkara penting dengan sumber di bawah, atau tanya orang yang pakar.',
     drawing: (n) => `Melukis pelajaran ${n}`, drawingWait: 'Biasanya 10 hingga 20 saat. Baca isi pelajaran sementara menunggu.', doFirst: 'Selesaikan langkah di atas dahulu, atau ketik Tunjukkan.',
     courseDone: 'Kursus selesai', startOver: 'Mula semula', share: 'Kongsi', copied: 'Pautan disalin', thinking: 'Sedang berfikir', youTapped: (w) => `Itu ${w}.`, answerIs: (w) => `Belum tepat: jawapannya "${w}".`, keepMore: 'Hampir. Teruskan sedikit lagi.', keepLess: 'Hampir. Undur sedikit.', nTokens: (n) => `${n} token`, slope: 'kecerunan', offChart: 'terkeluar dari carta', chancePick: 'peluang ia memilih ini', learned: 'apa yang telah dipelajari (| = sebenar)', round: (n) => `pusingan ${n}`, noiseLeft: (p) => `${p}% hingar tinggal`, stepOf2: (n, t) => `langkah ${n} daripada ${t}`, windowStart: 'apa yang model boleh baca', fetched: 'dicari dan ditambah', trainErr: 'ralat latihan', testErr: 'ralat pada data baharu', lessonStages: ['Mencari fakta', 'Menulis pelajaran', 'Menyemak kata-kata dengan gambar'], setForYou: (w) => `Langkah ini menetapkan ${w} untuk anda.`,
+    tagline: 'AHA membina kursus pendek untuk anda, dengan gambar yang boleh disentuh — laras, ketik, dan teka dahulu sebelum jawapan.',
+    gestures: { slide: 'Laras', tap: 'Ketik', predict: 'Pilih tekaan anda' }, tryDrag: 'Cuba: laras saya', tryDragDone: 'Bagus! Pelajaran juga berfungsi begini.',
+    howItWorks: 'Cara AHA berfungsi', howBody: 'Taip satu topik dan AHA membina kursus pendek. Setiap pelajaran ialah gambar yang boleh disentuh: laras pengetuai, ketik bahagian, pilih tekaan sebelum jawapan muncul. Tersangkut? Ketik Tunjukkan, atau Tanya bila-bila masa.',
   },
   zh: {
     title: '你想弄懂什么？', yourLevel: '你的程度', levelNote: (l) => `已选“${l}”。现在或之后都可以点别的来更改。`,
@@ -87,6 +98,9 @@ export const UI: Record<UiLang, Dict> = {
     cont: '继续', finish: '完成本课', nextLesson: '下一课', praise: ['完全正确。', '很好。', '对了。', '没错。', '是的。', '就是这样。'], close: '关闭', lessons: '课程', level: '程度', sources: '资料来源',
     disclaimer: 'AHA 用 AI 编写每一课，可能会出错。重要的内容请对照资料来源核实。',
     drawing: (n) => `正在绘制第 ${n} 课`, drawingWait: '通常 10 到 20 秒。可以先看看这一课讲什么。', doFirst: '请先完成上面的步骤，或点“示范给我看”。',
+    tagline: 'AHA 会为你定制一门小课程，配有可以动手玩的画面——拖一拖、转一转，先猜再看。',
+    gestures: { slide: '滑动', tap: '点按', predict: '选出你的猜测' }, tryDrag: '试一试：拖动我', tryDragDone: '做得好！课程里的画面也是这样玩的。',
+    howItWorks: 'AHA 是怎么用的', howBody: '输入一个主题，AHA 会为你准备一门小课程。每一课都是可以动手的画面：滑动旋钮、点按部件，先选一个猜测再看答案。卡住了？点“示范给我看”，或随时“提问”。',
     courseDone: '课程完成', startOver: '重新开始', share: '分享', copied: '链接已复制', thinking: '思考中', youTapped: (w) => `那是${w}。`, answerIs: (w) => `还不对：答案是“${w}”。`, keepMore: '差一点，再往前一些。', keepLess: '差一点，往回一些。', nTokens: (n) => `${n} 个词元`, slope: '斜率', offChart: '超出图表', chancePick: '选中它的概率', learned: '已学到的（| = 真实值）', round: (n) => `第 ${n} 轮`, noiseLeft: (p) => `剩余噪声 ${p}%`, stepOf2: (n, t) => `第 ${n} 步，共 ${t} 步`, windowStart: '模型能读到的范围', fetched: '检索后加入', trainErr: '训练误差', testErr: '新数据上的误差', lessonStages: ['查找事实', '编写课程', '核对文字与图示'], setForYou: (w) => `这一步已为你设置${w}。`,
   },
   ta: {
@@ -100,6 +114,9 @@ export const UI: Record<UiLang, Dict> = {
     cont: 'தொடர்', finish: 'பாடத்தை முடி', nextLesson: 'அடுத்த பாடம்', praise: ['சரியாகச் சொன்னீர்கள்.', 'அருமை.', 'சரி.', 'மிகச் சரி.', 'ஆம்.', 'அதுதான்.'], close: 'மூடு', lessons: 'பாடங்கள்', level: 'நிலை', sources: 'ஆதாரங்கள்',
     disclaimer: 'AHA ஒவ்வொரு பாடத்தையும் AI மூலம் எழுதுகிறது. தவறுகள் இருக்கலாம்; முக்கியமானவற்றை ஆதாரங்களுடன் சரிபாருங்கள்.',
     drawing: (n) => `பாடம் ${n} வரையப்படுகிறது`, drawingWait: 'பொதுவாக 10 முதல் 20 வினாடிகள். அதுவரை இந்தப் பாடம் எதைப் பற்றியது என்று படியுங்கள்.', doFirst: 'முதலில் மேலே உள்ள படியைச் செய்யுங்கள், அல்லது காட்டு என்பதைத் தட்டுங்கள்.',
+    tagline: 'AHA உங்களுக்காக ஒரு சிறிய பாடநெறியை உருவாக்குகிறது — தொட்டு விளையாடக்கூடிய படங்களுடன்: இழுங்கள், சுழற்றுங்கள், பதில் வரும் முன் யூகியுங்கள்.',
+    gestures: { slide: 'நகர்த்து', tap: 'தட்டு', predict: 'உங்கள் யூகத்தைத் தேர்வு செய்' }, tryDrag: 'முயலுங்கள்: என்னை நகர்த்துங்கள்', tryDragDone: 'அருமை! பாடங்களிலும் படங்கள் இப்படித்தான் வேலை செய்கின்றன.',
+    howItWorks: 'AHA எப்படி வேலை செய்கிறது', howBody: 'ஒரு தலைப்பைத் தட்டச்சு செய்யுங்கள்; AHA ஒரு சிறிய பாடநெறியை உருவாக்கும். ஒவ்வொரு பாடமும் தொட்டுணரக்கூடிய ஒரு படம்: கைப்பிடிகளை நகர்த்துங்கள், பகுதிகளைத் தட்டுங்கள், பதில் தெரியும் முன் ஒரு யூகத்தைத் தேர்வு செய்யுங்கள். சிக்கிவிட்டால்? "காட்டு" அல்லது "கேள்" என்பதைத் தட்டுங்கள்.',
     courseDone: 'பாடநெறி முடிந்தது', startOver: 'மீண்டும் தொடங்கு', share: 'பகிர்', copied: 'இணைப்பு நகலெடுக்கப்பட்டது', thinking: 'யோசிக்கிறது', youTapped: (w) => `அது ${w}.`, answerIs: (w) => `சரியில்லை: பதில் "${w}".`, keepMore: 'கிட்டத்தட்ட. இன்னும் கொஞ்சம் நகர்த்துங்கள்.', keepLess: 'கிட்டத்தட்ட. கொஞ்சம் பின்னால் நகர்த்துங்கள்.', nTokens: (n) => `${n} டோக்கன்கள்`, slope: 'சாய்வு', offChart: 'வரைபடத்துக்கு வெளியே', chancePick: 'இதைத் தேர்வு செய்யும் வாய்ப்பு', learned: 'கற்றுக்கொண்டது (| = உண்மை)', round: (n) => `சுற்று ${n}`, noiseLeft: (p) => `${p}% இரைச்சல் மீதம்`, stepOf2: (n, t) => `படி ${n} / ${t}`, windowStart: 'மாதிரி படிக்கக்கூடியது', fetched: 'தேடிச் சேர்க்கப்பட்டது', trainErr: 'பயிற்சிப் பிழை', testErr: 'புதிய தரவில் பிழை', lessonStages: ['உண்மைகளைத் தேடுகிறது', 'பாடத்தை எழுதுகிறது', 'சொற்களைப் படத்துடன் சரிபார்க்கிறது'], setForYou: (w) => `இந்தப் படி ${w} ஐ உங்களுக்காக அமைத்தது.`,
   },
 };
