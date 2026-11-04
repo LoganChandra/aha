@@ -10,7 +10,7 @@ import RichText from './RichText';
 import { useGlide, useReducedMotion, useSize, usesTime } from './scene/runtime';
 import SceneBoundary from './SceneBoundary';
 import Stage from './Stage';
-import { Icon, Knob, PromptBar } from './ui';
+import { DragToTry, Icon, Knob, PromptBar } from './ui';
 
 type Course = { prompt: string; level: Level; planId: string; askToken: string; plan: Plan; sources: Source[]; lang: UiLang; startAt?: number };
 type Slot = { status: 'idle' | 'loading' | 'ready' | 'error'; lesson?: Lesson; error?: string; sources?: Source[] };
@@ -183,6 +183,11 @@ function Home({ prompt, setPrompt, level, setLevel, lang, setLang, planning, msg
         ) : (
           <>
             <h1 onClick={focusInput} className="cursor-text font-serif text-[34px] leading-[1.1] tracking-[-0.015em] text-ink sm:text-[52px]">{tx.title}</h1>
+            {/* First-time visitors (Haknazar 2026-11-01) had no idea the lessons are hands-on. One line says what happens; the toy teaches the drag with a thumb (NN/g: contextual help beats a walkthrough). */}
+            <p className="mt-2.5 max-w-[520px] text-[16px] leading-snug text-ink-2">{tx.tagline}</p>
+            <div className="mt-4 max-w-[380px]">
+              <DragToTry label={tx.tryDrag} doneLabel={tx.tryDragDone} />
+            </div>
             <div className="mt-7">
               <div className="mb-2 text-[15px] font-semibold text-ink-2" id="level-label">{tx.yourLevel}</div>
               <div role="radiogroup" aria-labelledby="level-label" className="flex flex-wrap gap-2">
@@ -664,6 +669,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
               {task?.kind === 'predict' && !answer && !asking && (
                 <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 p-4 shadow-[var(--shadow)] backdrop-blur">
                   {/* Once answered, the question folds away: the answer and the picture matter now. */}
+                  {/* No gesture kicker here (Haknazar 2026-11-03: per-step labels felt naggy) — the home toy teaches the gestures once. */}
                   <div className={`mb-2.5 flex items-start gap-2 ${sp.pick !== undefined ? 'hidden' : ''}`}><p className="flex-1 text-[17px] font-semibold leading-snug text-ink"><RichText text={task.question} /></p>{sp.pick === undefined && <ShowMe onClick={showMe} label={tx.showMe} />}</div>
                   {/* Short choices sit two to a row so the picture keeps its room on a phone. */}
                   <div className={`grid gap-1.5 ${task.choices.every((c) => c.length <= 18) ? 'grid-cols-2' : 'sm:grid-cols-2'}`}>
@@ -690,7 +696,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                   initial={reduced || !sp.miss ? false : { x: [0, -6, 6, -4, 4, 0] }} animate={{ x: 0 }} transition={{ duration: 0.32 }}
                   className="pointer-events-auto flex w-full max-w-[600px] flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-[22px] border-2 border-[var(--t-primary)]/40 bg-surface/95 py-2 pl-4 pr-2 text-[16.5px] font-semibold text-ink shadow-[var(--shadow)] backdrop-blur"
                 >
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--t-primary)]" />
+                  {/* No gesture kicker (Haknazar 2026-11-03: per-step labels felt naggy); the hint itself says what to do. */}
                   <span className="min-w-[55%] flex-1">{sp.miss ? `${sp.empty ? tx.emptySpace : sp.hit ? `${tx.notThat} ${tx.youTapped(sp.hit)}` : tx.notThat} ${task.hint}` : task.hint}</span>
                   {/* The way out sits next to the instruction, where a stuck learner is already looking (panel: Kumar, Aisyah). */}
                   <span className="ml-auto"><ShowMe onClick={showMe} label={tx.showMe} /></span>
@@ -700,6 +706,7 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
                 <div className="pointer-events-auto w-full max-w-[600px] rounded-[20px] border border-line bg-surface/95 px-4 py-2.5 shadow-[var(--shadow)] backdrop-blur">
                   {taskKnob && task?.kind === 'slide' && (
                     <>
+                      {/* No gesture kicker (Haknazar 2026-11-03: per-step labels felt naggy); the hint itself says what to do. */}
                       {!done && <div className="flex items-center gap-2 pt-1.5"><p className="flex-1 text-[16px] font-semibold text-ink">{stall ? `${stall === 'more' ? tx.keepMore : tx.keepLess} ${task.hint}` : task.hint}</p><ShowMe onClick={showMe} label={tx.showMe} /></div>}
                       <Knob p={taskKnob} value={env[taskKnob.id] ?? taskKnob.value} onChange={(v) => setKnob(taskKnob.id, v)} toward={guide?.target} />
                     </>
@@ -995,6 +1002,16 @@ function LessonSheet({ course, slots, tx, current, reduced, onPick, onClose, onR
             );
           })}
         </ol>
+        {/* Help you can find again (NN/g: make help easy to recall): what AHA is and the three gestures, in the learner's language. */}
+        <div className="mt-5 rounded-2xl bg-sunk px-4 py-3">
+          <div className="text-[14px] font-semibold text-ink">{tx.howItWorks}</div>
+          <p className="mt-1 text-[14.5px] leading-snug text-ink-2">{tx.howBody}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {[tx.gestures.slide, tx.gestures.tap, tx.gestures.predict].map((g) => (
+              <span key={g} className="flex h-6 items-center rounded-full bg-[var(--t-primary)] px-2 text-[11.5px] font-bold uppercase tracking-[0.05em] text-white">{g}</span>
+            ))}
+          </div>
+        </div>
         <div className="mt-5">
           <div className="mb-2 text-[14px] font-semibold text-ink-2">{tx.level}</div>
           <div className="flex flex-wrap gap-1.5">

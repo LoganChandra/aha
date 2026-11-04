@@ -1,8 +1,58 @@
 'use client';
-// Small UI pieces: the prompt bar, knobs, icons, buttons.
-import { useEffect, useRef } from 'react';
+// Small UI pieces: the prompt bar, knobs, icons, buttons, the first-visit drag toy.
+import { useEffect, useRef, useState } from 'react';
 import { formatNumber } from '@/lib/expr';
 import type { Param } from '@/lib/recipe';
+
+/**
+ * First-visit hands-on teaser (Haknazar 2026-11-01: first-time visitors did not know the lessons are
+ * hands-on, and asked for "show like drag and drop"). One draggable dot on a short line: the exact gesture
+ * a lesson will ask for, learned with zero reading. Help shown alongside, not a tutorial to remember
+ * (NN/g, "Onboarding Tutorials", 2025: pull revelations in context beat push walkthroughs). Keyboard
+ * parity at WCAG 2.1.1: arrows move the dot; nothing here requires dragging (2.5.7).
+ */
+export function DragToTry({ label, doneLabel }: { label: string; doneLabel: string }) {
+  const [x, setX] = useState(0.18);
+  const [grabbed, setGrabbed] = useState(false);
+  const [ok, setOk] = useState(false);
+  const bar = useRef<HTMLDivElement>(null);
+  const move = (clientX: number) => {
+    if (!bar.current) return;
+    const r = bar.current.getBoundingClientRect();
+    const nx = Math.min(1, Math.max(0, (clientX - r.left - 22) / Math.max(1, r.width - 44)));
+    setX(nx);
+    if (nx > 0.6) setOk(true);
+  };
+  const nudgeKey = (d: number) => {
+    const nx = Math.min(1, Math.max(0, x + d));
+    setX(nx);
+    if (nx > 0.6) setOk(true);
+  };
+  return (
+    <div className={`rounded-[20px] border bg-surface/95 px-4 py-3 shadow-[var(--shadow)] ${ok ? 'border-[var(--t-green)]/50' : 'border-line'}`}>
+      <div className="flex items-center gap-3">
+        <div ref={bar} className="relative h-11 flex-1">
+          <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-line-2" />
+          <div className="absolute left-0 top-1/2 h-2 -translate-y-1/2 rounded-full transition-colors" style={{ width: `${x * 100}%`, background: ok ? 'var(--t-green)' : 'var(--t-primary)' }} />
+          <div
+            role="slider" tabIndex={0} aria-valuenow={Math.round(x * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={label}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); nudgeKey(0.08); }
+              else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); nudgeKey(-0.08); }
+            }}
+            onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); setGrabbed(true); }}
+            onPointerMove={(e) => grabbed && move(e.clientX)}
+            onPointerUp={() => setGrabbed(false)}
+            onPointerCancel={() => setGrabbed(false)}
+            style={{ left: `calc(${x * 100}% - 22px)` }}
+            className={`absolute top-1/2 h-11 w-11 -translate-y-1/2 touch-none rounded-full ${ok ? 'bg-[var(--t-green)]' : 'bg-[var(--t-primary)]'} ring-4 ring-[var(--surface)] shadow-[0_2px_8px_rgb(0_0_0/0.22)] ${!grabbed && !ok ? 'nudge' : ''}`}
+          />
+        </div>
+        <span aria-live="polite" className="shrink-0 text-[14px] font-semibold leading-tight text-ink-2">{ok ? doneLabel : label}</span>
+      </div>
+    </div>
+  );
+}
 
 export function Icon({ name, size = 20 }: { name: 'arrow-up' | 'back' | 'play' | 'pause' | 'list' | 'close' | 'check' | 'reset' | 'link' | 'down' | 'share' | 'chat'; size?: number }) {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
