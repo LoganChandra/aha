@@ -1,0 +1,979 @@
+{
+ "slug": "ai-prompting-basics",
+ "levels": [
+  "beginner"
+ ],
+ "aliases": [
+  "ai prompts",
+  "how to write ai prompts",
+  "prompt engineering",
+  "write better prompts",
+  "prompting",
+  "ai prompting",
+  "writing ai prompts"
+ ],
+ "plan": {
+  "status": "ok",
+  "topic": "Writing Better AI Prompts",
+  "summary": "You will understand how the words you give an AI (its persona, task, context and format) change the answer you get back, and you will be able to write prompts that get what you actually want.",
+  "lessons": [
+   {
+    "title": "The Same Question, Two Answers",
+    "pattern": "odds-and-temperature",
+    "goal": "You will see why a bare prompt and a fleshed-out prompt give different answers, and name the four parts that make a prompt: persona, task, context, format.",
+    "aha": "An AI isn't ignoring you, it's filling in the gaps you left. Every gap you leave is a guess it makes for you.",
+    "visual": "graph2d: the NEXT WORD template, showing one prompt as a row of next-word probabilities. The learner drags a slider that swaps 'Write an email' for 'I am an HR manager. Write a welcome email to a new hire, invite them to schedule a meeting on Friday, keep it under 150 words' and watches the probability bars change from flat and unsure to one tall confident bar.",
+    "facts": [
+     "Prompting guides divide a good prompt into four areas: persona, task, context and format (Inside Atlassian)",
+     "An example given: instead of 'Write an email to [contact] welcoming them to the company', add 'I am an HR manager' and 'invite them to schedule a meeting with me on [date]'"
+    ]
+   },
+   {
+    "title": "Say What You Want Done",
+    "pattern": "predict-reveal",
+    "goal": "Building on lesson 1's four parts, you will turn a vague request like 'help me with my presentation' into a clear task, and predict which of two prompts gets the more useful reply.",
+    "aha": "Vague tasks give you vague answers, not because the AI is dumb but because there are thousands of right answers to 'help me' and you didn't pick one.",
+    "visual": "graph2d: a task-specificity meter. The learner types or picks prompts; the meter shows how many different 'reasonable' answers each one could produce. Dragging from 'Help me with my presentation' to 'Give me three ways to make my opening slide more engaging for an audience of small business owners' collapses the bar from hundreds of options to a handful.",
+    "facts": [
+     "A vague prompt like 'Help me with my presentation' is contrasted with the actionable 'Give me three ways to make my opening slide more engaging for an audience of small business owners' (The Conversation)",
+     "Tip: keep prompts simple and concise, make instructions explicit (Algolia)"
+    ]
+   },
+   {
+    "title": "The Details Only You Have",
+    "pattern": "build-it-up",
+    "goal": "Using the task from lesson 2, you will add context piece by piece -- who you are, who it's for, what constraints apply -- and see how each added detail narrows the answer toward yours.",
+    "aha": "Context is not extra decoration. Each specific detail removes a whole family of answers that could have been right but weren't yours.",
+    "visual": "diagram: a funnel. The learner drags blocks of context (role, audience, situation, documents, deadline) into the top of the funnel and watches the pile of possible answers at the bottom shrink. Removing a context block widens the funnel again.",
+    "facts": [
+     "Example context: 'I'm a nonprofit director writing a grant proposal to a foundation that funds environmental education programs for urban schools' (The Conversation)",
+     "Context: 'Summarize these articles: [insert URLs]. Contextualize why these announcements are important to [industry]' (Inside Atlassian)",
+     "Context can include uploading relevant documents and stating constraints (The Conversation)"
+    ]
+   },
+   {
+    "title": "Ask for the Shape You Want",
+    "pattern": "out-of-a-hundred",
+    "goal": "Using the context-rich prompt from lesson 3, you will choose an output format (short email, bullet list, table, XML tags, word limit) and see how the AI reshapes a correct answer to fit it.",
+    "aha": "You can get the same content in totally different shapes. If you don't ask for a shape, you get the AI's default shape, which is usually long and polite.",
+    "visual": "chart: the ICON ARRAY template. The learner toggles format options next to one fixed prompt and watches the answer rearrange itself into a 150-word email, a 3-bullet list, or a table -- with the box count and word count redrawn each time.",
+    "facts": [
+     "'Different formats work for different types of content. Emails should be short and sweet, but blog posts can be thousands of words long' (Inside Atlassian)",
+     "Example: 'Write five questions about this product. Return them as an XML list' -- specifying format and length (Algolia)",
+     "Include example responses so the AI knows the expected output shape (Algolia)"
+    ]
+   },
+   {
+    "title": "Put It Together: One Prompt, Four Levers",
+    "pattern": "go-round-the-loop",
+    "goal": "You will write a complete prompt using persona, task, context and format, then loop through revise-and-check until the answer matches what you actually needed.",
+    "aha": "Prompt writing isn't one shot. It's a loop: write, read the answer, notice what's missing, add one lever, ask again.",
+    "visual": "diagram: the CYCLE template drawn as a loop with four lever labels (Persona, Task, Context, Format). The learner clicks each lever to tighten the prompt, reads the returned answer at the end of the loop, and the round counter ticks up as they iterate.",
+    "facts": [
+     "Prompt engineering means writing and refining these instructions: write an initial prompt, test it, refine (Algolia)",
+     "'The format of your prompt is not that important. The content is' -- focus on what you want and how you want it (The Conversation)",
+     "Today's chatbots are good at human conversation, so no technical script is needed (The Conversation)"
+    ]
+   }
+  ],
+  "lang": "English"
+ },
+ "sources": [
+  {
+   "url": "https://www.atlassian.com/blog/artificial-intelligence/ultimate-guide-writing-ai-prompts",
+   "title": "The ultimate guide to writing effective AI prompts - Inside Atlassian"
+  },
+  {
+   "url": "https://slc.theconversation.com/what-makes-a-good-ai-prompt-here-are-4-expert-tips-260502",
+   "title": "What makes a good AI prompt? Here are 4 expert tips"
+  },
+  {
+   "url": "https://www.algolia.com/doc/guides/algolia-ai/askai/guides/prompting",
+   "title": "Tips for writing efficient prompts - Algolia"
+  }
+ ],
+ "lessons": [
+  {
+   "title": "The Same Question, Two Answers",
+   "scene": {
+    "type": "nextWord",
+    "context": "Write an email",
+    "words": [
+     {
+      "id": "w1",
+      "label": "Hi",
+      "score": 1.2
+     },
+     {
+      "id": "w2",
+      "label": "Dear",
+      "score": 1.1
+     },
+     {
+      "id": "w3",
+      "label": "Hello",
+      "score": 1
+     },
+     {
+      "id": "w4",
+      "label": "To",
+      "score": 0.9
+     },
+     {
+      "id": "w5",
+      "label": "Subject",
+      "score": 0.8
+     }
+    ],
+    "temperature": "T",
+    "caption": "Chances for the next word"
+   },
+   "params": [
+    {
+     "id": "T",
+     "label": "How much the AI fills in",
+     "min": 0.1,
+     "max": 3,
+     "step": 0.05,
+     "value": 1
+    }
+   ],
+   "steps": [
+    {
+     "say": "You asked: \"Write an email.\" The AI has to guess the next word. Tap the word it thinks is most likely.",
+     "task": {
+      "kind": "tap",
+      "target": "w1",
+      "hint": "Tap the word with the best chance."
+     },
+     "after": "It picked \"Hi\" — but only about 1 time in 5. The rest of the time it guesses something else."
+    },
+    {
+     "say": "The AI is filling in gaps you left. Turn the dial to let it guess more freely.",
+     "task": {
+      "kind": "slide",
+      "param": "T",
+      "goal": "T >= 2.5",
+      "hint": "Slide \"How much the AI fills in\" up."
+     },
+     "after": "Now every word is almost equally likely. The AI is unsure because you didn't say what you wanted."
+    },
+    {
+     "say": "Now give it the details. Imagine you're an HR manager writing to a new hire.",
+     "task": {
+      "kind": "predict",
+      "question": "With more details, the AI's guess becomes…",
+      "choices": [
+       "more confident",
+       "less confident",
+       "the same"
+      ],
+      "answer": 0,
+      "reveal": {
+       "set": {
+        "T": 0.3
+       }
+      }
+     },
+     "after": "With details, one word takes almost all the chance. The AI stops guessing."
+    },
+    {
+     "say": "A good prompt has four parts: persona, task, context, format. Tap the part that says who you are.",
+     "task": {
+      "kind": "tap",
+      "target": "w1",
+      "hint": "Tap the word that shows the persona."
+     },
+     "after": "Persona: \"I am an HR manager.\" Task: \"Write a welcome email.\" Context: \"New hire, meeting Friday.\" Format: \"Under 150 words.\""
+    },
+    {
+     "say": "An AI isn't ignoring you — it's filling in the gaps you left. Every gap is a guess it makes for you.",
+     "focus": [
+      "w1",
+      "w2"
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Say What You Want Done",
+   "scene": {
+    "type": "graph2d",
+    "x": [
+     0,
+     10
+    ],
+    "y": [
+     0,
+     7
+    ],
+    "axes": false,
+    "items": [
+     {
+      "type": "polygon",
+      "id": "promptBox",
+      "tone": "neutral",
+      "points": [
+       [
+        0.4,
+        5.6
+       ],
+       [
+        9.6,
+        5.6
+       ],
+       [
+        9.6,
+        6.8
+       ],
+       [
+        0.4,
+        6.8
+       ]
+      ]
+     },
+     {
+      "type": "text",
+      "id": "vagueText",
+      "show": "spec<0.5",
+      "at": [
+       0.7,
+       6.2
+      ],
+      "text": "\"Help me with my presentation\""
+     },
+     {
+      "type": "text",
+      "id": "clearText",
+      "show": "spec>=0.5",
+      "at": [
+       0.7,
+       6.2
+      ],
+      "text": "\"Give me three ways to make my opening slide more engaging for an audience of…"
+     },
+     {
+      "type": "icon",
+      "id": "ai",
+      "label": "AI",
+      "tone": "primary",
+      "name": "bot",
+      "at": [
+       1.2,
+       3.6
+      ],
+      "size": 1.6
+     },
+     {
+      "type": "segment",
+      "id": "arrow1",
+      "tone": "neutral",
+      "from": [
+       2.2,
+       3.6
+      ],
+      "to": [
+       3.6,
+       3.6
+      ],
+      "arrow": true
+     },
+     {
+      "type": "icon",
+      "id": "answer1",
+      "tone": "neutral",
+      "show": "spec<0.5",
+      "name": "file-text",
+      "at": [
+       4.6,
+       4.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answer2",
+      "tone": "neutral",
+      "show": "spec<0.5",
+      "name": "file-text",
+      "at": [
+       4.6,
+       2.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answer3",
+      "tone": "neutral",
+      "show": "spec<0.5",
+      "name": "file-text",
+      "at": [
+       6.2,
+       4.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answer4",
+      "tone": "neutral",
+      "show": "spec<0.5",
+      "name": "file-text",
+      "at": [
+       6.2,
+       2.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answer5",
+      "tone": "neutral",
+      "show": "spec<0.5",
+      "name": "file-text",
+      "at": [
+       7.8,
+       4.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answer6",
+      "tone": "neutral",
+      "show": "spec<0.5",
+      "name": "file-text",
+      "at": [
+       7.8,
+       2.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answer7",
+      "tone": "neutral",
+      "show": "spec<0.5",
+      "name": "file-text",
+      "at": [
+       9.4,
+       4.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answer8",
+      "tone": "neutral",
+      "show": "spec<0.5",
+      "name": "file-text",
+      "at": [
+       9.4,
+       2.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answerClear1",
+      "tone": "green",
+      "show": "spec>=0.5",
+      "name": "file-text",
+      "at": [
+       4.6,
+       4.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answerClear2",
+      "tone": "green",
+      "show": "spec>=0.5",
+      "name": "file-text",
+      "at": [
+       4.6,
+       2.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answerClear3",
+      "tone": "green",
+      "show": "spec>=0.5",
+      "name": "file-text",
+      "at": [
+       6.2,
+       4.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answerClear4",
+      "tone": "green",
+      "show": "spec>=0.5",
+      "name": "file-text",
+      "at": [
+       6.2,
+       2.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answerClear5",
+      "tone": "green",
+      "show": "spec>=0.5",
+      "name": "file-text",
+      "at": [
+       7.8,
+       4.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answerClear6",
+      "tone": "green",
+      "show": "spec>=0.5",
+      "name": "file-text",
+      "at": [
+       7.8,
+       2.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answerClear7",
+      "tone": "green",
+      "show": "spec>=0.5",
+      "name": "file-text",
+      "at": [
+       9.4,
+       4.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "icon",
+      "id": "answerClear8",
+      "tone": "green",
+      "show": "spec>=0.5",
+      "name": "file-text",
+      "at": [
+       9.4,
+       2.6
+      ],
+      "size": 1.2
+     },
+     {
+      "type": "text",
+      "id": "readout",
+      "show": "spec>0",
+      "at": [
+       0.3,
+       0.5
+      ],
+      "text": "possible answers: {round(200*(1-spec)+3)}"
+     }
+    ]
+   },
+   "params": [
+    {
+     "id": "spec",
+     "label": "How specific is your ask?",
+     "min": 0,
+     "max": 1,
+     "step": 0.01,
+     "value": 0
+    }
+   ],
+   "steps": [
+    {
+     "say": "You ask an AI: \"Help me with my presentation.\" It has no idea what you want, so it guesses.",
+     "callouts": [
+      {
+       "at": "vagueText",
+       "text": "your prompt"
+      }
+     ],
+     "task": {
+      "kind": "tap",
+      "target": "ai",
+      "hint": "Tap the AI to see it start guessing."
+     },
+     "after": "It has to guess what you are preparing, who it is for, and what would count as useful help."
+    },
+    {
+     "say": "Before you touch anything: if you leave the ask vague, how many different answers could be reasonable?",
+     "task": {
+      "kind": "predict",
+      "question": "A vague ask like \"help me\" could produce…",
+      "choices": [
+       "just one obvious answer",
+       "hundreds of different answers",
+       "no answer at all"
+      ],
+      "answer": 1,
+      "reveal": {
+       "set": {
+        "spec": 0
+       }
+      }
+     },
+     "after": "Hundreds. The AI picks one of them, and it may not be the one you wanted."
+    },
+    {
+     "say": "Now make the ask specific: say exactly what you want done. Drag the slider to the right.",
+     "task": {
+      "kind": "slide",
+      "param": "spec",
+      "goal": "spec >= 0.8",
+      "hint": "Drag the slider until the prompt becomes clear."
+     },
+     "after": "The clear prompt names the task (three ways), the target (opening slide), and the audience (small business owners). The AI no longer has to guess."
+    },
+    {
+     "say": "With a clear ask, the number of reasonable answers drops to a handful. The AI can pick a good one.",
+     "focus": [
+      "readout"
+     ],
+     "task": {
+      "kind": "predict",
+      "question": "With the clear prompt, the AI's answer will be…",
+      "choices": [
+       "more useful and on-target",
+       "longer but less useful",
+       "exactly the same"
+      ],
+      "answer": 0,
+      "reveal": {
+       "set": {
+        "spec": 0.8
+       }
+      }
+     },
+     "after": "Vague tasks give vague answers, not because the AI is dumb but because there are hundreds of right answers to \"help me\" and you didn't pick one."
+    },
+    {
+     "say": "A clear task says what to do, for whom, and what counts as done. That is the second part of a good prompt.",
+     "focus": [
+      "clearText"
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Details Only You Have",
+   "scene": {
+    "type": "graph2d",
+    "x": [
+     -1,
+     11
+    ],
+    "y": [
+     -1,
+     9
+    ],
+    "axes": false,
+    "items": [
+     {
+      "type": "polygon",
+      "id": "funnel",
+      "tone": "neutral",
+      "points": [
+       [
+        2.4,
+        8.6
+       ],
+       [
+        7.6,
+        8.6
+       ],
+       [
+        6.2,
+        2.6
+       ],
+       [
+        3.8,
+        2.6
+       ]
+      ]
+     },
+     {
+      "type": "icon",
+      "id": "b1",
+      "label": "who you are",
+      "tone": "primary",
+      "show": "ctx>=1",
+      "name": "user",
+      "at": [
+       1.1,
+       7.6
+      ],
+      "size": 1.1
+     },
+     {
+      "type": "icon",
+      "id": "b2",
+      "label": "who it's for",
+      "tone": "cool",
+      "show": "ctx>=2",
+      "name": "users",
+      "at": [
+       1.1,
+       6.1
+      ],
+      "size": 1.1
+     },
+     {
+      "type": "icon",
+      "id": "b3",
+      "label": "your documents",
+      "tone": "green",
+      "show": "ctx>=3",
+      "name": "file-text",
+      "at": [
+       1.1,
+       4.6
+      ],
+      "size": 1.1
+     },
+     {
+      "type": "icon",
+      "id": "b4",
+      "label": "your limits",
+      "tone": "warm",
+      "show": "ctx>=4",
+      "name": "ruler",
+      "at": [
+       1.1,
+       3.1
+      ],
+      "size": 1.1
+     },
+     {
+      "type": "icon",
+      "id": "pile",
+      "label": "possible answers",
+      "tone": "accent",
+      "name": "file-text",
+      "at": [
+       5,
+       1.2
+      ],
+      "size": "2.6 - 0.5*ctx"
+     },
+     {
+      "type": "text",
+      "id": "count",
+      "at": [
+       0.2,
+       8.4
+      ],
+      "text": "possible answers: {max(1, round(16 - 3.75*ctx))}"
+     }
+    ]
+   },
+   "params": [
+    {
+     "id": "ctx",
+     "label": "Details you give",
+     "min": 0,
+     "max": 4,
+     "step": 1,
+     "value": 0
+    }
+   ],
+   "steps": [
+    {
+     "say": "A prompt with no details: \"Help me prepare\". The AI has to guess everything, so many different answers could fit.",
+     "task": {
+      "kind": "tap",
+      "target": "pile",
+      "hint": "Tap the pile of possible answers."
+     },
+     "after": "That pile is all the answers that could fit. Sixteen could be right, and the AI picks one."
+    },
+    {
+     "say": "Add the first detail: who you are. Watch the pile shrink.",
+     "task": {
+      "kind": "slide",
+      "param": "ctx",
+      "goal": "ctx>=1",
+      "hint": "Slide details up to 1."
+     },
+     "after": "Now it knows you are a nonprofit director. Fewer answers fit: {max(1, round(16 - 3.75*ctx))} left."
+    },
+    {
+     "say": "Add who it's for: a foundation that funds environmental education for urban schools.",
+     "task": {
+      "kind": "slide",
+      "param": "ctx",
+      "goal": "ctx>=2",
+      "hint": "Slide details up to 2."
+     },
+     "after": "The audience narrows it further. The AI no longer guesses who will read it."
+    },
+    {
+     "say": "Add your documents and your limits: the program report, 500 words, due Friday.",
+     "task": {
+      "kind": "slide",
+      "param": "ctx",
+      "goal": "ctx>=4",
+      "hint": "Slide details up to 4."
+     },
+     "after": "Almost no room left to guess. The answer is now yours, not a generic one."
+    },
+    {
+     "say": "Before you look: if you remove the audience detail, what happens to the pile?",
+     "task": {
+      "kind": "predict",
+      "question": "Remove \"who it's for\" and the possible answers…",
+      "choices": [
+       "get wider again",
+       "stay the same",
+       "get narrower"
+      ],
+      "answer": 0,
+      "reveal": {
+       "set": {
+        "ctx": 1
+       }
+      }
+     },
+     "after": "The pile widens: that detail was doing real work. Context is not decoration; each detail removes a family of answers that could have been right but weren't yours."
+    }
+   ]
+  },
+  {
+   "title": "Ask for the Shape You Want",
+   "scene": {
+    "type": "iconArray",
+    "total": 100,
+    "icon": "file-text",
+    "caption": "100 words in the AI's answer",
+    "groups": [
+     {
+      "id": "useful",
+      "label": "useful content",
+      "tone": "green",
+      "count": "if(fmt==0, 40, if(fmt==1, 70, if(fmt==2, 85, 95)))"
+     },
+     {
+      "id": "filler",
+      "label": "filler and politeness",
+      "tone": "red",
+      "count": "if(fmt==0, 60, if(fmt==1, 30, if(fmt==2, 15, 5)))"
+     }
+    ]
+   },
+   "params": [
+    {
+     "id": "fmt",
+     "label": "Output format",
+     "min": 0,
+     "max": 3,
+     "step": 1,
+     "value": 0,
+     "choices": [
+      "Default (no format asked)",
+      "Short email",
+      "3-bullet list",
+      "Table"
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "say": "You asked a clear question, but you didn't say what shape the answer should be. So the AI picked its own default: long and polite.",
+     "task": {
+      "kind": "tap",
+      "target": "filler",
+      "hint": "Tap the group that is just filler."
+     },
+     "after": "60 of the 100 words are filler: greetings, restating your question, 'I hope this helps'. Only 40 carry the answer."
+    },
+    {
+     "say": "Before you change anything: if you ask for a short email instead, what happens to the filler?",
+     "task": {
+      "kind": "predict",
+      "question": "Asking for a short email will make the filler…",
+      "choices": [
+       "shrink a lot",
+       "stay the same",
+       "grow"
+      ],
+      "answer": 0,
+      "reveal": {
+       "set": {
+        "fmt": 1
+       }
+      }
+     },
+     "after": "The AI reshapes the same content into an email: filler drops to about 30 words, useful content rises to about 70."
+    },
+    {
+     "say": "Now ask for a 3-bullet list. The AI keeps the same facts but strips the padding.",
+     "callouts": [
+      {
+       "at": "useful",
+       "text": "fmt = 2 is the 3-bullet list"
+      }
+     ],
+     "task": {
+      "kind": "slide",
+      "param": "fmt",
+      "goal": "abs(fmt - 2) < 0.1",
+      "hint": "Slide to '3-bullet list' (fmt = 2)."
+     },
+     "after": "About 85 of the 100 words are now useful, and filler drops to about 15. Learn Prompting's lesson on format suggests asking for 'exactly 5 items' or 'in 3 sentences or fewer'."
+    },
+    {
+     "say": "A table is the tightest shape: every word has to fit a cell.",
+     "task": {
+      "kind": "slide",
+      "param": "fmt",
+      "goal": "abs(fmt - 3) < 0.1",
+      "hint": "Slide to 'Table' (fmt = 3)."
+     },
+     "after": "About 95 words useful, 5 filler. The 2026 guide's example prompt asks for 'a markdown table with columns: Idea, Effort (1-5), Impact (1-5), Why'."
+    },
+    {
+     "say": "You can get the same content in very different shapes. If you don't ask for a shape, you get the AI's default: long and polite.",
+     "set": {
+      "fmt": 0
+     },
+     "focus": [
+      "useful",
+      "filler"
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Put It Together: One Prompt, Four Levers",
+   "scene": {
+    "type": "cycle",
+    "stages": [
+     {
+      "id": "write",
+      "label": "Write your prompt",
+      "icon": "pencil",
+      "tone": "primary"
+     },
+     {
+      "id": "read",
+      "label": "Read the answer",
+      "icon": "book-open",
+      "tone": "cool"
+     },
+     {
+      "id": "notice",
+      "label": "Notice what's missing",
+      "icon": "search",
+      "tone": "accent"
+     },
+     {
+      "id": "add",
+      "label": "Add one lever",
+      "icon": "sparkles",
+      "tone": "green"
+     }
+    ],
+    "speed": "sp",
+    "center": "one lap = one try",
+    "caption": "The prompt loop: write, read, notice, add a lever, ask again"
+   },
+   "params": [
+    {
+     "id": "sp",
+     "label": "Speed",
+     "min": 0,
+     "max": 2,
+     "step": 0.1,
+     "value": 0.6
+    }
+   ],
+   "steps": [
+    {
+     "say": "A prompt is not a one-shot spell. It is a loop: write, read the answer, notice what's missing, add one lever, ask again.",
+     "play": true,
+     "task": {
+      "kind": "tap",
+      "target": "write",
+      "hint": "Tap the stage where you write your prompt."
+     },
+     "after": "Every lap starts with writing. The other three stages only happen if you read what came back."
+    },
+    {
+     "say": "Google's Workspace guidance names four levers you can pull: persona, task, context, format. You don't need all four every time, but a few help.",
+     "task": {
+      "kind": "predict",
+      "question": "According to the Prompt Bench guide, a failing prompt often has…",
+      "choices": [
+       "one lever empty",
+       "too many words",
+       "the wrong chatbot"
+      ],
+      "answer": 0,
+      "reveal": {
+       "set": {
+        "sp": 1.2
+       }
+      }
+     },
+     "after": "One empty lever is often the culprit. The loop is how you find which one."
+    },
+    {
+     "say": "Watch one lap. The model answers, you read it, you spot the gap, you add one lever, and you ask again.",
+     "task": {
+      "kind": "slide",
+      "param": "sp",
+      "goal": "sp >= 1.5",
+      "hint": "Turn the speed up to watch the loop run."
+     },
+     "after": "Each lap is cheap. Google's guidance recommends follow-up prompts, review, and refinement rather than trying to get it perfect first time."
+    },
+    {
+     "say": "Google's own example combines all four levers in one line: \"You are a program manager in [industry]. Draft an executive summary email to [persona] based on [details]. Limit to bullet points.\"",
+     "callouts": [
+      {
+       "at": "write",
+       "text": "persona + task"
+      }
+     ],
+     "task": {
+      "kind": "tap",
+      "target": "add",
+      "hint": "Tap the stage where you add a lever."
+     },
+     "after": "Persona (program manager), task (draft an email), context (the details), format (bullet points). Four levers, one sentence."
+    },
+    {
+     "say": "Prompt engineering is just this loop: write, test, refine. The format of your prompt matters less than the content — what you want and how you want it.",
+     "task": {
+      "kind": "predict",
+      "question": "After three laps, your prompt should be…",
+      "choices": [
+       "longer and more specific",
+       "shorter and vaguer",
+       "exactly the same"
+      ],
+      "answer": 0,
+      "reveal": {
+       "set": {
+        "sp": 0.3
+       }
+      }
+     },
+     "after": "Each lap adds one lever: a persona, a clearer task, the context only you have, or the format you need. That is how a vague ask becomes a useful answer."
+    }
+   ]
+  }
+ ]
+}
