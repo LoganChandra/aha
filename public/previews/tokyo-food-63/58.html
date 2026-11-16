@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="A silent illustrated Tokyo arrival, reusing Sam and the four-gate visual language from 56.html.">
+<title>Sam’s Silent Tokyo Arrival</title>
+<style>
+:root{
+  --ink:#3C3C4A;--muted:#8A8A9A;--line:#E5E5EA;--paper:#F7F7F9;--map:#F5F3EE;
+  --role:#3BA8FF;--task:#2DC07A;--context:#FF9F1C;--format:#9B6BFF;
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0}
+body{display:grid;place-items:center;overflow:hidden;background:#111827;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#video{position:relative;width:min(100vw,1280px,177.777dvh);height:min(100dvh,720px,56.25vw);aspect-ratio:16/9;overflow:hidden;border:2px solid rgba(255,255,255,.28);border-radius:20px;background:#dce8f2;isolation:isolate}
+svg{display:block}
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;overflow:hidden}
+.airport-base{position:absolute;inset:0}
+.airport-base svg{width:100%;height:100%}
+#jet-symbols{position:absolute;width:0;height:0;overflow:hidden}
+.flight-plane{position:absolute;z-index:3;left:16%;top:40.8%;width:58%;height:auto;transform:translate(-118%,-75%) rotate(-7deg) scale(.74);transform-origin:52% 55%;animation:flight 35.8s linear infinite}
+.flight-plane svg{width:100%;height:auto;overflow:visible}
+@keyframes flight{
+  0%{opacity:0;transform:translate(-118%,-75%) rotate(-7deg) scale(.74)}
+  1.5%{opacity:1;transform:translate(-98%,-68%) rotate(-5.8deg) scale(.78)}
+  6%{opacity:1;transform:translate(-62%,-47%) rotate(-4.3deg) scale(.86)}
+  11.5%{opacity:1;transform:translate(-22%,-22%) rotate(-2.8deg) scale(.94)}
+  13%{opacity:1;transform:translate(3%,-10%) rotate(-2.2deg) scale(.97)}
+  14.4%{opacity:1;transform:translate(18%,0) rotate(-.3deg) scale(1)}
+  14.8%{opacity:1;transform:translate(18%,.8%) rotate(0) scale(.998)}
+  15.5%{opacity:1;transform:translate(22%,.8%) rotate(0) scale(1)}
+  17.5%{opacity:1;transform:translate(38%,.8%) rotate(0) scale(1)}
+  18.2%{opacity:0;transform:translate(38%,.8%) rotate(0) scale(1)}
+  20.95%{opacity:0;transform:translate(38%,.8%) rotate(0) scale(1)}
+  100%{opacity:0;transform:translate(-118%,-75%) rotate(-7deg) scale(.74)}
+}
+.gear-drop{transform-box:fill-box;transform-origin:50% 0;opacity:0;animation:gear-deploy 35.8s linear infinite}
+@keyframes gear-deploy{
+  0%,8.6%{opacity:0;transform:translateY(-12px)}
+  11.5%{opacity:1;transform:translateY(0)}
+  14.4%{opacity:1;transform:translateY(1px)}
+  14.8%{opacity:1;transform:translateY(-1px)}
+  18.2%,100%{opacity:0;transform:translateY(-1px)}
+}
+.wheel{transform-box:fill-box;transform-origin:center;animation:wheel-turn 35.8s linear infinite}
+@keyframes wheel-turn{0%,14.1%{transform:rotate(0)}17.5%{transform:rotate(620deg)}100%{transform:rotate(620deg)}}
+.tire-puff{position:absolute;z-index:2;left:72%;top:70%;width:12%;height:9%;opacity:0;animation:tire-puff 35.8s ease-out infinite}
+.tire-puff path{fill:none;stroke:#f4f7fa;stroke-width:5;stroke-linecap:round}
+@keyframes tire-puff{
+  0%,14.2%,100%{opacity:0}
+  14.9%{opacity:.72}
+  15.5%{opacity:.16}
+  16.2%{opacity:0}
+}
+.airport-exit{z-index:4;animation:exit-scene 35.8s linear infinite}
+@keyframes exit-scene{
+  0%,17.2%{opacity:0}
+  17.8%{opacity:1}
+  20.95%{opacity:1}
+  21.2%,100%{opacity:0}
+}
+.parked-plane{position:absolute;left:38%;top:41.1%;width:58%;height:auto;opacity:0;animation:parked-plane 35.8s linear infinite}
+.parked-plane svg{width:100%;height:auto;overflow:visible}
+@keyframes parked-plane{0%,17.5%{opacity:0}18.2%,20.95%{opacity:1}21.2%,100%{opacity:0}}
+.exit-door{transform-box:fill-box;transform-origin:left center;animation:door-open 35.8s linear infinite}
+@keyframes door-open{
+  0%,17.5%{transform:rotate(0)}
+  18.2%,20.95%{transform:rotate(68deg)}
+  21.2%,100%{transform:rotate(0)}
+}
+.stairs{position:absolute;z-index:3;left:63.5%;top:51%;width:20%;height:25%;opacity:0;animation:stairs-down 35.8s linear infinite}
+.stairs svg{width:100%;height:100%;overflow:visible}
+@keyframes stairs-down{
+  0%,17.5%{opacity:0;transform:translateY(-8px)}
+  18.5%,20.95%{opacity:1;transform:none}
+  21.2%,100%{opacity:0}
+}
+.traveler{position:absolute;z-index:6;display:flex;align-items:flex-end;gap:1%;width:13%;height:36%;opacity:0;overflow:visible}
+.traveler svg{overflow:visible}
+.person{height:100%;width:auto;flex:none}
+.person .leg,.person .arm,.person .torso,.person .head{transform-box:fill-box}
+.person .leg{transform-origin:50% 0}
+.person .arm{transform-origin:50% 0}
+.person .torso{transform-origin:50% 95%}
+.person .head{transform-origin:50% 96%}
+.walking .leg-left{animation:step-left .62s ease-in-out infinite}
+.walking .leg-right{animation:step-right .62s ease-in-out infinite}
+.walking .arm-left{animation:arm-left .62s ease-in-out infinite}
+.walking .arm-right{animation:arm-right .62s ease-in-out infinite}
+.walking .torso{animation:body-step .62s ease-in-out infinite}
+.walking .head{animation:head-step .92s ease-in-out infinite}
+@keyframes step-left{0%,100%{transform:rotate(9deg)}50%{transform:rotate(-9deg)}}
+@keyframes step-right{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(9deg)}}
+@keyframes arm-left{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+@keyframes arm-right{0%,100%{transform:rotate(8deg)}50%{transform:rotate(-8deg)}}
+@keyframes body-step{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+@keyframes head-step{0%,100%{transform:rotate(1deg)}50%{transform:rotate(-1deg)}}
+.airport-traveler{left:81%;top:40%;animation:exit-walk 35.8s cubic-bezier(.33,0,.35,1) infinite}
+@keyframes exit-walk{
+  0%,18%{opacity:0;left:81%;top:39%}
+  18.5%{opacity:1;left:80%;top:40%}
+  19.1%{opacity:1;left:77%;top:48%}
+  19.7%{opacity:1;left:73%;top:56%}
+  20.4%{opacity:1;left:69%;top:59%}
+  20.95%{opacity:1;left:67%;top:59%}
+  21.2%,100%{opacity:0;left:67%;top:59%}
+}
+.suitcase{position:absolute;right:-5%;bottom:4%;height:37%;width:auto}
+.wheel-small{transform-box:fill-box;transform-origin:center;animation:bag-wheel .48s linear infinite}
+@keyframes bag-wheel{to{transform:rotate(360deg)}}
+.hungry .face-neutral{display:none}
+.hungry .face-hungry{display:inline}
+.puzzled .face-neutral{display:none}
+.puzzled .face-puzzled{display:inline}
+.face-hungry,.face-puzzled{display:none}
+.stomach-cue{opacity:0;animation:stomach-cue 35.8s linear infinite}
+.stomach-cue circle{fill:none;stroke:#FF9F1C;stroke-width:2.5}
+@keyframes stomach-cue{
+  0%,18.4%{opacity:0}
+  18.8%{opacity:.8}
+  19.2%{opacity:.35}
+  19.6%{opacity:.8}
+  20%{opacity:.35}
+  20.4%{opacity:.8}
+  20.95%,21.2%{opacity:0}
+  23%{opacity:0}
+  25%{opacity:.8}
+  27%{opacity:.42}
+  29%{opacity:.8}
+  31%{opacity:.42}
+  33%{opacity:.8}
+  36%{opacity:.35}
+  39.25%,40.8%{opacity:0}
+  42.5%{opacity:.8}
+  44%{opacity:.35}
+  45.5%{opacity:.8}
+  47%{opacity:.35}
+  48.5%{opacity:.8}
+  50%{opacity:.35}
+  52%{opacity:.8}
+  55%{opacity:.35}
+  57.5%{opacity:0}
+  60%{opacity:.8}
+  62%{opacity:.42}
+  64%{opacity:.8}
+  66%{opacity:.42}
+  68%{opacity:.8}
+  72%{opacity:.35}
+  78.8%{opacity:0}
+  88%{opacity:0}
+  90%{opacity:.8}
+  92%{opacity:.35}
+  94%{opacity:.8}
+  96%{opacity:.35}
+  100%{opacity:0}
+}
+.gates-ui{z-index:5;background:#F7F7F9;animation:gates-scene 35.8s linear infinite}
+@keyframes gates-scene{
+  0%,20.5%{opacity:0}
+  21.4%{opacity:1}
+  78.8%{opacity:1}
+  79.8%,100%{opacity:0}
+}
+.app-card{position:absolute;inset:6% 4%;background:#fff;border:2px solid var(--line);border-radius:18px;box-shadow:0 4px 0 var(--line);padding:1.5%}
+.app-head{height:15%;display:flex;align-items:center;gap:1.5%;border-bottom:2px solid #F0F0F5;padding:0 1.2% 1.2%}
+.app-mark{width:7%;height:86%;min-width:40px;display:grid;place-items:center;border-radius:13px;background:#DDF7EA;flex:none}
+.app-mark svg{width:76%;height:76%}
+.brand-lines{display:flex;flex-direction:column;gap:7px;width:15%}
+.brand-lines i,.line i{height:7px;border-radius:99px;background:#E5E5EA;display:block}
+.brand-lines i:first-child{width:86%}
+.brand-lines i:last-child{width:59%;height:5px;background:#F0F0F5}
+.gate-row{margin-left:auto;display:flex;align-items:center;gap:1.5%;height:100%;width:44%;justify-content:flex-end}
+.gate-icon{width:18%;max-width:62px;aspect-ratio:1;border-radius:50%;border:2px solid var(--gate);background:#fff;color:var(--gate);display:grid;place-items:center;opacity:.28;transform:translateY(7px);animation-duration:35.8s;animation-timing-function:cubic-bezier(.33,0,.35,1);animation-iteration-count:infinite}
+.gate-icon svg{width:47%;height:47%}
+.gate-role{--gate:var(--role);animation-name:role-gate}
+.gate-task{--gate:var(--task);animation-name:task-gate}
+.gate-context{--gate:var(--context);animation-name:context-gate}
+.gate-format{--gate:var(--format);animation-name:format-gate}
+@keyframes role-gate{
+  0%,21%{opacity:.25;transform:translateY(7px);background:#fff}
+  22.3%{opacity:1;transform:none;background:#E1F1FF}
+  78.8%,100%{opacity:1;transform:none;background:#E1F1FF}
+}
+@keyframes task-gate{
+  0%,24.8%{opacity:.25;transform:translateY(7px);background:#fff}
+  26.1%{opacity:1;transform:none;background:#DDF7EA}
+  78.8%,100%{opacity:1;transform:none;background:#DDF7EA}
+}
+@keyframes context-gate{
+  0%,28.6%{opacity:.25;transform:translateY(7px);background:#fff}
+  29.9%{opacity:1;transform:none;background:#FFF1DA}
+  78.8%,100%{opacity:1;transform:none;background:#FFF1DA}
+}
+@keyframes format-gate{
+  0%,32.4%{opacity:.25;transform:translateY(7px);background:#fff}
+  33.7%{opacity:1;transform:none;background:#F0E8FF}
+  78.8%,100%{opacity:1;transform:none;background:#F0E8FF}
+}
+.app-body{position:absolute;left:2%;right:2%;top:18%;bottom:2%;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.78fr);gap:2%;min-height:0}
+.map-card,.chat-card{position:relative;overflow:hidden;border:2px solid var(--line);border-radius:14px;background:#fff}
+.map-card{background:var(--map)}
+.map-art{position:absolute;inset:0;width:100%;height:100%}
+.map-art .route-white{fill:none;stroke:#fff;stroke-width:16;stroke-linecap:round;stroke-linejoin:round}
+.map-art .route-green{fill:none;stroke:var(--task);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:map-route 35.8s ease-in-out infinite}
+@keyframes map-route{
+  0%,41%{stroke-dashoffset:1}
+  44%{stroke-dashoffset:.82}
+  52%{stroke-dashoffset:0}
+  78.8%,100%{stroke-dashoffset:0}
+}
+.food-pin{opacity:0;transform-box:fill-box;transform-origin:center;animation-duration:35.8s;animation-timing-function:cubic-bezier(.33,0,.35,1);animation-iteration-count:infinite}
+.pin-one{animation-name:pin-one}
+.pin-two{animation-name:pin-two}
+.pin-three{animation-name:pin-three}
+@keyframes pin-one{
+  0%,41.5%{opacity:0;transform:translateY(-12px)}
+  43%{opacity:1;transform:none}
+  78.8%,100%{opacity:1;transform:none}
+}
+@keyframes pin-two{
+  0%,44%{opacity:0;transform:translateY(-9px)}
+  45.5%{opacity:.8;transform:none}
+  78.8%,100%{opacity:.8;transform:none}
+}
+@keyframes pin-three{
+  0%,46.5%{opacity:0;transform:translateY(-8px)}
+  48%{opacity:.8;transform:none}
+  78.8%,100%{opacity:.8;transform:none}
+}
+.map-traveler{left:10%;top:60%;width:8%;height:14%;z-index:4;opacity:0;animation:map-walk 35.8s cubic-bezier(.33,0,.35,1) infinite}
+@keyframes map-walk{
+  0%,39.5%{opacity:0;left:8%;top:67%}
+  40.5%,57.5%{opacity:1;left:8%;top:67%}
+  59%{opacity:1;left:8%;top:67%}
+  68%{opacity:1;left:27%;top:53%}
+  75%{opacity:1;left:47%;top:40%}
+  78.8%{opacity:1;left:69%;top:25%}
+  79.8%,100%{opacity:0;left:69%;top:25%}
+}
+.chat-card{padding:1.5%;display:flex;flex-direction:column;gap:2%;background:#fff}
+.chat-head{display:flex;align-items:center;gap:3%;min-height:18%;padding-bottom:2%;border-bottom:2px solid #F0F0F5}
+.robot-avatar{width:16%;max-width:54px;aspect-ratio:1;border-radius:50%;background:#E1F1FF;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.robot-avatar svg{width:79%;height:79%}
+.chat-head-lines{display:flex;flex-direction:column;gap:6px;width:62%}
+.chat-head-lines i{height:7px;border-radius:99px;background:#E5E5EA}
+.chat-head-lines i:last-child{width:62%;height:5px;background:#F0F0F5}
+.message-list{display:flex;flex-direction:column;gap:7%;padding-top:3%;flex:1}
+.bubble{position:relative;height:15%;min-height:26px;border:2px solid var(--line);border-radius:13px;background:#F7F7F9;opacity:.42;overflow:hidden;animation-duration:35.8s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.bubble:before,.bubble:after{content:"";position:absolute;left:10%;height:5px;border-radius:99px;background:#D4DAE2}
+.bubble:before{top:30%;width:62%}
+.bubble:after{top:57%;width:42%}
+.bubble.user{align-self:flex-end;width:76%;background:#3C3C4A;border-color:#3C3C4A;border-radius:13px 13px 4px 13px}
+.bubble.user:before,.bubble.user:after{background:rgba(255,255,255,.72)}
+.bubble.role{animation-name:msg-role}
+.bubble.task{animation-name:msg-task}
+.bubble.context{animation-name:msg-context}
+.bubble.format{animation-name:msg-format}
+.bubble.answer{animation-name:msg-answer;align-self:flex-start;width:92%;background:#fff}
+@keyframes msg-role{0%,22%{opacity:.25;border-color:var(--line)}24%{opacity:1;border-color:var(--role)}78.8%,100%{opacity:1;border-color:var(--role)}}
+@keyframes msg-task{0%,24%{opacity:.25;border-color:var(--line)}26%{opacity:1;border-color:var(--task)}78.8%,100%{opacity:1;border-color:var(--task)}}
+@keyframes msg-context{0%,26%{opacity:.25;border-color:var(--line)}28%{opacity:1;border-color:var(--context)}78.8%,100%{opacity:1;border-color:var(--context)}}
+@keyframes msg-format{0%,28%{opacity:.25;border-color:var(--line)}30%{opacity:1;border-color:var(--format)}78.8%,100%{opacity:1;border-color:var(--format)}}
+@keyframes msg-answer{0%,64%{opacity:.25;border-color:var(--line)}67%{opacity:1;border-color:var(--task)}78.8%,100%{opacity:1;border-color:var(--task)}}
+.chat-gates{display:flex;justify-content:center;gap:3%;padding:2%;border:2px solid var(--line);border-radius:12px;background:#F7F7F9;opacity:0;animation:gate-summary 35.8s ease-in-out infinite}
+.chat-gates i{width:12px;height:12px;border-radius:50%;background:var(--gate)}
+.chat-gates i:nth-child(1){--gate:var(--role)}
+.chat-gates i:nth-child(2){--gate:var(--task)}
+.chat-gates i:nth-child(3){--gate:var(--context)}
+.chat-gates i:nth-child(4){--gate:var(--format)}
+@keyframes gate-summary{0%,57%{opacity:0;transform:translateY(6px)}61%{opacity:1;transform:none}78.8%,100%{opacity:1;transform:none}}
+.alley-scene{z-index:7;background:#191E2B;animation:alley-scene 35.8s linear infinite}
+@keyframes alley-scene{
+  0%,78.8%{opacity:0}
+  80%{opacity:1}
+  98.3%{opacity:1}
+  100%{opacity:0}
+}
+.alley-art{position:absolute;inset:0;width:100%;height:100%}
+.lantern{transform-box:fill-box;transform-origin:50% 0;animation:lantern-sway 4s ease-in-out infinite alternate}
+.lantern:nth-child(2){animation-delay:-1.4s}
+.lantern:nth-child(3){animation-delay:-2.2s}
+@keyframes lantern-sway{from{transform:rotate(-1.2deg)}to{transform:rotate(1.2deg)}}
+.steam{fill:none;stroke:#F6E9D2;stroke-width:4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:steam-rise 2.4s ease-in-out infinite}
+.steam.two{animation-delay:-.8s}
+.steam.three{animation-delay:-1.6s}
+@keyframes steam-rise{
+  0%{opacity:0;stroke-dashoffset:1;transform:translateY(10px)}
+  35%{opacity:.7;stroke-dashoffset:.45}
+  100%{opacity:0;stroke-dashoffset:0;transform:translateY(-14px)}
+}
+.alley-traveler{left:18%;top:44%;width:15%;height:43%;opacity:0;z-index:8;animation:alley-arrive 35.8s cubic-bezier(.33,0,.35,1) infinite}
+@keyframes alley-arrive{
+  0%,79.3%{opacity:0;left:17%;top:46%}
+  81%{opacity:1;left:20%;top:43%}
+  87%{opacity:1;left:34%;top:43%}
+  92%{opacity:1;left:38%;top:43%}
+  98.3%{opacity:1;left:38%;top:43%}
+  100%{opacity:0;left:38%;top:43%}
+}
+.phone-arm{transform-box:fill-box;transform-origin:50% 0;animation:phone-lift 35.8s cubic-bezier(.33,0,.35,1) infinite}
+.alley-traveler .arm-right{transform-origin:50% 0;animation:phone-lift 35.8s cubic-bezier(.33,0,.35,1) infinite}
+.phone-art{position:absolute;right:-10%;top:8%;width:42%;height:auto;opacity:0;transform:translateY(8px) rotate(0);transform-origin:bottom left;animation:phone-appear 35.8s cubic-bezier(.33,0,.35,1) infinite}
+@keyframes phone-appear{
+  0%,88%{opacity:0;transform:translateY(8px) rotate(0)}
+  91%{opacity:1;transform:translateY(-8px) rotate(-22deg)}
+  98.3%{opacity:1;transform:translateY(-8px) rotate(-22deg)}
+  100%{opacity:0;transform:translateY(8px) rotate(0)}
+}
+@keyframes phone-lift{
+  0%,86%{transform:rotate(0)}
+  91%{transform:rotate(-37deg)}
+  98.3%{transform:rotate(-37deg)}
+  100%{transform:rotate(0)}
+}
+.menu-focus{opacity:0;animation:focus-menu 35.8s ease-in-out infinite}
+@keyframes focus-menu{
+  0%,89%{opacity:0}
+  92%{opacity:.75}
+  98.3%{opacity:.75}
+  100%{opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+  /* Keep the silent story moving through its scenes. Reduce travel and remove
+     looping secondary motion instead of freezing the final alley frame. */
+  .flight-plane{animation-name:flight-reduced}
+  @keyframes flight-reduced{
+    0%{opacity:0;transform:translate(-42%,-22%) rotate(-3deg) scale(.88)}
+    1.5%{opacity:1;transform:translate(-38%,-18%) rotate(-2.6deg) scale(.9)}
+    6%{opacity:1;transform:translate(-23%,-11%) rotate(-1.8deg) scale(.94)}
+    11.5%{opacity:1;transform:translate(-7%,-3%) rotate(-.8deg) scale(.98)}
+    14.4%{opacity:1;transform:translate(8%,0) rotate(0) scale(1)}
+    14.8%,17.5%{opacity:1;transform:translate(11%,.5%) rotate(0) scale(1)}
+    18.2%,20.95%{opacity:0;transform:translate(11%,.5%) rotate(0) scale(1)}
+    100%{opacity:0;transform:translate(-42%,-22%) rotate(-3deg) scale(.88)}
+  }
+  .gear-drop,.wheel,.wheel-small,.exit-door,.lantern,.steam,
+  .walking .leg-left,.walking .leg-right,.walking .arm-left,.walking .arm-right,
+  .walking .torso,.walking .head{animation:none!important}
+  .gear-drop,.stairs,.gate-icon,.food-pin,.chat-gates,.alley-traveler,.phone-art{
+    transform:none!important
+  }
+  .stairs{transform:translateY(0)!important}
+  .airport-traveler{left:67%!important;top:59%!important}
+  .map-art .route-green{animation:none!important;stroke-dashoffset:0}
+  .map-traveler{left:69%!important;top:25%!important}
+  .alley-traveler{left:38%!important;top:43%!important}
+  .alley-traveler .arm-right{animation:none!important;transform:rotate(-37deg)!important}
+  .alley-traveler .phone-art{transform:translateY(-8px) rotate(-22deg)!important}
+  .steam{stroke-dasharray:none;stroke-dashoffset:0;opacity:.5}
+}
+</style>
+</head>
+<body>
+<main id="video" role="img" aria-label="Silent Tokyo arrival: plane landing, Sam searching for food">
+<svg id="jet-symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="jet-body" viewBox="0 0 1100 420">
+    <path d="M189 170 125 60 231 58 319 168Z" fill="#2DC07A" stroke="#3C3C4A" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M207 210 149 309 268 298 326 229Z" fill="#1F9A5E" stroke="#3C3C4A" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M412 171 612 28 704 37 559 190Z" fill="#dce4ea" stroke="#5A5A6A" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M459 215 633 398 737 391 602 220Z" fill="#cfd9e1" stroke="#5A5A6A" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M489 218 638 379 693 377 578 220Z" fill="#2DC07A" opacity=".88"/>
+    <g fill="#667785" stroke="#3C3C4A" stroke-width="5">
+      <path d="M500 226Q508 210 531 210H591Q612 214 614 237L603 280H516Q499 264 500 226Z"/>
+      <path d="M680 228Q686 213 707 213H758Q777 217 779 239L767 276H697Q680 262 680 228Z"/>
+    </g>
+    <g fill="#26323d">
+      <ellipse cx="556" cy="239" rx="14" ry="21"/><ellipse cx="729" cy="240" rx="13" ry="20"/>
+    </g>
+    <g fill="#9bb0bf" opacity=".65">
+      <path d="M549 222Q558 216 564 226L561 252Q553 255 548 246Z"/>
+      <path d="M723 223Q730 218 735 226L733 250Q727 253 722 246Z"/>
+    </g>
+    <path d="M178 171Q205 131 307 128L918 137Q1008 139 1057 179Q1073 193 1054 211Q1017 239 923 242L308 250Q207 247 178 216Q166 202 178 171Z" fill="#fff" stroke="#5A5A6A" stroke-width="6"/>
+    <path d="M193 195Q420 205 656 197Q855 190 1046 190" fill="none" stroke="#2DC07A" stroke-width="8"/>
+    <path d="M967 154Q1014 151 1044 180L1008 188 963 183Z" fill="#294f68" stroke="#3C3C4A" stroke-width="4" stroke-linejoin="round"/>
+    <g fill="#3BA8FF" stroke="#d8e7ef" stroke-width="3">
+      <circle cx="377" cy="164" r="9"/><circle cx="421" cy="161" r="9"/><circle cx="465" cy="159" r="9"/>
+      <circle cx="509" cy="157" r="9"/><circle cx="553" cy="156" r="9"/><circle cx="597" cy="156" r="9"/>
+      <circle cx="641" cy="157" r="9"/><circle cx="685" cy="158" r="9"/><circle cx="729" cy="160" r="9"/>
+      <circle cx="773" cy="162" r="9"/><circle cx="817" cy="164" r="9"/><circle cx="861" cy="166" r="9"/>
+    </g>
+    <path d="M305 131Q410 122 490 132" fill="none" stroke="#e4eaef" stroke-width="6" opacity=".9"/>
+    <circle cx="1045" cy="196" r="6" fill="#FF5A5F"/>
+  </symbol>
+</svg>
+<div class="airport-base" aria-hidden="true">
+<svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+  <rect width="1280" height="720" fill="#d7e6f2"/>
+  <path d="M0 360 170 250 296 342 439 212 579 356 704 278 826 360 980 240 1120 360 1280 246V545H0Z" fill="#a9bfd1"/>
+  <path d="M263 350 438 212 552 350 493 332 454 344 420 327 381 347Z" fill="#eef4f7"/>
+  <path d="M0 394H1280V546H0Z" fill="#b8cbd8"/>
+  <g fill="#7f96aa">
+    <rect x="22" y="405" width="83" height="140" rx="3"/><rect x="116" y="376" width="62" height="169" rx="3"/>
+    <rect x="189" y="423" width="99" height="122" rx="3"/><rect x="301" y="383" width="91" height="162" rx="3"/>
+    <rect x="405" y="423" width="74" height="122" rx="3"/><rect x="489" y="366" width="112" height="179" rx="3"/>
+    <rect x="612" y="409" width="89" height="136" rx="3"/><rect x="713" y="389" width="80" height="156" rx="3"/>
+    <rect x="805" y="414" width="105" height="131" rx="3"/><rect x="924" y="370" width="90" height="175" rx="3"/>
+    <rect x="1028" y="410" width="78" height="135" rx="3"/><rect x="1118" y="382" width="140" height="163" rx="3"/>
+  </g>
+  <g fill="#e7c98a" opacity=".78">
+    <path d="M40 428h12v18H40zM68 428h12v18H68zM137 397h11v16h-11zM157 397h11v16h-11zM328 404h13v17h-13zM354 404h13v17h-13z"/>
+    <path d="M519 388h12v15h-12zM544 388h12v15h-12zM746 408h12v16h-12zM771 408h12v16h-12zM950 392h13v17h-13zM978 392h13v17h-13z"/>
+    <path d="M1050 430h11v15h-11zM1080 430h11v15h-11zM1150 402h14v17h-14zM1180 402h14v17h-14z"/>
+  </g>
+  <g transform="translate(181 297)" fill="none" stroke="#FF5A5F" stroke-width="8" stroke-linecap="round">
+    <path d="M41 0 4 243M41 0 78 243M15 173H67M21 133H61M28 92H54M34 52H48M4 243H78"/>
+  </g>
+  <path d="M886 546V466L965 400 1044 466V546Z" fill="#7890a5"/>
+  <path d="M965 400 1044 466H1111V546H1044V466Z" fill="#6c849a"/>
+  <rect y="534" width="1280" height="186" fill="#303946"/>
+  <rect y="528" width="1280" height="8" fill="#68798a"/>
+  <path d="M0 570H1280" stroke="#a9b2ba" stroke-width="3" opacity=".45"/>
+  <path d="M70 612h130M302 612h130M534 612h130M766 612h130M998 612h130" stroke="#f0cf61" stroke-width="10" stroke-linecap="round"/>
+  <path d="M0 660H1280" stroke="#e8edf1" stroke-width="4" opacity=".6"/>
+  <g fill="#f6d977" opacity=".9">
+    <circle cx="40" cy="494" r="4"/><circle cx="110" cy="488" r="4"/><circle cx="1190" cy="474" r="4"/><circle cx="1240" cy="486" r="4"/>
+  </g>
+</svg>
+</div>
+<div class="flight-plane" aria-hidden="true">
+  <svg viewBox="0 0 1100 420" role="presentation">
+    <use href="#jet-body"/>
+    <g class="gear-drop" fill="#424d5a" stroke="#3C3C4A" stroke-width="7" stroke-linecap="round">
+      <path d="M710 242 700 323M975 237 977 319" fill="none"/>
+      <circle class="wheel" cx="695" cy="335" r="19"/><circle cx="695" cy="335" r="8" fill="#9da9b2"/>
+      <circle class="wheel" cx="977" cy="331" r="16"/><circle cx="977" cy="331" r="7" fill="#9da9b2"/>
+    </g>
+  </svg>
+</div>
+<svg class="tire-puff" viewBox="0 0 180 110" aria-hidden="true">
+  <path d="M20 90Q14 72 32 65Q35 45 57 55Q68 31 89 51Q105 34 118 56Q142 48 150 71Q169 80 158 96"/>
+  <path d="M48 91Q43 78 55 72Q66 54 80 72M107 91Q113 72 129 69"/>
+</svg>
+<section class="scene airport-exit" aria-hidden="true">
+  <div class="parked-plane">
+    <svg viewBox="0 0 1100 420">
+      <use href="#jet-body"/>
+      <g fill="#424d5a" stroke="#3C3C4A" stroke-width="7" stroke-linecap="round">
+        <path d="M710 242 700 323M975 237 977 319" fill="none"/>
+        <circle cx="695" cy="335" r="19"/><circle cx="695" cy="335" r="8" fill="#9da9b2"/>
+        <circle cx="977" cy="331" r="16"/><circle cx="977" cy="331" r="7" fill="#9da9b2"/>
+      </g>
+      <g class="exit-door">
+        <path d="M786 143 842 146 840 228 786 227Z" fill="#e5eef4" stroke="#3C3C4A" stroke-width="5"/>
+        <path d="M796 153h35v60h-35z" fill="#304354"/>
+      </g>
+    </svg>
+  </div>
+  <div class="stairs">
+    <svg viewBox="0 0 220 180">
+      <path d="M174 9 35 159M189 8 51 159" fill="none" stroke="#7f8f9e" stroke-width="8" stroke-linecap="round"/>
+      <path d="M166 34h-23M148 54h-25M130 74h-25M112 94H86M94 114H67M76 134H48M58 154H30" stroke="#d6dfe5" stroke-width="8" stroke-linecap="round"/>
+      <path d="M174 9 35 159M189 8 51 159" fill="none" stroke="#27313c" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="traveler airport-traveler walking hungry">
+    <svg class="person" viewBox="0 0 140 220">
+      <ellipse cx="69" cy="210" rx="39" ry="6" fill="#1e2732" opacity=".2"/>
+      <g class="legs">
+        <g class="leg leg-left"><path d="M48 135 69 137 65 185 54 190 48 182Z" fill="#3C3C4A"/><path d="M51 181Q61 182 65 187L61 195 42 196Q38 193 43 188Z" fill="#202938"/></g>
+        <g class="leg leg-right"><path d="M72 137 91 134 94 182 85 190 75 184Z" fill="#3C3C4A"/><path d="M78 183Q87 182 94 186L98 193 80 196Q75 194 75 190Z" fill="#202938"/></g>
+      </g>
+      <g class="torso">
+        <path d="M45 82Q54 74 70 74Q87 74 96 83L104 132Q101 143 91 145H48Q38 141 38 132Z" fill="#3BA8FF" stroke="#1C82D6" stroke-width="3"/>
+        <path d="M58 77 70 94 82 77 79 111 70 123 61 111Z" fill="#f8fafc"/>
+        <path d="M68 92h4l3 20-5 11-5-11Z" fill="#3C3C4A"/>
+        <path d="M46 88Q60 106 88 136" fill="none" stroke="#3C3C4A" stroke-width="6" stroke-linecap="round"/>
+        <rect x="78" y="123" width="19" height="19" rx="4" fill="#D97F00" stroke="#92400e" stroke-width="2"/>
+        <g class="arm arm-stomach"><path d="M52 90Q43 100 49 111L63 117" fill="none" stroke="#fed7aa" stroke-width="10" stroke-linecap="round"/><circle cx="66" cy="118" r="6" fill="#fed7aa"/></g>
+        <g class="arm arm-left"><path d="M91 89Q104 99 108 117L111 139" fill="none" stroke="#fed7aa" stroke-width="10" stroke-linecap="round"/><circle cx="111" cy="141" r="6" fill="#fed7aa"/></g>
+      </g>
+      <g class="head">
+        <rect x="64" y="70" width="12" height="14" rx="5" fill="#fed7aa"/>
+        <ellipse cx="70" cy="54" rx="22" ry="20" fill="#fed7aa"/>
+        <ellipse cx="63" cy="52" rx="2.5" ry="3.5" fill="#0f172a"/><circle cx="64" cy="51" r="1" fill="#fff"/>
+        <ellipse cx="77" cy="52" rx="2.5" ry="3.5" fill="#0f172a"/><circle cx="78" cy="51" r="1" fill="#fff"/>
+        <path class="face-neutral" d="M65 60Q70 65 75 60" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+        <g class="face-hungry"><path d="M58 44 64 46M76 46 82 44" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="70" cy="61" rx="3.8" ry="5" fill="#3C3C4A"/><ellipse cx="70" cy="64" rx="1.5" ry="1.5" fill="#ff8d7a"/></g>
+        <g class="face-puzzled"><path d="M58 45 64 43M76 45 82 43" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="70" cy="62" rx="3" ry="4.5" fill="#3C3C4A"/></g>
+        <ellipse cx="58" cy="58" rx="3" ry="1.8" fill="#FF5A5F" opacity=".48"/><ellipse cx="82" cy="58" rx="3" ry="1.8" fill="#FF5A5F" opacity=".48"/>
+        <g class="role-hat"><ellipse cx="70" cy="38" rx="28" ry="8" fill="#0b1426"/><path d="M48 38C48 24 54 18 70 18C86 18 92 24 92 38Z" fill="#3C3C4A"/><path d="M49 34Q70 37 91 34" fill="none" stroke="#3BA8FF" stroke-width="3.5"/><circle cx="70" cy="27" r="4" fill="#fff"/></g>
+      </g>
+      <g class="stomach-cue"><circle cx="69" cy="116" r="9"/><circle cx="69" cy="116" r="15" opacity=".5"/></g>
+    </svg>
+    <svg class="suitcase" viewBox="0 0 76 100">
+      <path d="M25 19V9Q25 4 30 4H48Q53 4 53 9V19" fill="none" stroke="#3C3C4A" stroke-width="5" stroke-linecap="round"/>
+      <rect x="10" y="18" width="58" height="68" rx="9" fill="#D97F00" stroke="#3C3C4A" stroke-width="4"/>
+      <path d="M20 25v52M58 25v52" stroke="#f8d69a" stroke-width="3"/>
+      <path d="M27 41h24" stroke="#92400e" stroke-width="4" stroke-linecap="round"/>
+      <circle class="wheel-small" cx="20" cy="91" r="5" fill="#3C3C4A"/><circle class="wheel-small" cx="58" cy="91" r="5" fill="#3C3C4A"/>
+    </svg>
+  </div>
+</section>
+<section class="scene gates-ui" aria-hidden="true">
+  <div class="app-card">
+    <header class="app-head">
+      <div class="app-mark">
+        <svg viewBox="0 0 140 150">
+          <g fill="none" stroke="#5146E5" stroke-width="5" stroke-linecap="round">
+            <path d="M48 80q-9 0-12 8m56-8q9 0 12 8"/>
+          </g>
+          <rect x="42" y="76" width="56" height="56" rx="17" fill="#3BA8FF" stroke="#fff" stroke-width="3"/>
+          <rect x="51" y="91" width="38" height="24" rx="6" fill="#dbeafe"/>
+          <path d="M61 99l4 4-4 4m8 0h7" fill="none" stroke="#149A8C" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="39" y="29" width="62" height="49" rx="16" fill="#eef0ff" stroke="#5146E5" stroke-width="4"/>
+          <path d="M70 29V18" fill="none" stroke="#5146E5" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="70" cy="14" r="5" fill="#FF9F1C" stroke="#fff" stroke-width="2"/>
+          <circle cx="57" cy="51" r="4" fill="#5146E5"/><circle cx="83" cy="51" r="4" fill="#5146E5"/>
+          <path d="M60 64q10 8 20 0" fill="none" stroke="#149A8C" stroke-width="3" stroke-linecap="round"/>
+          <rect x="55" y="120" width="30" height="7" rx="3.5" fill="#5146E5"/>
+        </svg>
+      </div>
+      <div class="brand-lines"><i></i><i></i></div>
+      <div class="gate-row">
+        <div class="gate-icon gate-role"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></div>
+        <div class="gate-icon gate-task"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 2 2 4-4M13 7h7M4 16l2 2 4-4M13 16h7"/></svg></div>
+        <div class="gate-icon gate-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
+        <div class="gate-icon gate-format"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 3h6M12 3v2"/></svg></div>
+      </div>
+    </header>
+    <div class="app-body">
+      <div class="map-card">
+        <svg class="map-art" viewBox="0 0 700 470" preserveAspectRatio="xMidYMid slice">
+          <rect width="700" height="470" fill="#F5F3EE"/>
+          <path d="M0 82 700 280M10 390 690 80M115 0 340 470M530 0 400 470" stroke="#e9e4dc" stroke-width="72" fill="none"/>
+          <path class="route-white" d="M85 350Q180 310 236 273T358 223Q420 200 510 150"/>
+          <path class="route-green" d="M85 350Q180 310 236 273T358 223Q420 200 510 150" pathLength="1"/>
+          <path d="M12 138Q77 107 128 124T225 113M410 367Q488 336 590 367" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+          <path d="M430 40q78 25 118 76v75q-70-20-130-60Z" fill="#dcefd8" stroke="#b9d8b2" stroke-width="4"/>
+          <g fill="#c9c1b5" opacity=".55">
+            <rect x="55" y="30" width="52" height="30" rx="5"/><rect x="240" y="54" width="70" height="40" rx="6"/>
+            <rect x="570" y="220" width="78" height="42" rx="6"/><rect x="330" y="350" width="64" height="32" rx="5"/>
+            <rect x="105" y="205" width="70" height="38" rx="5"/><rect x="512" y="100" width="60" height="34" rx="5"/>
+          </g>
+          <g fill="#fff" stroke="#3C3C4A" stroke-width="3">
+            <rect x="235" y="155" width="35" height="29" rx="6"/><path d="M244 155v-10h17v10"/>
+          </g>
+          <g class="food-pin pin-one" transform="translate(510 150)">
+            <circle r="24" fill="#2DC07A" stroke="#fff" stroke-width="7"/>
+            <path d="M-12 4h24M-9 7q9 10 18 0M-8-2h16M-5-9v6M1-10v7M7-9v6" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          </g>
+          <g class="food-pin pin-two" transform="translate(302 300)">
+            <circle r="20" fill="#FF9F1C" stroke="#fff" stroke-width="6"/>
+            <path d="M-9 2h18q-1 10-9 10t-9-10ZM-7-3l3-5M0-3l3-5M7-3l3-5" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          </g>
+          <g class="food-pin pin-three" transform="translate(170 116)">
+            <circle r="20" fill="#9B6BFF" stroke="#fff" stroke-width="6"/>
+            <path d="M-9 0q9-13 18 0M-8 2h16l-2 8H-6z" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          </g>
+        </svg>
+        <div class="traveler map-traveler walking hungry">
+          <svg class="person" viewBox="0 0 140 220">
+            <ellipse cx="69" cy="210" rx="39" ry="6" fill="#1e2732" opacity=".2"/>
+            <g class="legs"><g class="leg leg-left"><path d="M48 135 69 137 65 185 54 190 48 182Z" fill="#3C3C4A"/><path d="M51 181Q61 182 65 187L61 195 42 196Q38 193 43 188Z" fill="#202938"/></g><g class="leg leg-right"><path d="M72 137 91 134 94 182 85 190 75 184Z" fill="#3C3C4A"/><path d="M78 183Q87 182 94 186L98 193 80 196Q75 194 75 190Z" fill="#202938"/></g></g>
+            <g class="torso"><path d="M45 82Q54 74 70 74Q87 74 96 83L104 132Q101 143 91 145H48Q38 141 38 132Z" fill="#3BA8FF" stroke="#1C82D6" stroke-width="3"/><path d="M58 77 70 94 82 77 79 111 70 123 61 111Z" fill="#f8fafc"/><path d="M68 92h4l3 20-5 11-5-11Z" fill="#3C3C4A"/><path d="M46 88Q60 106 88 136" fill="none" stroke="#3C3C4A" stroke-width="6" stroke-linecap="round"/><rect x="78" y="123" width="19" height="19" rx="4" fill="#D97F00" stroke="#92400e" stroke-width="2"/><g class="arm arm-left"><path d="M52 90Q42 91 38 107L35 123" fill="none" stroke="#fed7aa" stroke-width="10" stroke-linecap="round"/><circle cx="35" cy="126" r="6" fill="#fed7aa"/></g><g class="arm arm-right"><path d="M91 89Q104 99 108 117L111 139" fill="none" stroke="#fed7aa" stroke-width="10" stroke-linecap="round"/><circle cx="111" cy="141" r="6" fill="#fed7aa"/></g></g>
+            <g class="head"><rect x="64" y="70" width="12" height="14" rx="5" fill="#fed7aa"/><ellipse cx="70" cy="54" rx="22" ry="20" fill="#fed7aa"/><ellipse cx="63" cy="52" rx="2.5" ry="3.5" fill="#0f172a"/><circle cx="64" cy="51" r="1" fill="#fff"/><ellipse cx="77" cy="52" rx="2.5" ry="3.5" fill="#0f172a"/><circle cx="78" cy="51" r="1" fill="#fff"/><path class="face-neutral" d="M65 60Q70 65 75 60" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/><g class="face-hungry"><path d="M58 44 64 46M76 46 82 44" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="70" cy="61" rx="3.8" ry="5" fill="#3C3C4A"/></g><ellipse cx="58" cy="58" rx="3" ry="1.8" fill="#FF5A5F" opacity=".48"/><ellipse cx="82" cy="58" rx="3" ry="1.8" fill="#FF5A5F" opacity=".48"/><g class="role-hat"><ellipse cx="70" cy="38" rx="28" ry="8" fill="#0b1426"/><path d="M48 38C48 24 54 18 70 18C86 18 92 24 92 38Z" fill="#3C3C4A"/><path d="M49 34Q70 37 91 34" fill="none" stroke="#3BA8FF" stroke-width="3.5"/><circle cx="70" cy="27" r="4" fill="#fff"/></g></g>
+            <g class="stomach-cue"><circle cx="69" cy="116" r="9" fill="none" stroke="#FF9F1C" stroke-width="2.5"/><circle cx="69" cy="116" r="15" fill="none" stroke="#FF9F1C" stroke-width="2" opacity=".5"/></g>
+          </svg>
+          <svg class="suitcase" viewBox="0 0 76 100"><path d="M25 19V9Q25 4 30 4H48Q53 4 53 9V19" fill="none" stroke="#3C3C4A" stroke-width="5" stroke-linecap="round"/><rect x="10" y="18" width="58" height="68" rx="9" fill="#D97F00" stroke="#3C3C4A" stroke-width="4"/><path d="M20 25v52M58 25v52" stroke="#f8d69a" stroke-width="3"/><path d="M27 41h24" stroke="#92400e" stroke-width="4" stroke-linecap="round"/><circle class="wheel-small" cx="20" cy="91" r="5" fill="#3C3C4A"/><circle class="wheel-small" cx="58" cy="91" r="5" fill="#3C3C4A"/></svg>
+        </div>
+      </div>
+      <div class="chat-card">
+        <div class="chat-head">
+          <div class="robot-avatar">
+            <svg viewBox="0 0 140 150">
+              <rect x="42" y="76" width="56" height="56" rx="17" fill="#3BA8FF" stroke="#fff" stroke-width="3"/>
+              <rect x="51" y="91" width="38" height="24" rx="6" fill="#dbeafe"/>
+              <path d="M61 99l4 4-4 4m8 0h7" fill="none" stroke="#149A8C" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="39" y="29" width="62" height="49" rx="16" fill="#eef0ff" stroke="#5146E5" stroke-width="4"/>
+              <path d="M70 29V18" fill="none" stroke="#5146E5" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="70" cy="14" r="5" fill="#FF9F1C" stroke="#fff" stroke-width="2"/>
+              <circle cx="57" cy="51" r="4" fill="#5146E5"/><circle cx="83" cy="51" r="4" fill="#5146E5"/>
+              <path d="M60 64q10 8 20 0" fill="none" stroke="#149A8C" stroke-width="3" stroke-linecap="round"/>
+              <rect x="55" y="120" width="30" height="7" rx="3.5" fill="#5146E5"/>
+            </svg>
+          </div>
+          <div class="chat-head-lines"><i></i><i></i></div>
+        </div>
+        <div class="message-list">
+          <div class="bubble role"></div><div class="bubble task"></div>
+          <div class="bubble context"></div><div class="bubble format"></div>
+          <div class="bubble answer"></div>
+        </div>
+        <div class="chat-gates"><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="scene alley-scene" aria-hidden="true">
+  <svg class="alley-art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+    <rect width="1280" height="720" fill="#191E2B"/>
+    <path d="M0 0H1280V270H0Z" fill="#252C3B"/>
+    <path d="M0 380 180 252H1100L1280 380V720H0Z" fill="#28252A"/>
+    <path d="M0 640 320 500H965L1280 642V720H0Z" fill="#3A3030"/>
+    <path d="M0 670 405 555H890L1280 672" fill="none" stroke="#6E5144" stroke-width="8" opacity=".55"/>
+    <g fill="#313B4A">
+      <path d="M0 0h180v470H0zM1080 0h200v490h-200z"/>
+      <path d="M30 90h90v145H30zM1107 88h122v160h-122z" fill="#1d2735"/>
+    </g>
+    <g fill="#e9bd71" opacity=".48">
+      <rect x="47" y="116" width="18" height="24"/><rect x="83" y="116" width="18" height="24"/>
+      <rect x="1133" y="119" width="22" height="26"/><rect x="1177" y="119" width="22" height="26"/>
+    </g>
+    <g class="lantern" transform="translate(274 72)">
+      <path d="M0-38v30" stroke="#111723" stroke-width="5"/>
+      <path d="M-37 0Q-37-15-24-19H24Q37-15 37 0V64Q37 82 0 88Q-37 82-37 64Z" fill="#FF5A5F" stroke="#D93C42" stroke-width="5"/>
+      <path d="M-27 12h54M-27 28h54M-27 44h54M-27 60h54" stroke="#f4b5b6" stroke-width="3" opacity=".72"/>
+      <path d="M-28 5Q0 0 28 5" fill="none" stroke="#ffe0df" stroke-width="4"/>
+    </g>
+    <g class="lantern" transform="translate(1007 40)">
+      <path d="M0-28v24" stroke="#111723" stroke-width="5"/>
+      <path d="M-33 2Q-33-12-21-17H21Q33-12 33 2V56Q33 72 0 76Q-33 72-33 56Z" fill="#FF9F1C" stroke="#D97F00" stroke-width="5"/>
+      <path d="M-23 14h46M-23 30h46M-23 46h46" stroke="#ffe0b2" stroke-width="3" opacity=".8"/>
+    </g>
+    <path d="M735 238h420v350H735z" fill="#4b3932" stroke="#171b23" stroke-width="12"/>
+    <path d="M758 259h374v329H758z" fill="#2d2b31" stroke="#8c6a51" stroke-width="8"/>
+    <path d="M735 238h420v50H735z" fill="#3C3C4A"/>
+    <g fill="#2d2926">
+      <path d="M780 288h106v300H780zM902 288h106v300H902zM1024 288h106v300H1024z"/>
+    </g>
+    <g fill="#b87943" opacity=".65">
+      <rect x="793" y="305" width="78" height="11" rx="5"/><rect x="793" y="330" width="57" height="7" rx="4"/>
+      <rect x="915" y="305" width="78" height="11" rx="5"/><rect x="915" y="330" width="57" height="7" rx="4"/>
+      <rect x="1037" y="305" width="78" height="11" rx="5"/><rect x="1037" y="330" width="57" height="7" rx="4"/>
+    </g>
+    <g fill="#F5F3EE">
+      <path d="M787 391q45-44 90 0l-7 35h-76z"/><path d="M909 391q45-44 90 0l-7 35h-76z"/><path d="M1031 391q45-44 90 0l-7 35h-76z"/>
+    </g>
+    <g fill="#fff" stroke="#D9D0C4" stroke-width="5">
+      <ellipse cx="832" cy="404" rx="38" ry="12"/><ellipse cx="954" cy="404" rx="38" ry="12"/><ellipse cx="1076" cy="404" rx="38" ry="12"/>
+    </g>
+    <path d="M760 570H1132" stroke="#D97F00" stroke-width="8"/>
+    <path d="M0 576H694" stroke="#5A4947" stroke-width="8"/>
+    <path d="M0 605H1280" stroke="#141a24" stroke-width="9"/>
+    <g opacity=".7">
+      <path d="M420 254q-10 18 0 34M447 244q-12 19 0 37M474 254q-10 18 0 34" fill="none" stroke="#FF9F1C" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g class="menu-focus" fill="none" stroke="#3BA8FF" stroke-width="5">
+      <rect x="775" y="294" width="111" height="149" rx="8"/>
+      <path d="M775 315h23M775 315v-21M886 315h-23M886 315v-21M775 443h23M775 443v-21M886 443h-23M886 443v-21"/>
+    </g>
+  </svg>
+  <div class="traveler alley-traveler puzzled">
+    <svg class="person" viewBox="0 0 140 220">
+      <ellipse cx="69" cy="210" rx="39" ry="6" fill="#0e1118" opacity=".36"/>
+      <g class="legs"><g class="leg leg-left"><path d="M48 135 69 137 65 185 54 190 48 182Z" fill="#3C3C4A"/><path d="M51 181Q61 182 65 187L61 195 42 196Q38 193 43 188Z" fill="#202938"/></g><g class="leg leg-right"><path d="M72 137 91 134 94 182 85 190 75 184Z" fill="#3C3C4A"/><path d="M78 183Q87 182 94 186L98 193 80 196Q75 194 75 190Z" fill="#202938"/></g></g>
+      <g class="torso"><path d="M45 82Q54 74 70 74Q87 74 96 83L104 132Q101 143 91 145H48Q38 141 38 132Z" fill="#3BA8FF" stroke="#1C82D6" stroke-width="3"/><path d="M58 77 70 94 82 77 79 111 70 123 61 111Z" fill="#f8fafc"/><path d="M68 92h4l3 20-5 11-5-11Z" fill="#3C3C4A"/><path d="M46 88Q60 106 88 136" fill="none" stroke="#3C3C4A" stroke-width="6" stroke-linecap="round"/><rect x="78" y="123" width="19" height="19" rx="4" fill="#D97F00" stroke="#92400e" stroke-width="2"/><g class="arm arm-left"><path d="M52 90Q42 91 38 107L35 123" fill="none" stroke="#fed7aa" stroke-width="10" stroke-linecap="round"/><circle cx="35" cy="126" r="6" fill="#fed7aa"/></g><g class="arm arm-right"><path d="M91 89Q104 99 108 117L111 139" fill="none" stroke="#fed7aa" stroke-width="10" stroke-linecap="round"/><circle cx="111" cy="141" r="6" fill="#fed7aa"/></g></g>
+      <g class="head"><rect x="64" y="70" width="12" height="14" rx="5" fill="#fed7aa"/><ellipse cx="70" cy="54" rx="22" ry="20" fill="#fed7aa"/><ellipse cx="63" cy="52" rx="2.5" ry="3.5" fill="#0f172a"/><circle cx="64" cy="51" r="1" fill="#fff"/><ellipse cx="77" cy="52" rx="2.5" ry="3.5" fill="#0f172a"/><circle cx="78" cy="51" r="1" fill="#fff"/><path class="face-neutral" d="M65 60Q70 65 75 60" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/><g class="face-puzzled"><path d="M58 45 64 43M76 45 82 43" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="70" cy="62" rx="3" ry="4.5" fill="#3C3C4A"/></g><ellipse cx="58" cy="58" rx="3" ry="1.8" fill="#FF5A5F" opacity=".48"/><ellipse cx="82" cy="58" rx="3" ry="1.8" fill="#FF5A5F" opacity=".48"/><g class="role-hat"><ellipse cx="70" cy="38" rx="28" ry="8" fill="#0b1426"/><path d="M48 38C48 24 54 18 70 18C86 18 92 24 92 38Z" fill="#3C3C4A"/><path d="M49 34Q70 37 91 34" fill="none" stroke="#3BA8FF" stroke-width="3.5"/><circle cx="70" cy="27" r="4" fill="#fff"/></g></g>
+    </svg>
+    <svg class="suitcase" viewBox="0 0 76 100"><path d="M25 19V9Q25 4 30 4H48Q53 4 53 9V19" fill="none" stroke="#3C3C4A" stroke-width="5" stroke-linecap="round"/><rect x="10" y="18" width="58" height="68" rx="9" fill="#D97F00" stroke="#3C3C4A" stroke-width="4"/><path d="M20 25v52M58 25v52" stroke="#f8d69a" stroke-width="3"/><path d="M27 41h24" stroke="#92400e" stroke-width="4" stroke-linecap="round"/><circle class="wheel-small" cx="20" cy="91" r="5" fill="#3C3C4A"/><circle class="wheel-small" cx="58" cy="91" r="5" fill="#3C3C4A"/></svg>
+    <svg class="phone-art" viewBox="0 0 54 86">
+      <rect x="3" y="2" width="48" height="82" rx="9" fill="#3C3C4A"/>
+      <rect x="7" y="8" width="40" height="69" rx="6" fill="#f7f7f9"/>
+      <circle cx="27" cy="12" r="1.8" fill="#3C3C4A"/>
+      <rect x="12" y="24" width="12" height="12" rx="3" fill="#E1F1FF" stroke="#3BA8FF" stroke-width="2"/>
+      <rect x="30" y="24" width="12" height="12" rx="3" fill="#DDF7EA" stroke="#2DC07A" stroke-width="2"/>
+      <rect x="12" y="42" width="12" height="12" rx="3" fill="#FFF1DA" stroke="#FF9F1C" stroke-width="2"/>
+      <rect x="30" y="42" width="12" height="12" rx="3" fill="#F0E8FF" stroke="#9B6BFF" stroke-width="2"/>
+    </svg>
+  </div>
+</section>
+</main>
+</body>
+</html>

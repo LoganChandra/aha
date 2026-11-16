@@ -1,0 +1,87 @@
+{
+  "viewport": "390x844",
+  "timings": {
+    "PLANE_DESCENT": 2400,
+    "PLANE_STOP_WAIT": 800,
+    "SAM_EXIT": 1800,
+    "HUNGER_GROWL": 1800,
+    "TRANSITION_TO_MAP": 1000,
+    "GATE_HOLD_BEFORE": 900,
+    "POPUP_HOLD": 900,
+    "TYPING_SPEED_PER_CHAR": 75,
+    "BETWEEN_GATES_PAUSE": 1400,
+    "FINAL_ANSWER_HOLD": 5000
+  },
+  "normalMotion": [
+    {
+      "kind": "tap",
+      "at": 8267.299999982119
+    },
+    {
+      "kind": "gate",
+      "target": "gate1",
+      "at": 9525.90000000596
+    },
+    {
+      "kind": "tap",
+      "at": 14446.799999982119
+    },
+    {
+      "kind": "gate",
+      "target": "gate2",
+      "at": 15706.90000000596
+    },
+    {
+      "kind": "tap",
+      "at": 21187.40000000596
+    },
+    {
+      "kind": "gate",
+      "target": "gate3",
+      "at": 22445.69999998808
+    },
+    {
+      "kind": "tap",
+      "at": 27926.19999998808
+    },
+    {
+      "kind": "gate",
+      "target": "gate4",
+      "at": 29188
+    },
+    {
+      "kind": "answer",
+      "at": 33065.79999998212
+    }
+  ],
+  "reducedMotion": [
+    {
+      "kind": "gate",
+      "target": "gate1",
+      "at": 464.19999998807907
+    },
+    {
+      "kind": "gate",
+      "target": "gate2",
+      "at": 2985.9000000059605
+    },
+    {
+      "kind": "gate",
+      "target": "gate3",
+      "at": 5864.800000011921
+    },
+    {
+      "kind": "gate",
+      "target": "gate4",
+      "at": 8733.09999999404
+    },
+    {
+      "kind": "answer",
+      "at": 11024.699999988079
+    },
+    {
+      "kind": "restart",
+      "at": 11085.40000000596
+    }
+  ]
+}
