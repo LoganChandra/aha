@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
@@ -7,7 +7,6 @@ import { chromium } from 'playwright';
 
 const versionDir = resolve('public/previews/tokyo-food-67');
 const lessonPath = resolve(versionDir, 'lesson1-video.html');
-const qaDir = resolve(versionDir, 'qa');
 const lessonHtml = await readFile(lessonPath, 'utf8');
 const source61 = await readFile(resolve('public/previews/tokyo-food-61/lesson1-video.html'), 'utf8');
 const source58 = await readFile(resolve('public/previews/tokyo-food-61/58.html'), 'utf8');
@@ -26,7 +25,8 @@ const lessonBase = lessonHtml
   .replace('   await playRestaurantPayoff();\n', '')
   .replace(' },8200);', ' },6900);');
 
-test('story keeps 61 UI and connects prompt result to the restaurant payoff', () => {
+test('story keeps 61 UI, connects the restaurant payoff, and ships only its two HTML files', async () => {
+  assert.deepEqual((await readdir(versionDir)).sort(), ['58.html', 'lesson1-video.html']);
   assert.ok(lessonHtml.includes('<title>Sam builds a Tokyo food prompt</title>'));
   assert.ok(lessonHtml.includes("var order=[{g:1,k:'guide'},{g:2,k:'lunch'},{g:3,k:'v'},{g:4,k:'list'}]"));
   assert.match(lessonHtml, /async function moveActorTo\(node\)/);
@@ -51,7 +51,6 @@ test('story keeps 61 UI and connects prompt result to the restaurant payoff', ()
 
 test('phone QA follows the character from arrival through clicks, answer and eating', { timeout: 120_000 }, async () => {
   const browser = await chromium.launch({ headless: true });
-  const frames = [];
   const expected = [
     { gate: 1, key: 'guide', choice: 'Local Guide', prompt: 'Local Guide (Kenji)' },
     { gate: 2, key: 'lunch', choice: 'Lunch spot', prompt: 'Shibuya Station' },
@@ -73,11 +72,6 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     }, 16);
   });
 
-  const saveFrame = async (page, file, title, description) => {
-    await page.screenshot({ path: resolve(qaDir, file), fullPage: false });
-    frames.push({ file, title, description });
-  };
-
   const waitForArrivalBeat = async (page, message) => {
     const frame = page.frames().find((candidate) => candidate.url().endsWith('/58.html'));
     assert.ok(frame, message);
@@ -94,21 +88,16 @@ test('phone QA follows the character from arrival through clicks, answer and eat
 
   const waitForGateAndOption = async (page, item) => {
     await page.waitForFunction((gate) => document.querySelector(`.gate[data-i="${gate}"]`)?.classList.contains('tapping'), item.gate, { timeout: 35_000 });
-    await saveFrame(page, `tap-${item.gate}-gate.png`, `Sam taps gate ${item.gate}`, 'The guide character moves to and taps the real prompt gate.');
     await page.waitForFunction((key) => document.querySelector(`.opt input[data-k="${key}"]`)?.closest('.opt')?.classList.contains('tapping'), item.key, { timeout: 15_000 });
-    await saveFrame(page, `tap-${item.gate}-choice.png`, `Sam chooses ${item.choice}`, 'The character selects one option from the gate menu.');
     await page.waitForFunction(({ gate, choice }) => (document.querySelector(`#cur${gate}`)?.textContent || '').includes(choice), item, { timeout: 25_000 });
-    await saveFrame(page, `gate-${item.gate}-added.png`, `${item.choice} added`, 'The prompt updates with this detail before Sam moves to the next gate.');
   };
 
   try {
-    await mkdir(qaDir, { recursive: true });
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     await installTapRecorder(page);
     await page.goto(pathToFileURL(lessonPath).href, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__arrivalFrameLoaded === true, null, { timeout: 15_000 });
     await page.waitForTimeout(1_800);
-    await saveFrame(page, '00-tokyo-arrival.png', 'Plane arrives in Tokyo', 'The original 58 arrival sequence begins the story.');
     const arrivalFrame = await waitForArrivalBeat(page, 'the Tokyo arrival scene stays visible through the landing beat');
     const normalArrival = await arrivalFrame.evaluate(() => {
       const opacity = (selector) => Number.parseFloat(getComputedStyle(document.querySelector(selector)).opacity);
@@ -122,8 +111,6 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     assert.ok(normalArrival.parkedPlane > 0.8, 'the plane has completed its landing');
     assert.ok(normalArrival.traveler > 0.8 && normalArrival.hungry, 'hungry Sam exits the landed plane');
     assert.ok(normalArrival.stomachCue > 0.2, 'the hunger cue is visible');
-    await saveFrame(page, '01-plane-landed-sam-hungry.png', 'Sam exits the landed plane hungry', 'The arrival beat finishes before the character starts building a food prompt.');
-
     for (const item of expected) await waitForGateAndOption(page, item);
 
     try {
@@ -165,8 +152,6 @@ test('phone QA follows the character from arrival through clicks, answer and eat
       error.message += `; final answer frame state: ${JSON.stringify(state)}`;
       throw error;
     }
-    await saveFrame(page, '13-ai-recommends-lunch.png', 'AI gives a specific lunch answer', 'The completed prompt produces a nearby vegetarian food recommendation.');
-
     await page.waitForFunction(() => document.querySelector('#meal-story')?.classList.contains('on'), null, { timeout: 20_000 });
     await page.waitForFunction(() => {
       const scene = document.querySelector('#meal-story');
@@ -176,8 +161,6 @@ test('phone QA follows the character from arrival through clicks, answer and eat
         && actor?.classList.contains('eating')
         && actor.getBoundingClientRect().left > 80;
     }, null, { timeout: 5_000 });
-    await saveFrame(page, '14-sam-enters-restaurant.png', 'Sam follows the map to the restaurant', 'The same character reaches the warm restaurant scene after the answer.');
-
     await page.waitForFunction(() => {
       const scene = document.querySelector('#meal-story');
       const actor = document.querySelector('#prompt-actor');
@@ -232,8 +215,6 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     assert.equal(bitePhysics.handMatchesSkin, true, 'hand uses the character’s skin color');
     assert.equal(bitePhysics.oldPoseCount, 6, 'all six original role, task and format poses are accounted for');
     assert.equal(bitePhysics.oldPosesHidden, true, 'old pose hands stay hidden while the single meal arm is active');
-    await saveFrame(page, '15-sam-eats.png', 'Sam eats', 'The character lifts a bite from the table to their mouth.');
-
     await page.waitForFunction(() => document.querySelector('#story-handoff.on')?.textContent.trim() === 'Now your turn', null, { timeout: 10_000 });
     await page.waitForFunction(() => document.documentElement.dataset.promptStoryComplete === 'true', null, { timeout: 15_000 });
     await page.waitForFunction(() => !document.querySelector('#prompt-actor'), null, { timeout: 5_000 });
@@ -245,13 +226,12 @@ test('phone QA follows the character from arrival through clicks, answer and eat
       handoff: document.querySelector('#story-handoff')?.textContent.trim() || '',
       viewport: `${innerWidth}x${innerHeight}`,
     }));
+    assert.equal(normal.viewport, '390x844');
     assert.deepEqual(normal.taps, ['gate-1', 'option-guide', 'gate-2', 'option-lunch', 'gate-3', 'option-v', 'gate-4', 'option-list']);
     assert.match(normal.finalAnswer, /Vegan Izakaya Masaka/);
     assert.equal(normal.mealVisible, false, 'the payoff returns to the lesson UI');
     assert.equal(normal.complete, true);
     assert.equal(normal.handoff, 'Now your turn', 'the final story beat hands the lesson to the learner');
-    await saveFrame(page, '17-now-your-turn.png', 'Now your turn', 'The restaurant story ends and the original lesson UI is ready for the learner.');
-
     const reduced = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     await reduced.emulateMedia({ reducedMotion: 'reduce' });
     await installTapRecorder(reduced);
@@ -270,7 +250,6 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     assert.ok(reducedArrival.parkedPlane > 0.8, 'reduced motion still lands the plane');
     assert.ok(reducedArrival.traveler > 0.8 && reducedArrival.hungry, 'reduced motion shows hungry Sam');
     assert.ok(reducedArrival.stomachCue > 0.2, 'reduced motion preserves the hunger cue');
-    await saveFrame(reduced, '02-reduced-plane-landed-sam-hungry.png', 'Reduced motion still shows the arrival', 'The plane lands and hungry Sam exits with reduced motion enabled.');
     await reduced.waitForFunction(() => document.documentElement.dataset.promptStoryComplete === 'true', null, { timeout: 30_000 });
     await reduced.waitForFunction(() => document.querySelector('#story-handoff.on')?.textContent.trim() === 'Now your turn', null, { timeout: 5_000 });
     const reducedResult = await reduced.evaluate(() => ({
@@ -284,15 +263,8 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     assert.equal(reducedResult.mealVisible, false, 'reduced motion advances past the meal scene');
     assert.equal(reducedResult.complete, true, 'reduced motion reaches the lesson handoff');
     assert.equal(reducedResult.handoff, 'Now your turn');
-    await saveFrame(reduced, '16-reduced-motion-handoff.png', 'Reduced motion reaches the lesson UI', 'The reduced-motion timeline still completes the answer and restaurant story.');
-
-    const cards = frames.map((frame, index) => `<article><h2>${String(index).padStart(2, '0')} · ${frame.title}</h2><p>${frame.description}</p><img src="${frame.file}" alt="${frame.title}"></article>`).join('\n');
-    const gallery = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tokyo prompt story QA</title><style>body{margin:0;padding:20px;background:#f7f7f9;color:#3c3c4a;font:16px/1.45 system-ui,sans-serif}main{max-width:430px;margin:auto}h1{font-size:24px}article{margin:18px 0;padding:14px;background:#fff;border:1px solid #e5e5ea;border-radius:16px}h2{font-size:18px;margin:0 0 5px}p{margin:0 0 10px;color:#727280}img{display:block;width:min(100%,390px);height:auto;border:1px solid #e5e5ea;border-radius:12px}</style><main><h1>Tokyo prompt story · QA</h1><p>Phone viewport: 390 × 844. The character taps each gate, sees the answer, then follows it to the restaurant and eats.</p>${cards}</main></html>`;
-    await writeFile(resolve(qaDir, 'index.html'), gallery);
-    await writeFile(resolve(qaDir, 'events.json'), `${JSON.stringify({ viewport: normal.viewport, normal, reduced: reducedResult }, null, 2)}\n`);
     await page.close();
     await reduced.close();
-    console.log(`STORY QA REPORT: ${resolve(qaDir, 'index.html')}`);
   } finally {
     await browser.close();
   }
