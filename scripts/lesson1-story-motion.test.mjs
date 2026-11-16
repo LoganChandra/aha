@@ -78,6 +78,20 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     frames.push({ file, title, description });
   };
 
+  const waitForArrivalBeat = async (page, message) => {
+    const frame = page.frames().find((candidate) => candidate.url().endsWith('/58.html'));
+    assert.ok(frame, message);
+    await frame.waitForFunction(() => {
+      const opacity = (selector) => Number.parseFloat(getComputedStyle(document.querySelector(selector)).opacity);
+      const traveler = document.querySelector('.airport-traveler');
+      return opacity('.parked-plane') > 0.8
+        && opacity('.airport-traveler') > 0.8
+        && traveler?.classList.contains('hungry')
+        && opacity('.airport-traveler .stomach-cue') > 0.2;
+    }, null, { timeout: 15_000 });
+    return frame;
+  };
+
   const waitForGateAndOption = async (page, item) => {
     await page.waitForFunction((gate) => document.querySelector(`.gate[data-i="${gate}"]`)?.classList.contains('tapping'), item.gate, { timeout: 35_000 });
     await saveFrame(page, `tap-${item.gate}-gate.png`, `Sam taps gate ${item.gate}`, 'The guide character moves to and taps the real prompt gate.');
@@ -91,14 +105,11 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     await mkdir(qaDir, { recursive: true });
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     await installTapRecorder(page);
-    const normalArrivalStart = Date.now();
     await page.goto(pathToFileURL(lessonPath).href, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__arrivalFrameLoaded === true, null, { timeout: 15_000 });
     await page.waitForTimeout(1_800);
     await saveFrame(page, '00-tokyo-arrival.png', 'Plane arrives in Tokyo', 'The original 58 arrival sequence begins the story.');
-    await page.waitForTimeout(Math.max(0, 6_800 - (Date.now() - normalArrivalStart)));
-    const arrivalFrame = page.frames().find((frame) => frame.url().endsWith('/58.html'));
-    assert.ok(arrivalFrame, 'the Tokyo arrival scene stays visible through the landing beat');
+    const arrivalFrame = await waitForArrivalBeat(page, 'the Tokyo arrival scene stays visible through the landing beat');
     const normalArrival = await arrivalFrame.evaluate(() => {
       const opacity = (selector) => Number.parseFloat(getComputedStyle(document.querySelector(selector)).opacity);
       return {
@@ -244,12 +255,9 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     const reduced = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     await reduced.emulateMedia({ reducedMotion: 'reduce' });
     await installTapRecorder(reduced);
-    const reducedArrivalStart = Date.now();
     await reduced.goto(pathToFileURL(lessonPath).href, { waitUntil: 'domcontentloaded' });
     await reduced.waitForFunction(() => window.__arrivalFrameLoaded === true, null, { timeout: 15_000 });
-    await reduced.waitForTimeout(Math.max(0, 6_800 - (Date.now() - reducedArrivalStart)));
-    const reducedArrivalFrame = reduced.frames().find((frame) => frame.url().endsWith('/58.html'));
-    assert.ok(reducedArrivalFrame, 'reduced-motion arrival remains visible through landing');
+    const reducedArrivalFrame = await waitForArrivalBeat(reduced, 'reduced-motion arrival remains visible through landing');
     const reducedArrival = await reducedArrivalFrame.evaluate(() => {
       const opacity = (selector) => Number.parseFloat(getComputedStyle(document.querySelector(selector)).opacity);
       return {
