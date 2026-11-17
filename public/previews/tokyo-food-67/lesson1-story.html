@@ -1,331 +1,971 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Prof AI · Before lesson 1</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Prof AI Lesson 1: Tokyo Adventure (Full Video Animation)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&amp;family=Nunito+Sans:wght@700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style>
-:root{--em:#2DC07A;--em-d:#1F9A5E;--em-l:#DDF7EA;--sk:#3BA8FF;--sk-d:#1C82D6;--sk-l:#E1F1FF;
---or:#FF9F1C;--or-d:#D97F00;--or-l:#FFF1DA;--vi:#9B6BFF;--vi-d:#7A4BE0;--vi-l:#F0E8FF;
---ink:#3C3C4A;--muted:#8A8A9A;--line:#E5E5EA;--line-d:#CFCFD8;--canvas:#F7F7F9;--night:#17214A}
-*{box-sizing:border-box;margin:0}
-html,body{background:#0b0f19;color:var(--ink);font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:700;-webkit-text-size-adjust:100%}
-body{min-height:100dvh;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.stage{position:relative;width:100%;max-width:440px;height:100dvh;max-height:940px;background:var(--canvas);overflow:hidden;display:flex;flex-direction:column}
-button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
-:focus-visible{outline:3px solid var(--sk);outline-offset:2px;border-radius:10px}
-/* progress */
-.rail{position:absolute;top:0;left:0;right:0;height:6px;background:rgba(255,255,255,.25);z-index:40}
-.rail i{display:block;height:100%;width:0;background:var(--em);transition:width .6s ease}
-/* scenes */
-.sc{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .6s ease,transform .6s ease;transform:scale(1.02);display:flex;flex-direction:column}
-.sc.on{opacity:1;pointer-events:auto;transform:none}
-/* 1 map */
-.mapwrap{position:absolute;inset:0;overflow:hidden;background:#e8eef5}
-.mapwrap svg{position:absolute;width:260%;height:260%;left:-80%;top:-80%;transition:transform 3.6s cubic-bezier(.5,0,.2,1),left 3.6s cubic-bezier(.5,0,.2,1),top 3.6s cubic-bezier(.5,0,.2,1)}
-.sc.on .mapwrap svg{transform:scale(1);left:-30%;top:-40%}
-.zoomtag{position:absolute;right:14px;bottom:120px;background:#fff;border:2px solid var(--line);border-radius:99px;padding:5px 12px;font-weight:900;font-size:12px;box-shadow:0 4px 0 var(--line)}
-.pin{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%)}
-.pin i{display:block;width:16px;height:16px;border-radius:50%;background:var(--sk);box-shadow:0 0 0 8px rgba(59,168,255,.25);animation:pulse 2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 6px rgba(59,168,255,.3)}70%{box-shadow:0 0 0 26px rgba(59,168,255,0)}100%{box-shadow:0 0 0 6px rgba(59,168,255,0)}}
-/* captions */
-.cap{position:absolute;left:0;right:0;bottom:0;padding:16px 18px calc(88px + env(safe-area-inset-bottom));background:linear-gradient(to top,rgba(11,15,25,.92) 40%,transparent);color:#fff}
-.cap b{display:block;font-size:18px;font-weight:900;line-height:1.25}
-.cap span{display:block;font-size:13.5px;font-weight:700;opacity:.82;margin-top:4px}
-/* buttons */
-.bar{position:absolute;left:0;right:0;bottom:0;padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:30}
-.btn{flex:1;height:52px;border-radius:15px;background:var(--em);color:#fff;font-weight:900;text-transform:uppercase;letter-spacing:.05em;font-size:14px;box-shadow:0 5px 0 var(--em-d)}
-.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--em-d)}
-.btn.ghost{background:rgba(255,255,255,.14);color:#fff;box-shadow:none;border:2px solid rgba(255,255,255,.35);flex:none;padding:0 16px}
-/* 2 plane */
-.night{position:absolute;inset:0;background:linear-gradient(#17214a,#31488f 55%,#5b6fb8)}
-.stars i{position:absolute;background:#fff;border-radius:50%}
-.ground{position:absolute;left:0;right:0;bottom:0;height:38%;background:#141c3a;border-top:3px solid #2b3f86}
-.runway{position:absolute;left:0;right:0;bottom:14%;height:8px;display:flex;gap:22px;padding:0 10px}
-.runway i{flex:1;background:#f2c94c;opacity:.55;border-radius:2px}
-.plane{position:absolute;left:-40%;top:18%;width:190px;transition:all 3.2s cubic-bezier(.3,.7,.4,1)}
-.sc.on .plane{left:26%;top:52%}
-.sam{position:absolute;bottom:12%;left:50%;transform:translate(-50%,20px);opacity:0;transition:all .7s ease .9s}
-.sc.on .sam{opacity:1;transform:translate(-50%,0)}
-.bub{position:absolute;left:50%;top:-64px;transform:translateX(-50%);background:#fff;border:2px solid var(--line);border-radius:16px;padding:9px 13px;font-weight:900;font-size:14px;white-space:nowrap;box-shadow:0 5px 0 var(--line)}
-.bub:after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-8px;width:14px;height:14px;background:#fff;border-right:2px solid var(--line);border-bottom:2px solid var(--line);transform:rotate(45deg)}
-/* 3 phone teach */
-.sheet{position:absolute;inset:0;background:var(--canvas);padding:20px 16px 96px;display:flex;flex-direction:column;gap:12px;overflow:auto}
-.h1{font-size:21px;font-weight:900;line-height:1.2}
-.h1 em{font-style:normal;color:var(--em-d)}
-.card{background:#fff;border:2px solid var(--line);border-radius:16px;box-shadow:0 4px 0 var(--line);padding:12px}
-.grow{display:flex;align-items:center;gap:10px;border:2px dashed var(--line-d);border-radius:12px;padding:9px 10px;margin-bottom:8px;transition:.25s;opacity:.35}
-.grow.in{opacity:1;border-style:solid}
-.grow.in.r{border-color:var(--sk);background:var(--sk-l)}
-.grow.in.c{border-color:var(--or);background:var(--or-l)}
-.grow.in.t{border-color:var(--em);background:var(--em-l)}
-.grow.in.f{border-color:var(--vi);background:var(--vi-l)}
-.grow .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--line);flex:none;color:#fff;font-weight:900;font-size:13px}
-.grow.in .ic{background:currentColor}
-.grow small{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.grow b{font-size:14px;font-weight:800}
-.msg{border:2px solid var(--line);border-radius:12px;padding:10px;font-size:14px;font-weight:800;line-height:1.6;background:#fff;min-height:54px}
-.msg span{border-radius:6px;padding:2px 6px;display:inline-block;margin:0 2px 3px 0}
-.msg .r{background:var(--sk-l);color:var(--sk-d)}.msg .c{background:var(--or-l);color:var(--or-d)}
-.msg .t{background:var(--em-l);color:var(--em-d)}.msg .f{background:var(--vi-l);color:var(--vi-d)}
-.res{display:flex;gap:8px;align-items:center;border:2px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:8px;opacity:0;transform:translateY(6px);transition:.3s}
-.res.on{opacity:1;transform:none}
-.res .n{flex:1;font-size:13.5px;font-weight:800}
-.res .p{font-weight:900;color:var(--or-d);font-size:13px}
-/* 4 eating */
-.shop{position:absolute;inset:0;background:linear-gradient(#1b2450,#141c3a)}
-.counter{position:absolute;left:0;right:0;bottom:0;height:34%;background:#4a3222;border-top:8px solid #2b1b10}
-.bowl{position:absolute;left:50%;bottom:36%;transform:translateX(-50%);width:86px;height:52px;background:#fff;border:3px solid #d9be8e;border-radius:0 0 44px 44px;overflow:hidden}
-.bowl i{position:absolute;left:0;right:0;top:0;height:12px;background:#e8b04b}
-.steam{position:absolute;left:50%;bottom:52%;transform:translateX(-50%);display:flex;gap:10px}
-.steam i{width:6px;height:26px;background:#fff;opacity:.45;border-radius:99px;animation:steam 2.2s infinite ease-in-out}
-.steam i:nth-child(2){animation-delay:.4s}.steam i:nth-child(3){animation-delay:.8s}
-@keyframes steam{0%{transform:translateY(6px) scaleY(.7);opacity:.15}50%{opacity:.5}100%{transform:translateY(-14px) scaleY(1.1);opacity:0}}
-/* 5 your turn */
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.chip{border:2px solid var(--line);border-radius:99px;padding:9px 14px;font-size:13.5px;font-weight:800;background:#fff}
-.chip[aria-pressed=true]{border-color:var(--em);background:var(--em-l);color:var(--em-d)}
-.hint{font-size:13px;font-weight:800;color:var(--muted);min-height:18px}
-/* 6 handoff */
-.hand{position:absolute;inset:0;background:var(--canvas);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;text-align:center}
-.hand h2{font-size:24px;font-weight:900}
-.hand p{font-size:15px;font-weight:700;color:var(--muted)}
-.load{width:54px;height:54px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--em);animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
-</style></head>
+  * { box-sizing: border-box; font-family: 'Nunito', 'Nunito Sans', sans-serif; user-select: none; }
+  body { margin: 0; padding: 0; background: #0b0f19; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; width: 100vw; }
+
+  /* Design System Lip physics & styling tokens */
+  :root {
+    --em: #2DC07A; --em-d: #1F9A5E; --em-l: #DDF7EA;
+    --sk: #3BA8FF; --sk-d: #1C82D6; --sk-l: #E1F1FF;
+    --or: #FF9F1C; --or-d: #D97F00; --or-l: #FFF1DA;
+    --vi: #9B6BFF; --vi-d: #7A4BE0; --vi-l: #F0E8FF;
+    --rd: #FF5A5F; --rd-d: #D93C42;
+    --ink: #3C3C4A; --canvas: #F7F7F9;
+  }
+
+  /* 16:9 Video Canvas Frame */
+  #video-frame {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    background: #eef2f7;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.6), 0 0 0 4px rgba(255,255,255,0.08);
+  }
+
+  /* Progress indicator bar at top (video style scrubber) */
+  .timeline-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 38px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.4) 70%, transparent 100%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .timeline-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.22);
+    position: relative;
+  }
+  .timeline-fill {
+    height: 100%; width: 0%;
+    background: #2DC07A;
+    box-shadow: 0 0 8px rgba(45,192,122,0.8);
+    transition: width 0.15s linear;
+  }
+
+  /* Common Beat Stage */
+  .beat-stage {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.98);
+  }
+  .beat-stage.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+  }
+
+  /* Clouds floating */
+  @keyframes driftClouds {
+    0% { transform: translateX(110%); }
+    100% { transform: translateX(-120%); }
+  }
+  .cloud-1 { animation: driftClouds 32s linear infinite; }
+  .cloud-2 { animation: driftClouds 24s linear infinite 10s; }
+  .cloud-3 { animation: driftClouds 28s linear infinite 5s; }
+
+  /* Airplane Landing Motion */
+  @keyframes planeLand {
+    0% { transform: translate(-300px, -180px) rotate(14deg) scale(0.65); }
+    40% { transform: translate(320px, 90px) rotate(4deg) scale(0.9); }
+    65% { transform: translate(520px, 140px) rotate(0deg) scale(1); }
+    85% { transform: translate(600px, 140px) rotate(0deg) scale(1); }
+    100% { transform: translate(620px, 140px) rotate(0deg) scale(1); }
+  }
+  .airplane-landing {
+    animation: planeLand 5.2s cubic-bezier(0.2, 0.8, 0.35, 1) forwards;
+  }
+
+  /* Character bounce and walk */
+  @keyframes charDisembark {
+    0% { transform: translate(0, 0) scale(0); opacity: 0; }
+    50% { transform: translate(30px, -40px) scale(1.1); opacity: 1; }
+    70% { transform: translate(70px, 0) scale(1); opacity: 1; }
+    100% { transform: translate(110px, 0) scale(1); opacity: 1; }
+  }
+  .char-exit {
+    animation: charDisembark 2.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 4.5s forwards;
+  }
+
+  /* Floating icon speech balloon */
+  @keyframes bubblePop {
+    0% { transform: scale(0) translateY(20px); opacity: 0; }
+    70% { transform: scale(1.08) translateY(-6px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .pop-balloon {
+    animation: bubblePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* Subtle character idle breathing */
+  @keyframes charBreathe {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .idle-bounce {
+    animation: charBreathe 2s ease-in-out infinite;
+  }
+
+  /* Pulse Ripple */
+  @keyframes radarRipple {
+    0% { transform: scale(0.4); opacity: 1; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+  .ripple-circle {
+    animation: radarRipple 2.2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+  }
+
+  /* Map Marker Pop */
+  @keyframes pinDrop {
+    0% { transform: translateY(-50px) scale(0); opacity: 0; }
+    60% { transform: translateY(8px) scale(1.12); opacity: 1; }
+    80% { transform: translateY(-3px) scale(0.97); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  /* Kanji Glow */
+  @keyframes neonGlow {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 90, 95, 0.4)); }
+    50% { filter: drop-shadow(0 0 24px rgba(255, 90, 95, 0.85)); }
+  }
+  .kanji-pulse {
+    animation: neonGlow 2s ease-in-out infinite;
+  }
+</style>
+</head>
 <body>
-<div class="stage" id="stage">
-  <div class="rail"><i id="railFill"></i></div>
-
-  <!-- 1 MAP ZOOM -->
-  <section class="sc on" id="sc0" aria-label="Tokyo map zooming in">
-    <div class="mapwrap">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <rect width="100" height="100" fill="#e8eef5"/>
-        <g stroke="#d6e2ee" stroke-width="7"><path d="M-10 22H110"/><path d="M-10 48H110"/><path d="M-10 74H110"/><path d="M20 -10V110"/><path d="M52 -10V110"/><path d="M82 -10V110"/></g>
-        <g stroke="#fff" stroke-width="2.4"><path d="M-10 35H110"/><path d="M64 -10V110"/></g>
-        <path d="M0 84 Q22 76 40 92 L40 100 L0 100Z" fill="#c2e7d3"/>
-        <path d="M78 0 Q90 12 100 10 L100 0Z" fill="#bfe3fd"/>
-        <g fill="#c9d7e4"><rect x="24" y="24" width="10" height="7" rx="1"/><rect x="38" y="50" width="9" height="9" rx="1"/><rect x="70" y="52" width="8" height="8" rx="1"/><rect x="56" y="78" width="10" height="6" rx="1"/></g>
-        <text x="52" y="46" font-size="3.2" font-weight="700" fill="#5A5A6A" text-anchor="middle" font-family="Nunito,sans-serif">Shibuya</text>
+<div id="video-frame">
+<!-- Top Video Progress Bar with Dynamic Step Header -->
+<div class="timeline-bar">
+<div class="timeline-track">
+<div class="timeline-fill" id="timeline-progress"></div>
+</div>
+<div class="flex items-center justify-between px-6 pt-1.5 text-xs text-white/90">
+<div class="flex items-center space-x-2">
+<span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="font-extrabold tracking-wider uppercase bg-white/15 px-2.5 py-0.5 rounded-full border border-white/20 text-[11px] text-white" id="current-step-badge">
+          1. ARRIVAL
+        </span>
+</div>
+<!-- Video controls overlay (Play/Pause & Beat buttons) -->
+<div class="flex items-center space-x-2">
+<button class="px-2 py-0.5 rounded-md bg-white/20 hover:bg-white/30 text-[11px] font-bold text-white transition flex items-center space-x-1" id="btn-toggle-play" onclick="togglePlay()">
+<span class="material-symbols-outlined text-[14px]" id="play-pause-icon">pause</span>
+<span id="play-pause-label">Pause</span>
+</button>
+<div class="flex items-center space-x-1 bg-black/40 px-1.5 py-0.5 rounded-full border border-white/10 text-[10px] font-black">
+<button class="step-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white" data-beat="0" onclick="jumpToBeat(0)">1</button>
+<button class="step-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white" data-beat="1" onclick="jumpToBeat(1)">2</button>
+<button class="step-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white" data-beat="2" onclick="jumpToBeat(2)">3</button>
+<button class="step-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white" data-beat="3" onclick="jumpToBeat(3)">4</button>
+<button class="step-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white" data-beat="4" onclick="jumpToBeat(4)">5</button>
+<button class="step-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white" data-beat="5" onclick="jumpToBeat(5)">6</button>
+<button class="step-btn px-2 py-0.5 rounded-full text-white/70 hover:text-white" data-beat="6" onclick="jumpToBeat(6)">7</button>
+</div>
+</div>
+</div>
+</div>
+<!-- BEAT 0: MAP ZOOM -->
+<div class="beat-stage" id="beat-0">
+  <div class="absolute inset-0 bg-[#E8EEF5] overflow-hidden">
+    <div id="zoomwrap" style="position:absolute;inset:0;transition:transform 4s cubic-bezier(.5,0,.2,1);transform:scale(2.6);transform-origin:52% 48%">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%">
+        <rect width="100" height="100" fill="#E8EEF5"/>
+        <g stroke="#D6E2EE" stroke-width="7"><path d="M-10 22H110"/><path d="M-10 48H110"/><path d="M-10 74H110"/><path d="M20 -10V110"/><path d="M52 -10V110"/><path d="M82 -10V110"/></g>
+        <g stroke="#FFFFFF" stroke-width="2.4"><path d="M-10 35H110"/><path d="M64 -10V110"/></g>
+        <path d="M0 84 Q22 76 40 92 L40 100 L0 100Z" fill="#C2E7D3"/>
+        <g fill="#C9D7E4"><rect x="24" y="24" width="10" height="7" rx="1"/><rect x="38" y="50" width="9" height="9" rx="1"/><rect x="70" y="52" width="8" height="8" rx="1"/><rect x="56" y="78" width="10" height="6" rx="1"/></g>
+        <text x="52" y="46" font-size="3.4" font-weight="700" fill="#5A5A6A" text-anchor="middle" font-family="Nunito,sans-serif">SHIBUYA</text>
       </svg>
     </div>
-    <div class="pin"><i></i></div>
-    <div class="zoomtag" id="zoomTag">1.0×</div>
-    <div class="cap"><b>Tokyo. One station.</b><span>Zooming in on Shibuya…</span></div>
-  </section>
-
-  <!-- 2 PLANE -->
-  <section class="sc" id="sc1" aria-label="The plane lands">
-    <div class="night">
-      <div class="stars" id="stars"></div>
-      <div class="ground"></div>
-      <div class="runway"><i></i><i></i><i></i><i></i><i></i></div>
-      <svg class="plane" viewBox="0 0 320 200" aria-hidden="true">
-        <path d="M40,110 C50,60 140,55 240,65 C285,70 310,95 310,115 C310,135 285,155 230,155 L70,155 C45,155 35,135 40,110 Z" fill="#fff"/>
-        <path d="M140,110 L195,190 L165,190 L115,110 Z" fill="#2DC07A"/>
-        <path d="M150,75 L200,10 L170,10 L125,75 Z" fill="#1F9A5E"/>
-        <path d="M45,110 L20,30 L60,30 L85,110 Z" fill="#2DC07A"/>
-        <circle cx="160" cy="105" r="8" fill="#3BA8FF"/><circle cx="195" cy="105" r="8" fill="#3BA8FF"/><circle cx="230" cy="105" r="8" fill="#3BA8FF"/>
-      </svg>
-      <div class="sam">
-        <div class="bub">Hungry! Let's find food.</div>
-        <svg width="86" height="120" viewBox="0 0 86 120" aria-hidden="true">
-          <ellipse cx="43" cy="112" rx="22" ry="5" fill="#0b1226" opacity=".5"/>
-          <path d="M28 108c-4-22-5-34-2-42h34c3 8 2 20-2 42z" fill="#2DC07A"/>
-          <circle cx="43" cy="48" r="17" fill="#FFE0B2"/>
-          <path d="M26 48a17 17 0 0 1 34 0z" fill="#FF9F1C"/>
-          <path d="M60 44h14a5 5 0 0 1 0 10H60z" fill="#FF9F1C"/>
-          <circle cx="37" cy="49" r="2.8" fill="#3C3C4A"/><circle cx="49" cy="49" r="2.8" fill="#3C3C4A"/>
-          <path d="M38 56q5 4 10 0" stroke="#3C3C4A" stroke-width="2" fill="none" stroke-linecap="round"/>
-        </svg>
+    <div style="position:absolute;left:52%;top:48%;transform:translate(-50%,-50%)">
+      <span style="display:block;width:16px;height:16px;border-radius:50%;background:#3BA8FF;box-shadow:0 0 0 8px rgba(59,168,255,.25);animation:radarRipple 2.2s infinite"></span>
+    </div>
+    <div style="position:absolute;right:24px;bottom:120px" class="bg-white border-2 border-[#E5E5EA] rounded-full px-3 py-1 text-xs font-black shadow">3.6&times;</div>
+    <div class="absolute bottom-6 inset-x-0 flex justify-center z-30 pointer-events-none">
+      <div class="bg-black/75 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-xl flex items-center space-x-3 text-white">
+        <span class="w-3 h-3 rounded-full bg-sky-400"></span>
+        <p class="text-base font-extrabold tracking-wide">Tokyo. One station: <span class="text-sky-300">Shibuya.</span></p>
       </div>
     </div>
-    <div class="cap"><b>The plane lands.</b><span>Sam steps out — first time in Tokyo.</span></div>
-  </section>
-
-  <!-- 3 WHAT PROF AI IS -->
-  <section class="sc" id="sc2" aria-label="What Prof AI is and how to use it">
-    <div class="sheet">
-      <div class="h1">This is <em>Prof AI</em>.</div>
-      <p style="font-size:14.5px;font-weight:700;color:#5A5A6A">You say what you want, in plain words. It answers with a lesson you can play.</p>
-      <div class="card">
-        <div style="font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px" id="stepLbl">Tap a piece</div>
-        <div class="grow r" id="g0"><span class="ic">1</span><span><small>Role</small><b>Be my Tokyo food guide</b></span></div>
-        <div class="grow c" id="g1"><span class="ic">2</span><span><small>Context</small><b>I'm hungry in Tokyo</b></span></div>
-        <div class="grow t" id="g2"><span class="ic">3</span><span><small>Task</small><b>Find 3 nearby restaurants</b></span></div>
-        <div class="grow f" id="g3"><span class="ic">4</span><span><small>Format</small><b>Names, distances, prices</b></span></div>
-        <div class="msg" id="msg"><span style="color:#8A8A9A">Your prompt appears here…</span></div>
-      </div>
-      <div class="card" id="resCard" style="display:none">
-        <div style="font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">What came back</div>
-        <div class="res on"><span class="n">Ichiran Ramen · 350 m</span><span class="p">¥860</span></div>
-        <div class="res on"><span class="n">Sushi Zanmai · 1.2 km</span><span class="p">¥1,800</span></div>
-        <div class="res on"><span class="n">Omoide Yokocho · 600 m</span><span class="p">¥700</span></div>
-      </div>
-    </div>
-    <div class="cap"><b>Four pieces. One good prompt.</b><span>Watch Sam tap them in.</span></div>
-  </section>
-
-  <!-- 4 EATING -->
-  <section class="sc" id="sc3" aria-label="Sam eats at the restaurant">
-    <div class="shop" style="background:#141c3a">
-      <svg viewBox="0 0 390 320" style="position:absolute;inset:0;width:100%;height:100%" aria-label="Sam eating ramen at a Tokyo counter">
-        <rect width="390" height="320" fill="#141c3a"/>
-        <!-- steam above the bowl -->
-        <g stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".55">
-          <path d="M168 208c-8-12 6-18 0-30"/>
-          <path d="M195 204c-8-14 8-20 0-34"/>
-          <path d="M222 208c-8-12 6-18 0-30"/>
-        </g>
-        <!-- Sam -->
-        <g>
-          <rect x="150" y="196" width="90" height="44" rx="16" fill="#2DC07A"/>
-          <circle cx="195" cy="140" r="34" fill="#FFE0B2"/>
-          <path d="M161 140a34 34 0 0 1 68 0z" fill="#FF9F1C"/>
-          <path d="M228 134h20a7 7 0 0 1 0 14h-20z" fill="#FF9F1C"/>
-          <circle cx="183" cy="142" r="4" fill="#3C3C4A"/><circle cx="207" cy="142" r="4" fill="#3C3C4A"/>
-          <path d="M184 155q11 8 22 0" stroke="#3C3C4A" stroke-width="3" fill="none" stroke-linecap="round"/>
-        </g>
-        <!-- arm + hand holding chopsticks -->
-        <path d="M232 206c14 6 24 12 30 22" stroke="#FFE0B2" stroke-width="12" stroke-linecap="round" fill="none"/>
-        <circle cx="264" cy="230" r="9" fill="#FFE0B2" stroke="#E8C79A" stroke-width="2"/>
-        <!-- bowl -->
-        <path d="M137 236h116c0 26-20 44-58 44s-58-18-58-44z" fill="#fff" stroke="#D9BE8E" stroke-width="4"/>
-        <path d="M137 236h116" stroke="#D9BE8E" stroke-width="4"/>
-        <path d="M146 246c14 8 30 10 48 10s34-2 48-10" stroke="#E8B04B" stroke-width="8" fill="none" stroke-linecap="round"/>
-        <!-- counter -->
-        <rect y="266" width="390" height="54" fill="#4A3222"/>
-        <rect y="266" width="390" height="5" fill="#2B1B10"/>
-        <!-- chopsticks from the hand into the bowl -->
-        <g stroke-linecap="round"><path d="M262 224L206 246" stroke="#B45309" stroke-width="5"/><path d="M258 232L202 254" stroke="#92400E" stroke-width="5"/></g>
-        <path d="M206 246c-6-10-4-16 2-18" stroke="#E8B04B" stroke-width="5" fill="none" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div class="cap"><b>It worked. Sam is eating.</b><span>"Ramen. Exactly what I wanted. Now your turn."</span></div>
-  </section>
-
-  <!-- 5 YOUR TURN -->
-  <section class="sc" id="sc4" aria-label="Your turn to build a prompt">
-    <div class="sheet">
-      <div class="h1">Your turn. <em>Build the prompt.</em></div>
-      <p style="font-size:14.5px;font-weight:700;color:#5A5A6A">Pick one from each piece. All four and it unlocks.</p>
-      <div class="card">
-        <div style="font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#3BA8FF;margin-bottom:6px">Role</div>
-        <div class="chips" id="cr"></div>
-        <div style="font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#FF9F1C;margin:12px 0 6px">Context</div>
-        <div class="chips" id="cc"></div>
-        <div style="font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#2DC07A;margin:12px 0 6px">Task</div>
-        <div class="chips" id="ct"></div>
-        <div style="font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#9B6BFF;margin:12px 0 6px">Format</div>
-        <div class="chips" id="cf"></div>
-      </div>
-      <div class="hint" id="hint">0 of 4 picked.</div>
-    </div>
-    <div class="cap"><b>Same four pieces.</b><span>Any sensible pick works — nothing here can break.</span></div>
-  </section>
-
-  <!-- 6 HANDOFF -->
-  <section class="sc" id="sc5" aria-label="Starting lesson 1">
-    <div class="hand">
-      <div class="load" id="spin" style="display:none"></div>
-      <h2 id="handT">Nice. Lesson 1 starts now.</h2>
-      <p id="handP">Same story, but this time you drive.</p>
-    </div>
-  </section>
-
-  <div class="bar">
-    <button class="btn ghost" id="skip" type="button">Skip</button>
-    <button class="btn" id="next" type="button">Next</button>
   </div>
 </div>
-
+<!-- BEAT 1: ARRIVE IN TOKYO -->
+<div class="beat-stage active" id="beat-1">
+<!-- Sky & Mt. Fuji & Tokyo Skyline -->
+<div class="absolute inset-0 bg-gradient-to-b from-[#bfe4ff] via-[#d7efff] to-[#eaf5fc]">
+<!-- Clouds -->
+<div class="absolute top-12 w-44 h-14 bg-white/80 rounded-full cloud-1 filter blur-[1px]"></div>
+<div class="absolute top-24 w-60 h-18 bg-white/70 rounded-full cloud-2 filter blur-[1px]"></div>
+<div class="absolute top-10 right-20 w-52 h-16 bg-white/75 rounded-full cloud-3 filter blur-[1px]"></div>
+<!-- Mt Fuji silhouette -->
+<svg class="absolute bottom-[220px] right-[240px] w-80 h-48 opacity-45" viewbox="0 0 300 200">
+<polygon fill="#a4c6ea" points="150,20 280,200 20,200"></polygon>
+<polygon fill="#ffffff" points="150,20 180,68 120,68"></polygon>
+</svg>
+<!-- Tokyo Tower Red Icon -->
+<div class="absolute bottom-[220px] left-[260px] w-28 h-64 flex flex-col items-center justify-end opacity-90">
+<div class="w-2 h-16 bg-[#FF5A5F]"></div>
+<div class="w-10 h-8 bg-[#FF5A5F] rounded-t-lg -mt-1"></div>
+<div class="w-18 h-24 bg-[#FF5A5F] rounded-t-xl" style="clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%);"></div>
+<div class="w-24 h-16 bg-[#FF5A5F] rounded-t-sm" style="clip-path: polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%);"></div>
+</div>
+<!-- Tokyo Skyline Flat Blocks -->
+<div class="absolute bottom-[220px] inset-x-0 h-44 flex items-end justify-center space-x-5 opacity-40 px-12">
+<div class="w-20 h-40 bg-[#7c9cb8] rounded-t-md"></div>
+<div class="w-16 h-28 bg-[#8eabc4] rounded-t-md"></div>
+<div class="w-24 h-48 bg-[#6f8fae] rounded-t-md"></div>
+<div class="w-20 h-32 bg-[#8daec7] rounded-t-md"></div>
+<div class="w-28 h-52 bg-[#5d7f9f] rounded-t-md"></div>
+<div class="w-16 h-36 bg-[#82a4c1] rounded-t-md"></div>
+<div class="w-24 h-44 bg-[#6c8ea9] rounded-t-md"></div>
+</div>
+<!-- Airport Haneda Runway Base -->
+<div class="absolute bottom-0 inset-x-0 h-[220px] bg-[#2E313D] border-t-8 border-[#3C4050] flex flex-col justify-between py-6">
+<!-- Runway markings -->
+<div class="w-full flex justify-around opacity-60">
+<div class="w-20 h-4 bg-[#F2C94C] rounded-full"></div>
+<div class="w-20 h-4 bg-[#F2C94C] rounded-full"></div>
+<div class="w-20 h-4 bg-[#F2C94C] rounded-full"></div>
+<div class="w-20 h-4 bg-[#F2C94C] rounded-full"></div>
+<div class="w-20 h-4 bg-[#F2C94C] rounded-full"></div>
+</div>
+<div class="w-full flex justify-center space-x-12 opacity-80">
+<div class="w-32 h-6 bg-white rounded"></div>
+<div class="w-32 h-6 bg-white rounded"></div>
+<div class="w-32 h-6 bg-white rounded"></div>
+</div>
+</div>
+<!-- Animated Jet Airplane Landing -->
+<div class="absolute bottom-[160px] left-[100px] airplane-landing z-20">
+<!-- Chunky Airplane SVG -->
+<svg class="w-72 h-44 drop-shadow-2xl" viewbox="0 0 320 200">
+<!-- Plane Body -->
+<path d="M40,110 C50,60 140,55 240,65 C285,70 310,95 310,115 C310,135 285,155 230,155 L70,155 C45,155 35,135 40,110 Z" fill="#FFFFFF"></path>
+<!-- Wings -->
+<path d="M140,110 L195,190 L165,190 L115,110 Z" fill="#2DC07A"></path>
+<path d="M150,75 L200,10 L170,10 L125,75 Z" fill="#1F9A5E"></path>
+<!-- Tail -->
+<path d="M45,110 L20,30 L60,30 L85,110 Z" fill="#2DC07A"></path>
+<!-- Windows -->
+<circle cx="160" cy="105" fill="#3BA8FF" r="9"></circle>
+<circle cx="195" cy="105" fill="#3BA8FF" r="9"></circle>
+<circle cx="230" cy="105" fill="#3BA8FF" r="9"></circle>
+<!-- Cockpit -->
+<path d="M275,100 C285,100 295,105 300,114 L265,114 Z" fill="#3BA8FF"></path>
+<!-- Wheels -->
+<rect fill="#5A5A6A" height="18" width="8" x="150" y="160"></rect>
+<circle cx="154" cy="180" fill="#1C1B1D" r="10"></circle>
+<rect fill="#5A5A6A" height="18" width="8" x="250" y="160"></rect>
+<circle cx="254" cy="180" fill="#1C1B1D" r="10"></circle>
+</svg>
+<!-- Disembarking 3D Avatar Character -->
+<div class="absolute -bottom-8 left-[130px] char-exit flex flex-col items-center">
+<!-- Speech Balloon: Hunger & Tokyo Food! -->
+<div class="pop-balloon mb-3 bg-white p-3.5 rounded-2xl shadow-[0_8px_0_#CFCFD8] border-2 border-[#E5E5EA] flex items-center space-x-3">
+<span class="text-3xl">😋</span>
+<div class="w-8 h-8 rounded-full bg-[#FFF1DA] flex items-center justify-center">
+<svg class="w-5 h-5 text-[#FF9F1C]" fill="currentColor" viewbox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"></path></svg>
+</div>
+<span class="text-2xl">🍜</span>
+</div>
+<!-- Chunky Avatar Body -->
+<div class="w-16 h-28 relative idle-bounce">
+<!-- Hat/Hair -->
+<div class="w-14 h-6 bg-[#FF9F1C] rounded-t-full mx-auto border-2 border-[#D97F00]"></div>
+<!-- Face -->
+<div class="w-12 h-10 bg-[#FFD1A4] mx-auto rounded-b-xl flex items-center justify-around px-2 relative -mt-1 shadow-sm">
+<div class="w-2.5 h-2.5 bg-[#1C1B1D] rounded-full"></div>
+<div class="w-2.5 h-2.5 bg-[#1C1B1D] rounded-full"></div>
+</div>
+<!-- Torso (Emerald Coat) -->
+<div class="w-14 h-12 bg-[#2DC07A] rounded-xl mx-auto -mt-1 border-2 border-[#1F9A5E] flex items-center justify-center">
+<!-- Backpack straps -->
+<div class="w-10 h-7 border-2 border-white/60 rounded-md"></div>
+</div>
+<!-- Legs -->
+<div class="flex justify-center space-x-2 -mt-1">
+<div class="w-4 h-7 bg-[#3BA8FF] rounded-b-md"></div>
+<div class="w-4 h-7 bg-[#3BA8FF] rounded-b-md"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Beat 1 Lower-Third Subtitle Bar -->
+<div class="absolute bottom-6 inset-x-0 flex justify-center z-30 pointer-events-none">
+<div class="bg-black/75 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-xl flex items-center space-x-3 text-white">
+<span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+<p class="text-base font-extrabold tracking-wide">
+            Alex arrives in Tokyo: <span class="text-amber-300">"Starving! Let's find food."</span>
+</p>
+</div>
+</div>
+</div>
+</div>
+<!-- BEAT 2: SHOW HOW TO ASK AI (THE 4 GATES ASSEMBLE) -->
+<div class="beat-stage" id="beat-2">
+<div class="absolute inset-0 bg-[#F4F6FB] flex items-center justify-center p-10 pt-14">
+<!-- Communicator Device Frame -->
+<div class="w-[1000px] h-[590px] bg-white rounded-[32px] border-4 border-[#E5E5EA] shadow-[0_16px_0_#CFCFD8] flex flex-col p-7 relative overflow-hidden">
+<!-- Header Bar -->
+<div class="flex items-center justify-between pb-4 border-b-2 border-[#F0F0F5]">
+<!-- Prof Papilio Butterfly Mascot floating -->
+<div class="flex items-center space-x-4">
+<div class="w-13 h-13 bg-[#2DC07A] p-2 rounded-2xl flex items-center justify-center shadow-[0_4px_0_#1F9A5E]">
+<!-- Butterfly Mascot Vector -->
+<svg class="w-8 h-8 text-white" fill="currentColor" viewbox="0 0 24 24">
+<circle cx="8" cy="8" fill="#3BA8FF" r="4"></circle>
+<circle cx="16" cy="8" fill="#9B6BFF" r="4"></circle>
+<circle cx="8" cy="15" fill="#FF9F1C" r="3"></circle>
+<circle cx="16" cy="15" fill="#2DC07A" r="3"></circle>
+<ellipse cx="12" cy="12" fill="#FFFFFF" rx="1.5" ry="7"></ellipse>
+</svg>
+</div>
+<div>
+<div class="text-base font-black text-[#1A1A27] tracking-tight">Prof AI Prompt Engine</div>
+<div class="text-xs font-bold text-slate-500">The 4 Gates Framework</div>
+</div>
+</div>
+<!-- 4 Gate Color Indicator Dots with Labels -->
+<div class="flex items-center space-x-2 bg-[#F7F7F9] px-3.5 py-1.5 rounded-full border-2 border-[#E5E5EA] text-xs font-black">
+<span class="text-[#00629f] flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#3BA8FF]"></span>ROLE</span>
+<span class="text-[#895100] flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#FF9F1C]"></span>CONTEXT</span>
+<span class="text-[#006d40] flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#2DC07A]"></span>TASK</span>
+<span class="text-[#592cb8] flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#9B6BFF]"></span>FORMAT</span>
+</div>
+</div>
+<!-- Central Assembly Chamber -->
+<div class="flex-1 grid grid-cols-12 gap-6 items-center py-4">
+<!-- Left: The Character demonstrating -->
+<div class="col-span-4 flex flex-col items-center justify-center">
+<div class="w-36 h-52 relative idle-bounce">
+<!-- Avatar -->
+<div class="w-28 h-12 bg-[#FF9F1C] rounded-t-full mx-auto border-2 border-[#D97F00]"></div>
+<div class="w-24 h-20 bg-[#FFD1A4] mx-auto rounded-b-2xl flex items-center justify-around px-4 relative -mt-2">
+<div class="w-3.5 h-3.5 bg-[#1C1B1D] rounded-full"></div>
+<div class="w-3.5 h-3.5 bg-[#1C1B1D] rounded-full"></div>
+</div>
+<div class="w-28 h-20 bg-[#2DC07A] rounded-2xl mx-auto -mt-2 border-2 border-[#1F9A5E] flex items-center justify-center shadow-md">
+<div class="w-16 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+<span class="text-3xl">✨</span>
+</div>
+</div>
+<div class="flex justify-center space-x-4 -mt-1">
+<div class="w-7 h-10 bg-[#3BA8FF] rounded-b-xl"></div>
+<div class="w-7 h-10 bg-[#3BA8FF] rounded-b-xl"></div>
+</div>
+</div>
+</div>
+<!-- Right: The 4 Prompt Gates sequentially stacking with clear labels -->
+<div class="col-span-8 flex flex-col space-y-3">
+<!-- Gate 1: Role -->
+<div class="h-16 bg-[#E1F1FF] border-2 border-[#3BA8FF] rounded-2xl px-4 flex items-center justify-between shadow-[0_4px_0_#1C82D6] transform translate-y-8 opacity-0" id="b2-gate-1">
+<div class="flex items-center space-x-3.5">
+<div class="w-10 h-10 bg-[#3BA8FF] rounded-xl flex items-center justify-center text-white shadow-[0_3px_0_#1C82D6]">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+</div>
+<div>
+<div class="text-sm font-black text-[#004a79] tracking-wide">1. ROLE: Tokyo Food Guide <span class="text-xs font-bold text-[#00629f]">(Who)</span></div>
+<div class="text-xs font-bold text-[#3BA8FF]">Local dining specialist tone &amp; expertise</div>
+</div>
+</div>
+<span class="px-2.5 py-1 bg-[#3BA8FF] text-white rounded-lg text-xs font-black shadow-sm">GATE 1</span>
+</div>
+<!-- Gate 2: Context -->
+<div class="h-16 bg-[#FFF1DA] border-2 border-[#FF9F1C] rounded-2xl px-4 flex items-center justify-between shadow-[0_4px_0_#D97F00] transform translate-y-8 opacity-0" id="b2-gate-2">
+<div class="flex items-center space-x-3.5">
+<div class="w-10 h-10 bg-[#FF9F1C] rounded-xl flex items-center justify-center text-white shadow-[0_3px_0_#D97F00]">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+</div>
+<div>
+<div class="text-sm font-black text-[#895100] tracking-wide">2. CONTEXT: Hungry in Shibuya <span class="text-xs font-bold text-[#9e6209]">(Where &amp; Status)</span></div>
+<div class="text-xs font-bold text-[#D97F00]">Current location, solo traveler, evening</div>
+</div>
+</div>
+<span class="px-2.5 py-1 bg-[#FF9F1C] text-white rounded-lg text-xs font-black shadow-sm">GATE 2</span>
+</div>
+<!-- Gate 3: Task -->
+<div class="h-16 bg-[#DDF7EA] border-2 border-[#2DC07A] rounded-2xl px-4 flex items-center justify-between shadow-[0_4px_0_#1F9A5E] transform translate-y-8 opacity-0" id="b2-gate-3">
+<div class="flex items-center space-x-3.5">
+<div class="w-10 h-10 bg-[#2DC07A] rounded-xl flex items-center justify-center text-white shadow-[0_3px_0_#1F9A5E]">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+</div>
+<div>
+<div class="text-sm font-black text-[#00522f] tracking-wide">3. TASK: Find 3 nearby spots <span class="text-xs font-bold text-[#006d40]">(What)</span></div>
+<div class="text-xs font-bold text-[#1F9A5E]">Quick authentic dinner under 10 min walk</div>
+</div>
+</div>
+<span class="px-2.5 py-1 bg-[#2DC07A] text-white rounded-lg text-xs font-black shadow-sm">GATE 3</span>
+</div>
+<!-- Gate 4: Format -->
+<div class="h-16 bg-[#F0E8FF] border-2 border-[#9B6BFF] rounded-2xl px-4 flex items-center justify-between shadow-[0_4px_0_#7A4BE0] transform translate-y-8 opacity-0" id="b2-gate-4">
+<div class="flex items-center space-x-3.5">
+<div class="w-10 h-10 bg-[#9B6BFF] rounded-xl flex items-center justify-center text-white shadow-[0_3px_0_#7A4BE0]">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><rect height="7" width="7" x="3" y="3"></rect><rect height="7" width="7" x="14" y="3"></rect><rect height="7" width="7" x="14" y="14"></rect><rect height="7" width="7" x="3" y="14"></rect></svg>
+</div>
+<div>
+<div class="text-sm font-black text-[#51239c] tracking-wide">4. FORMAT: Names, Distances &amp; Prices <span class="text-xs font-bold text-[#6d39bd]">(How)</span></div>
+<div class="text-xs font-bold text-[#7A4BE0]">Concise numbered list with budget info</div>
+</div>
+</div>
+<span class="px-2.5 py-1 bg-[#9B6BFF] text-white rounded-lg text-xs font-black shadow-sm">GATE 4</span>
+</div>
+</div>
+</div>
+<!-- Automatic Simulated Send Action with Unified Callout -->
+<div class="mt-1 flex items-center justify-center">
+<div class="px-8 h-13 bg-[#2DC07A] rounded-2xl flex items-center justify-center space-x-3 text-white shadow-[0_6px_0_#1F9A5E] transform transition-all duration-300" id="b2-send-action">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><line x1="22" x2="11" y1="2" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+<span class="text-sm font-black tracking-wide">Combine all 4 gates → Send to Prof AI</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- BEAT 3: SHOW RESULTS (MAP & 3 RESTAURANT MARKERS POP) -->
+<div class="beat-stage" id="beat-3">
+<div class="absolute inset-0 bg-[#E8EEF5] flex items-center justify-center p-8 pt-12">
+<!-- Street Map Container -->
+<div class="w-full h-full bg-[#DBE4EE] rounded-[32px] border-4 border-[#C7D4E2] relative overflow-hidden shadow-inner">
+<!-- SVG Tokyo Street Grid -->
+<svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+<!-- Main Roads -->
+<line stroke="#FFFFFF" stroke-linecap="round" stroke-width="32" x1="100" x2="400" y1="0" y2="720"></line>
+<line stroke="#CBD5E1" stroke-dasharray="16 16" stroke-width="4" x1="100" x2="400" y1="0" y2="720"></line>
+<line stroke="#FFFFFF" stroke-linecap="round" stroke-width="28" x1="300" x2="1100" y1="720" y2="100"></line>
+<line stroke="#CBD5E1" stroke-dasharray="16 16" stroke-width="4" x1="300" x2="1100" y1="720" y2="100"></line>
+<line stroke="#FFFFFF" stroke-width="26" x1="0" x2="1280" y1="360" y2="380"></line>
+<line stroke="#FFFFFF" stroke-width="24" x1="850" x2="700" y1="0" y2="720"></line>
+<!-- River / Green parks -->
+<path d="M0,600 Q300,550 500,680 L500,720 L0,720 Z" fill="#C2E7D3"></path>
+<path d="M900,0 Q1050,150 1280,120 L1280,0 Z" fill="#BFE3FD"></path>
+</svg>
+<!-- Center: Character standing on Tokyo Map with pulsing radar -->
+<div class="absolute top-[48%] left-[34%] transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+<div class="absolute w-48 h-48 rounded-full bg-[#3BA8FF]/20 ripple-circle"></div>
+<div class="absolute w-32 h-32 rounded-full bg-[#3BA8FF]/30 ripple-circle" style="animation-delay: 0.7s;"></div>
+<!-- Character celebrating -->
+<div class="relative z-10 flex flex-col items-center idle-bounce">
+<!-- Celebration Speech -->
+<div class="pop-balloon mb-2 bg-white px-3.5 py-1.5 rounded-2xl shadow-[0_6px_0_#CFCFD8] border-2 border-[#E5E5EA] flex items-center space-x-1.5">
+<span class="text-2xl">🎉</span>
+<span class="text-xs font-black text-slate-800">Shibuya Found!</span>
+</div>
+<!-- Avatar Mini -->
+<div class="w-14 h-22 relative">
+<div class="w-12 h-5 bg-[#FF9F1C] rounded-t-full mx-auto"></div>
+<div class="w-10 h-8 bg-[#FFD1A4] mx-auto rounded-b-lg flex items-center justify-around px-1.5 -mt-1">
+<div class="w-2 h-2 bg-[#1C1B1D] rounded-full"></div>
+<div class="w-2 h-2 bg-[#1C1B1D] rounded-full"></div>
+</div>
+<div class="w-12 h-9 bg-[#2DC07A] rounded-xl mx-auto -mt-1 flex items-center justify-center"></div>
+<div class="flex justify-center space-x-1.5">
+<div class="w-3.5 h-5 bg-[#3BA8FF] rounded-b"></div>
+<div class="w-3.5 h-5 bg-[#3BA8FF] rounded-b"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 3 Specific Food Map Pins with requested badge names -->
+<!-- Pin 1: Yakitori -->
+<div class="absolute top-[26%] left-[58%] transform -translate-x-1/2 -translate-y-1/2 opacity-0 z-20" id="b3-pin-1">
+<div class="bg-white px-3.5 py-2.5 rounded-2xl shadow-[0_8px_0_#CFCFD8] border-2 border-[#E5E5EA] flex items-center space-x-3">
+<div class="w-11 h-11 bg-[#FF9F1C] rounded-xl flex items-center justify-center text-2xl shadow-[0_3px_0_#D97F00]">
+              🍢
+            </div>
+<div class="flex flex-col pr-1">
+<span class="text-xs font-black text-slate-900 tracking-tight">Yakitori Alley</span>
+<span class="text-[11px] font-bold text-[#D97F00]">3 min · ¥850</span>
+</div>
+</div>
+<!-- Pointer -->
+<div class="w-4 h-4 bg-white border-r-2 border-b-2 border-[#E5E5EA] transform rotate-45 mx-auto -mt-2 shadow-sm"></div>
+</div>
+<!-- Pin 2: Ramen -->
+<div class="absolute top-[64%] left-[68%] transform -translate-x-1/2 -translate-y-1/2 opacity-0 z-20" id="b3-pin-2">
+<div class="bg-white px-3.5 py-2.5 rounded-2xl shadow-[0_8px_0_#CFCFD8] border-2 border-[#E5E5EA] flex items-center space-x-3">
+<div class="w-11 h-11 bg-[#FF5A5F] rounded-xl flex items-center justify-center text-2xl shadow-[0_3px_0_#D93C42]">
+              🍜
+            </div>
+<div class="flex flex-col pr-1">
+<span class="text-xs font-black text-slate-900 tracking-tight">Dogenzaka Ramen</span>
+<span class="text-[11px] font-bold text-[#FF5A5F]">6 min · ¥950</span>
+</div>
+</div>
+<div class="w-4 h-4 bg-white border-r-2 border-b-2 border-[#E5E5EA] transform rotate-45 mx-auto -mt-2 shadow-sm"></div>
+</div>
+<!-- Pin 3: Soba / Tempura -->
+<div class="absolute top-[36%] left-[20%] transform -translate-x-1/2 -translate-y-1/2 opacity-0 z-20" id="b3-pin-3">
+<div class="bg-white px-3.5 py-2.5 rounded-2xl shadow-[0_8px_0_#CFCFD8] border-2 border-[#E5E5EA] flex items-center space-x-3">
+<div class="w-11 h-11 bg-[#2DC07A] rounded-xl flex items-center justify-center text-2xl shadow-[0_3px_0_#1F9A5E]">
+              🍱
+            </div>
+<div class="flex flex-col pr-1">
+<span class="text-xs font-black text-slate-900 tracking-tight">Niboshi Soba</span>
+<span class="text-[11px] font-bold text-[#1F9A5E]">8 min · ¥1,100</span>
+</div>
+</div>
+<div class="w-4 h-4 bg-white border-r-2 border-b-2 border-[#E5E5EA] transform rotate-45 mx-auto -mt-2 shadow-sm"></div>
+</div>
+<!-- Beat 3 Subtitle -->
+<div class="absolute bottom-5 inset-x-0 flex justify-center z-30 pointer-events-none">
+<div class="bg-black/75 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/20 shadow-xl flex items-center space-x-2.5 text-white">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+<p class="text-sm font-extrabold tracking-wide">
+              Clear prompt → <span class="text-emerald-300">3 exact matches found!</span>
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- BEAT 4: USER'S TURN (TRY IT - VIRTUAL HAND ASSEMBLES WITH HINTS) -->
+<div class="beat-stage" id="beat-4">
+<div class="absolute inset-0 bg-[#F4F6FB] flex items-center justify-center p-10 pt-14">
+<div class="w-[1040px] h-[590px] bg-white rounded-[32px] border-4 border-[#E5E5EA] shadow-[0_16px_0_#CFCFD8] p-7 flex flex-col justify-between relative overflow-hidden">
+<!-- Header: Prof Papilio with Guidance Caption -->
+<div class="flex items-center justify-between pb-3 border-b-2 border-[#F0F0F5]">
+<div class="flex items-center space-x-3">
+<div class="w-12 h-12 bg-[#FF9F1C] rounded-2xl flex items-center justify-center shadow-[0_4px_0_#D97F00]">
+<span class="text-2xl">💡</span>
+</div>
+<div>
+<div class="text-sm font-black text-slate-900">Interactive Drill</div>
+<div class="text-xs font-bold text-slate-500">Practice assembling the 4 gates</div>
+</div>
+</div>
+<!-- 4 Target Slots at top with text indicators -->
+<div class="flex items-center space-x-3">
+<div class="w-32 h-13 rounded-2xl border-2 border-dashed border-[#3BA8FF] bg-[#E1F1FF]/50 flex items-center justify-center text-xs font-black text-[#00629f] transition-all duration-300" id="slot-1">
+              1. ROLE
+            </div>
+<div class="w-32 h-13 rounded-2xl border-2 border-dashed border-[#FF9F1C] bg-[#FFF1DA]/50 flex items-center justify-center text-xs font-black text-[#895100] transition-all duration-300" id="slot-2">
+              2. CONTEXT
+            </div>
+<div class="w-32 h-13 rounded-2xl border-2 border-dashed border-[#2DC07A] bg-[#DDF7EA]/50 flex items-center justify-center text-xs font-black text-[#006d40] transition-all duration-300" id="slot-3">
+              3. TASK
+            </div>
+<div class="w-32 h-13 rounded-2xl border-2 border-dashed border-[#9B6BFF] bg-[#F0E8FF]/50 flex items-center justify-center text-xs font-black text-[#592cb8] transition-all duration-300" id="slot-4">
+              4. FORMAT
+            </div>
+</div>
+</div>
+<!-- Middle: Primitives Tray where user pieces snap together -->
+<div class="flex-1 flex items-center justify-around py-4 px-2">
+<!-- Toy Gate Piece 1: Role -->
+<div class="w-52 h-34 bg-[#E1F1FF] border-2 border-[#3BA8FF] rounded-2xl p-3 flex flex-col items-center justify-center space-y-2 shadow-[0_5px_0_#1C82D6] transform transition-all duration-500" id="toy-gate-1">
+<div class="w-12 h-12 bg-[#3BA8FF] rounded-2xl flex items-center justify-center text-white shadow-[0_3px_0_#1C82D6]">
+<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+</div>
+<span class="text-xs font-black text-[#004a79]">1. ROLE (Guide)</span>
+</div>
+<!-- Toy Gate Piece 2: Context -->
+<div class="w-52 h-34 bg-[#FFF1DA] border-2 border-[#FF9F1C] rounded-2xl p-3 flex flex-col items-center justify-center space-y-2 shadow-[0_5px_0_#D97F00] transform transition-all duration-500" id="toy-gate-2">
+<div class="w-12 h-12 bg-[#FF9F1C] rounded-2xl flex items-center justify-center text-white shadow-[0_3px_0_#D97F00]">
+<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+</div>
+<span class="text-xs font-black text-[#895100]">2. CONTEXT (Shibuya)</span>
+</div>
+<!-- Toy Gate Piece 3: Task -->
+<div class="w-52 h-34 bg-[#DDF7EA] border-2 border-[#2DC07A] rounded-2xl p-3 flex flex-col items-center justify-center space-y-2 shadow-[0_5px_0_#1F9A5E] transform transition-all duration-500" id="toy-gate-3">
+<div class="w-12 h-12 bg-[#2DC07A] rounded-2xl flex items-center justify-center text-white shadow-[0_3px_0_#1F9A5E]">
+<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+</div>
+<span class="text-xs font-black text-[#00522f]">3. TASK (3 Spots)</span>
+</div>
+<!-- Toy Gate Piece 4: Format -->
+<div class="w-52 h-34 bg-[#F0E8FF] border-2 border-[#9B6BFF] rounded-2xl p-3 flex flex-col items-center justify-center space-y-2 shadow-[0_5px_0_#7A4BE0] transform transition-all duration-500" id="toy-gate-4">
+<div class="w-12 h-12 bg-[#9B6BFF] rounded-2xl flex items-center justify-center text-white shadow-[0_3px_0_#7A4BE0]">
+<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><rect height="7" width="7" x="3" y="3"></rect><rect height="7" width="7" x="14" y="3"></rect><rect height="7" width="7" x="14" y="14"></rect><rect height="7" width="7" x="3" y="14"></rect></svg>
+</div>
+<span class="text-xs font-black text-[#51239c]">4. FORMAT (List)</span>
+</div>
+</div>
+<!-- Animated Pointer Touch Hand -->
+<div class="absolute z-50 pointer-events-none transition-all duration-700 opacity-0" id="touch-hand">
+<div class="w-14 h-14 rounded-full bg-white/90 border-4 border-[#3BA8FF] flex items-center justify-center shadow-2xl">
+<div class="w-5 h-5 rounded-full bg-[#3BA8FF] animate-ping"></div>
+</div>
+</div>
+<!-- Beat 4 Guidance Caption & Success Celebration Flash -->
+<div class="h-12 flex items-center justify-center relative">
+<!-- Guidance Caption (default) -->
+<div class="bg-slate-900/85 backdrop-blur-sm px-6 py-2 rounded-full border border-slate-700 text-white shadow-md flex items-center space-x-2 transition-opacity duration-300" id="b4-guidance">
+<span class="text-base">👆</span>
+<span class="text-xs font-extrabold tracking-wide">Now your turn: Tap the 4 gates to build the prompt.</span>
+</div>
+<!-- Celebration Flash (when assembled) -->
+<div class="absolute bg-[#DDF7EA] px-8 py-2 rounded-full border-2 border-[#2DC07A] flex items-center space-x-3 opacity-0 transition-opacity duration-500 shadow-md" id="b4-celebration">
+<span class="text-xl">⚡</span>
+<span class="text-xs font-black text-[#00522f] uppercase tracking-wider">Perfect match! All 4 Gates Locked</span>
+<span class="text-xl">🎯</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- BEAT 5: THE CLIFFHANGER (KANJI MENU MYSTERY) -->
+<div class="beat-stage" id="beat-5">
+<div class="absolute inset-0 bg-[#1A1C24] flex items-center justify-center overflow-hidden">
+<!-- Tokyo Night Street Atmosphere -->
+<div class="absolute inset-0 bg-gradient-to-t from-[#0F1117] via-[#1A1C24] to-[#252836]">
+<!-- Red Paper Lanterns Hanging -->
+<div class="absolute top-10 inset-x-0 flex justify-around px-16">
+<div class="flex flex-col items-center">
+<div class="w-1 h-12 bg-black"></div>
+<div class="w-20 h-28 bg-[#FF5A5F] rounded-2xl shadow-[0_0_35px_rgba(255,90,95,0.7)] flex items-center justify-center border-2 border-[#D93C42]">
+<span class="text-4xl text-black font-black">居</span>
+</div>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-1 h-20 bg-black"></div>
+<div class="w-20 h-28 bg-[#FF5A5F] rounded-2xl shadow-[0_0_35px_rgba(255,90,95,0.7)] flex items-center justify-center border-2 border-[#D93C42]">
+<span class="text-4xl text-black font-black">酒</span>
+</div>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-1 h-10 bg-black"></div>
+<div class="w-20 h-28 bg-[#FF5A5F] rounded-2xl shadow-[0_0_35px_rgba(255,90,95,0.7)] flex items-center justify-center border-2 border-[#D93C42]">
+<span class="text-4xl text-black font-black">屋</span>
+</div>
+</div>
+</div>
+<!-- Restaurant Wooden Noren Curtain Entrance -->
+<div class="absolute bottom-0 inset-x-0 h-[480px] bg-[#2E2822] border-t-8 border-[#4A3F35] flex items-center justify-center">
+<!-- Character looking bewildered at Japanese Menu -->
+<div class="flex items-center space-x-16 -mt-8">
+<!-- Adventurer Character with question mark speech bubble -->
+<div class="flex flex-col items-center">
+<!-- Speech Bubble: Question Mark / Bewildered -->
+<div class="pop-balloon mb-4 bg-white p-3 rounded-2xl shadow-[0_8px_0_#CFCFD8] border-2 border-[#E5E5EA] flex items-center space-x-2">
+<span class="text-4xl text-[#FF5A5F] font-black">❓</span>
+<span class="text-3xl">😵‍💫</span>
+</div>
+<!-- Character Body -->
+<div class="w-28 h-44 relative idle-bounce">
+<div class="w-24 h-10 bg-[#FF9F1C] rounded-t-full mx-auto"></div>
+<div class="w-20 h-16 bg-[#FFD1A4] mx-auto rounded-b-xl flex items-center justify-around px-3 -mt-1">
+<!-- Surprised wide eyes -->
+<div class="w-4 h-4 bg-[#1C1B1D] rounded-full"></div>
+<div class="w-4 h-4 bg-[#1C1B1D] rounded-full"></div>
+</div>
+<div class="w-24 h-18 bg-[#2DC07A] rounded-2xl mx-auto -mt-1 border-2 border-[#1F9A5E]"></div>
+<div class="flex justify-center space-x-3">
+<div class="w-6 h-10 bg-[#3BA8FF] rounded-b-lg"></div>
+<div class="w-6 h-10 bg-[#3BA8FF] rounded-b-lg"></div>
+</div>
+</div>
+</div>
+<!-- Authentic Japanese Wooden Kanji Menu Board (Unreadable Cliffhanger!) -->
+<div class="w-80 h-96 bg-[#4A3222] rounded-3xl border-4 border-[#2B1B10] shadow-[0_20px_40px_rgba(0,0,0,0.8)] p-6 flex flex-col justify-between kanji-pulse">
+<div class="w-full flex justify-between items-center border-b-2 border-[#694833] pb-3">
+<span class="text-xs font-bold text-[#E5B582] uppercase tracking-wider">Tokyo Night Menu</span>
+<div class="w-8 h-8 rounded-full bg-[#E5B582] flex items-center justify-center font-black text-black text-sm">
+                  特
+                </div>
+</div>
+<!-- Unreadable Kanji Dishes -->
+<div class="space-y-4 py-2">
+<div class="flex items-center justify-between text-[#F5DFBB] font-black text-xl tracking-widest">
+<span>特選 豚骨拉麺</span>
+<span class="text-base opacity-80">¥850</span>
+</div>
+<div class="flex items-center justify-between text-[#F5DFBB] font-black text-xl tracking-widest">
+<span>炭火 備長焼き鳥</span>
+<span class="text-base opacity-80">¥650</span>
+</div>
+<div class="flex items-center justify-between text-[#F5DFBB] font-black text-xl tracking-widest">
+<span>秘伝 煎り餃子</span>
+<span class="text-base opacity-80">¥450</span>
+</div>
+<div class="flex items-center justify-between text-[#F5DFBB] font-black text-xl tracking-widest">
+<span>旬の刺身盛合せ</span>
+<span class="text-base opacity-80">¥1,200</span>
+</div>
+</div>
+<!-- Mystery Camera Tease Icon (Next Quest: Vision AI Prompting) -->
+<div class="w-full h-12 bg-[#2DC07A] rounded-2xl flex items-center justify-center space-x-2 text-white shadow-[0_4px_0_#1F9A5E]">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+<span class="text-xs font-black tracking-wide">Vision AI Prompting Preview</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Beat 5 Story Caption -->
+<div class="absolute bottom-5 inset-x-0 flex justify-center z-30 pointer-events-none">
+<div class="bg-black/85 backdrop-blur-md px-6 py-3 rounded-full border border-amber-400/30 shadow-2xl flex items-center space-x-3 text-white max-w-[90%] text-center">
+<span class="text-xl">📸</span>
+<p class="text-sm font-extrabold tracking-wide">
+              At the restaurant: <span class="text-amber-300">The menu is only in Japanese!</span> How do we prompt with a picture? <span class="text-emerald-400 underline decoration-2 font-black">(Next Lesson)</span>
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- BEAT 6: EATING -> YOUR TURN -> HANDOFF -->
+<div class="beat-stage" id="beat-6">
+  <div class="absolute inset-0 bg-[#141C3A]">
+    <svg viewBox="0 0 390 320" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">
+      <rect width="390" height="320" fill="#141C3A"/>
+      <g stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".5">
+        <path d="M168 208c-8-12 6-18 0-30"/><path d="M195 204c-8-14 8-20 0-34"/><path d="M222 208c-8-12 6-18 0-30"/>
+      </g>
+      <rect x="150" y="196" width="90" height="44" rx="16" fill="#2DC07A"/>
+      <circle cx="195" cy="140" r="34" fill="#FFE0B2"/>
+      <path d="M161 140a34 34 0 0 1 68 0z" fill="#FF9F1C"/>
+      <path d="M228 134h20a7 7 0 0 1 0 14h-20z" fill="#FF9F1C"/>
+      <circle cx="183" cy="142" r="4" fill="#3C3C4A"/><circle cx="207" cy="142" r="4" fill="#3C3C4A"/>
+      <path d="M184 155q11 8 22 0" stroke="#3C3C4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M232 206c14 6 24 12 30 22" stroke="#FFE0B2" stroke-width="12" stroke-linecap="round" fill="none"/>
+      <path d="M137 236h116c0 26-20 44-58 44s-58-18-58-44z" fill="#fff" stroke="#D9BE8E" stroke-width="4"/>
+      <path d="M146 246c14 8 30 10 48 10s34-2 48-10" stroke="#E8B04B" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <rect y="266" width="390" height="54" fill="#4A3222"/>
+      <g stroke-linecap="round"><path d="M262 224L206 246" stroke="#B45309" stroke-width="5"/><path d="M258 232L202 254" stroke="#92400E" stroke-width="5"/></g>
+    </svg>
+    <div class="absolute bottom-6 inset-x-0 flex flex-col items-center gap-3 z-30 px-6">
+      <div class="bg-black/75 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-xl text-white text-center">
+        <p class="text-base font-extrabold">Ramen. Exactly what I wanted. <span class="text-emerald-300">Now your turn.</span></p>
+      </div>
+      <button id="startLesson" class="px-8 h-13 bg-[#2DC07A] rounded-2xl text-white font-black shadow-[0_6px_0_#1F9A5E] text-sm">Start lesson 1</button>
+    </div>
+  </div>
+</div>
 <script>
-(function(){
-'use strict';
-var $=function(id){return document.getElementById(id)};
-var sc=[$('sc0'),$('sc1'),$('sc2'),$('sc3'),$('sc4'),$('sc5')];
-var i=0,steps=0,gate=0,pick={},started=0,timers=[];
-function clearT(){timers.forEach(clearTimeout);timers=[]}
-function T(fn,ms){timers.push(setTimeout(fn,ms))}
-function rail(){ $('railFill').style.width=(i/(sc.length-1)*100)+'%' }
+  // Continuous 5-Beat Video Playback Loop Controller
+  const stages = [
+    document.getElementById('beat-0'),
+    document.getElementById('beat-1'),
+    document.getElementById('beat-2'),
+    document.getElementById('beat-3'),
+    document.getElementById('beat-4'),
+    document.getElementById('beat-5'),
+    document.getElementById('beat-6')
+  ];
+  const progressBar = document.getElementById('timeline-progress');
+  const stepBadge = document.getElementById('current-step-badge');
+  const playPauseLabel = document.getElementById('play-pause-label');
+  const playPauseIcon = document.getElementById('play-pause-icon');
+  const stepButtons = document.querySelectorAll('.step-btn');
 
-function goto(n){
-  clearT();
-  if(n>=sc.length)return;
-  sc[i].classList.remove('on'); i=n; sc[i].classList.add('on'); rail();
-  if(n===0){ $('zoomTag').textContent='1.0×'; T(function(){$('zoomTag').textContent='1.6×'},900); T(function(){$('zoomTag').textContent='3.6×'},2000); }
-  if(n===2){ gate=0; buildMsg(); T(tapGate,900); }
-  if(n===3){ /* eating */ }
-  if(n===4){ buildChips(); }
-  if(n===5){ handoff(); }
-}
+  const stepTitles = [
+    "0. TOKYO",
+    "1. ARRIVAL",
+    "2. 4 GATES ASSEMBLE",
+    "3. RESULTS ON MAP",
+    "4. YOUR TURN",
+    "5. CLIFFHANGER",
+    "6. EAT & PLAY"
+  ];
 
-/* scene 2: auto-tap the four gates */
-function tapGate(){
-  if(gate>3)return;
-  var g=$('g'+gate); if(g)g.classList.add('in');
-  gate++; buildMsg(); T(tapGate,1100);
-}
-function buildMsg(){
-  var txt=['Be my Tokyo food guide','I\'m hungry in Tokyo','Find 3 nearby restaurants','Names, distances, prices'];
-  var cls=['r','c','t','f'],h='';
-  for(var k=0;k<gate;k++)h+='<span class="'+cls[k]+'">'+txt[k]+'</span> ';
-  $('msg').innerHTML=h||'<span style="color:#8A8A9A">Your prompt appears here…</span>';
-  $('stepLbl').textContent=gate>=4?'Sent — four pieces':'Tap a piece';
-  if(gate>=4){ $('resCard').style.display='block'; $('stepLbl').textContent='What came back'; }
-}
+  let currentBeat = 0;
+  const beatDurations = [4200, 7500, 6800, 6500, 7800, 7200, 9000]; // Duration per beat in ms
+  const totalDuration = beatDurations.reduce((a, b) => a + b, 0);
 
-/* scene 5: your turn */
-var OPTS={r:['Food guide','Local friend','Travel planner'],c:['Hungry in Tokyo','First time here','Alone'],t:['3 restaurants','Cheap food','Open now'],f:['Name, distance, price','One sentence','Short list']};
-function buildChips(){
-  ['r','c','t','f'].forEach(function(k){
-    var box=$('c'+k); if(box.children.length)return;
-    box.innerHTML=OPTS[k].map(function(o,j){return '<button class="chip" type="button" data-g="'+k+'" data-v="'+j+'" aria-pressed="false">'+o+'</button>'}).join('');
-  });
-  hint();
-}
-function hint(){
-  var n=Object.keys(pick).length;
-  $('hint').textContent=n<4?n+' of 4 picked.':'All four. Go.';
-  $('next').textContent=n<4?'Next':'Start lesson 1';
-}
-document.addEventListener('click',function(e){
-  var b=e.target.closest('#sc4 .chip'); if(!b)return;
-  var g=b.dataset.g;
-  Array.prototype.forEach.call($('c'+g).children,function(c){c.setAttribute('aria-pressed',String(c===b))});
-  pick[g]=b.dataset.v; hint();
-});
+  let isPlaying = true;
+  let startTime = Date.now();
+  let pausedElapsed = 0;
 
-/* handoff */
-function handoff(){
-  $('spin').style.display='block';
-  $('handT').textContent='Nice. Lesson 1 starts now.';
-  $('handP').textContent='Same story, but this time you drive.';
-  T(function(){
-    var target='lesson1-video.html';
-    try{ if(window.parent&&window.parent!==window){ window.parent.postMessage({profai:'start-lesson',index:0},'*'); return; } }catch(e){}
-    location.href=target;
-  },1800);
-}
-
-/* buttons */
-$('next').addEventListener('click',function(){
-  if(i===4 && Object.keys(pick).length<4){ // nudge instead of blocking
-    var miss=['r','c','t','f'].filter(function(k){return !pick[k]})[0];
-    $('hint').textContent='Pick a '+({r:'Role',c:'Context',t:'Task',f:'Format'})[miss]+' first.';
-    return;
+  function updateStepButtons(index) {
+    stepButtons.forEach((btn, i) => {
+      if (i === index) {
+        btn.classList.add('bg-white', 'text-slate-900');
+        btn.classList.remove('text-white/70');
+      } else {
+        btn.classList.remove('bg-white', 'text-slate-900');
+        btn.classList.add('text-white/70');
+      }
+    });
   }
-  goto(i+1);
-});
-$('skip').addEventListener('click',function(){ goto(5); });
 
-/* stars */
-(function(){var h='';for(var k=0;k<26;k++){h+='<i style="left:'+(k*37%100)+'%;top:'+(k*13%46)+'%;width:'+(2+k%2)+'px;height:'+(2+k%2)+'px;opacity:'+(0.3+(k%4)*0.16)+'"></i>'}document.getElementById('stars').innerHTML=h})();
+  function activateBeat(index) {
+    stages.forEach((stage, i) => {
+      if (i === index) {
+        stage.classList.add('active');
+      } else {
+        stage.classList.remove('active');
+      }
+    });
 
-rail(); T(function(){ $('zoomTag').textContent='1.6×' },900); T(function(){ $('zoomTag').textContent='3.6×' },2000);
-window.__t={get:function(){return{i:i,pick:Object.keys(pick).length,gate:gate}},go:goto};
-})();
+    if (stepBadge) {
+      stepBadge.textContent = stepTitles[index];
+    }
+    updateStepButtons(index);
+
+    // Reset and trigger beat-specific sequence animations
+    if (index === 0) { const zw=document.getElementById('zoomwrap'); if(zw){ zw.style.transform='scale(1)'; } }
+    if (index === 1) { // Beat 2: 4 Gates stack
+      setTimeout(() => {
+        const g1 = document.getElementById('b2-gate-1');
+        if (g1) { g1.style.opacity = '1'; g1.style.transform = 'translateY(0)'; g1.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'; }
+      }, 500);
+      setTimeout(() => {
+        const g2 = document.getElementById('b2-gate-2');
+        if (g2) { g2.style.opacity = '1'; g2.style.transform = 'translateY(0)'; g2.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'; }
+      }, 1400);
+      setTimeout(() => {
+        const g3 = document.getElementById('b2-gate-3');
+        if (g3) { g3.style.opacity = '1'; g3.style.transform = 'translateY(0)'; g3.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'; }
+      }, 2300);
+      setTimeout(() => {
+        const g4 = document.getElementById('b2-gate-4');
+        if (g4) { g4.style.opacity = '1'; g4.style.transform = 'translateY(0)'; g4.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'; }
+      }, 3200);
+      setTimeout(() => {
+        const sendBtn = document.getElementById('b2-send-action');
+        if (sendBtn) {
+          sendBtn.style.transform = 'scale(0.94) translateY(4px)';
+          setTimeout(() => { sendBtn.style.transform = 'scale(1) translateY(0)'; }, 300);
+        }
+      }, 4300);
+    }
+
+    if (index === 2) { // Beat 3: Map pins pop
+      setTimeout(() => {
+        const p1 = document.getElementById('b3-pin-1');
+        if (p1) { p1.style.opacity = '1'; p1.style.animation = 'pinDrop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'; }
+      }, 600);
+      setTimeout(() => {
+        const p2 = document.getElementById('b3-pin-2');
+        if (p2) { p2.style.opacity = '1'; p2.style.animation = 'pinDrop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'; }
+      }, 1500);
+      setTimeout(() => {
+        const p3 = document.getElementById('b3-pin-3');
+        if (p3) { p3.style.opacity = '1'; p3.style.animation = 'pinDrop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'; }
+      }, 2400);
+    }
+
+    if (index === 3) { // Beat 4: User's Turn simulation
+      const hand = document.getElementById('touch-hand');
+      const t1 = document.getElementById('toy-gate-1');
+      const t2 = document.getElementById('toy-gate-2');
+      const t3 = document.getElementById('toy-gate-3');
+      const t4 = document.getElementById('toy-gate-4');
+      const s1 = document.getElementById('slot-1');
+      const s2 = document.getElementById('slot-2');
+      const s3 = document.getElementById('slot-3');
+      const s4 = document.getElementById('slot-4');
+      const cel = document.getElementById('b4-celebration');
+      const guide = document.getElementById('b4-guidance');
+
+      // Reset
+      [t1, t2, t3, t4].forEach(t => { if(t) { t.style.transform = 'translateY(0) scale(1)'; t.style.opacity = '1'; } });
+      if (s1) { s1.style.background = 'rgba(225, 241, 255, 0.5)'; s1.style.color = '#00629f'; }
+      if (s2) { s2.style.background = 'rgba(255, 241, 218, 0.5)'; s2.style.color = '#895100'; }
+      if (s3) { s3.style.background = 'rgba(221, 247, 234, 0.5)'; s3.style.color = '#006d40'; }
+      if (s4) { s4.style.background = 'rgba(240, 232, 255, 0.5)'; s4.style.color = '#592cb8'; }
+      if (cel) cel.style.opacity = '0';
+      if (guide) guide.style.opacity = '1';
+
+      if (hand) { hand.style.opacity = '1'; hand.style.top = '340px'; hand.style.left = '200px'; }
+      
+      // Step 1: Hand snaps Gate 1
+      setTimeout(() => {
+        if (hand) { hand.style.top = '80px'; hand.style.left = '520px'; }
+        if (t1) { t1.style.transform = 'translateY(-180px) scale(0.6)'; t1.style.opacity = '0'; }
+        if (s1) { s1.style.background = '#3BA8FF'; s1.style.color = '#FFFFFF'; }
+      }, 1300);
+
+      // Step 2: Hand snaps Gate 2
+      setTimeout(() => {
+        if (hand) { hand.style.top = '340px'; hand.style.left = '420px'; }
+      }, 2000);
+      setTimeout(() => {
+        if (hand) { hand.style.top = '80px'; hand.style.left = '640px'; }
+        if (t2) { t2.style.transform = 'translateY(-180px) scale(0.6)'; t2.style.opacity = '0'; }
+        if (s2) { s2.style.background = '#FF9F1C'; s2.style.color = '#FFFFFF'; }
+      }, 2700);
+
+      // Step 3: Hand snaps Gate 3 & 4 rapidly
+      setTimeout(() => {
+        if (t3) { t3.style.transform = 'translateY(-180px) scale(0.6)'; t3.style.opacity = '0'; }
+        if (s3) { s3.style.background = '#2DC07A'; s3.style.color = '#FFFFFF'; }
+      }, 3700);
+      setTimeout(() => {
+        if (t4) { t4.style.transform = 'translateY(-180px) scale(0.6)'; t4.style.opacity = '0'; }
+        if (s4) { s4.style.background = '#9B6BFF'; s4.style.color = '#FFFFFF'; }
+        if (hand) { hand.style.opacity = '0'; }
+        if (guide) { guide.style.opacity = '0'; }
+        if (cel) { cel.style.opacity = '1'; }
+      }, 4600);
+    }
+  }
+
+  function tickTimeline() {
+    if (!isPlaying) return;
+
+    const elapsed = (Date.now() - startTime) % totalDuration;
+    const pct = (elapsed / totalDuration) * 100;
+    progressBar.style.width = pct + '%';
+
+    // Find which beat we are currently in
+    let accumulated = 0;
+    for (let i = 0; i < beatDurations.length; i++) {
+      accumulated += beatDurations[i];
+      if (elapsed < accumulated) {
+        if (currentBeat !== i) {
+          currentBeat = i;
+          activateBeat(currentBeat);
+        }
+        break;
+      }
+    }
+    requestAnimationFrame(tickTimeline);
+  }
+
+  function togglePlay() {
+    if (isPlaying) {
+      isPlaying = false;
+      pausedElapsed = (Date.now() - startTime) % totalDuration;
+      playPauseLabel.textContent = 'Play';
+      playPauseIcon.textContent = 'play_arrow';
+    } else {
+      isPlaying = true;
+      startTime = Date.now() - pausedElapsed;
+      playPauseLabel.textContent = 'Pause';
+      playPauseIcon.textContent = 'pause';
+      requestAnimationFrame(tickTimeline);
+    }
+  }
+
+  function jumpToBeat(beatIdx) {
+    let offset = 0;
+    for (let i = 0; i < beatIdx; i++) {
+      offset += beatDurations[i];
+    }
+    startTime = Date.now() - offset;
+    pausedElapsed = offset;
+    currentBeat = beatIdx;
+    activateBeat(currentBeat);
+    if (!isPlaying) {
+      progressBar.style.width = ((offset / totalDuration) * 100) + '%';
+    }
+  }
+
+  var nex=new URLSearchParams(location.search).get('next')||'58.html';
+  var btn=document.getElementById('startLesson');
+  if(btn)btn.addEventListener('click',function(){ location.href=nex; });
+
+  // Start sequence
+  activateBeat(0);
+  requestAnimationFrame(tickTimeline);
 </script>
 </body></html>
