@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Prof AI · Before lesson 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--em:#2DC07A;--em-d:#1F9A5E;--em-l:#DDF7EA;--sk:#3BA8FF;--sk-d:#1C82D6;--sk-l:#E1F1FF;
+--or:#FF9F1C;--or-d:#D97F00;--or-l:#FFF1DA;--vi:#9B6BFF;--vi-d:#7A4BE0;--vi-l:#F0E8FF;
+--ink:#3C3C4A;--muted:#8A8A9A;--line:#E5E5EA;--line-d:#CFCFD8;--canvas:#F7F7F9;--night:#17214A}
+*{box-sizing:border-box;margin:0}
+html,body{background:#0b0f19;color:var(--ink);font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:700;-webkit-text-size-adjust:100%}
+body{min-height:100dvh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.stage{position:relative;width:100%;max-width:440px;height:100dvh;max-height:940px;background:var(--canvas);overflow:hidden;display:flex;flex-direction:column}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+:focus-visible{outline:3px solid var(--sk);outline-offset:2px;border-radius:10px}
+/* progress */
+.rail{position:absolute;top:0;left:0;right:0;height:6px;background:rgba(255,255,255,.25);z-index:40}
+.rail i{display:block;height:100%;width:0;background:var(--em);transition:width .6s ease}
+/* scenes */
+.sc{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .6s ease,transform .6s ease;transform:scale(1.02);display:flex;flex-direction:column}
+.sc.on{opacity:1;pointer-events:auto;transform:none}
+/* 1 map */
+.mapwrap{position:absolute;inset:0;overflow:hidden;background:#e8eef5}
+.mapwrap svg{position:absolute;width:260%;height:260%;left:-80%;top:-80%;transition:transform 3.6s cubic-bezier(.5,0,.2,1),left 3.6s cubic-bezier(.5,0,.2,1),top 3.6s cubic-bezier(.5,0,.2,1)}
+.sc.on .mapwrap svg{transform:scale(1);left:-30%;top:-40%}
+.zoomtag{position:absolute;right:14px;bottom:120px;background:#fff;border:2px solid var(--line);border-radius:99px;padding:5px 12px;font-weight:900;font-size:12px;box-shadow:0 4px 0 var(--line)}
+.pin{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%)}
+.pin i{display:block;width:16px;height:16px;border-radius:50%;background:var(--sk);box-shadow:0 0 0 8px rgba(59,168,255,.25);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 6px rgba(59,168,255,.3)}70%{box-shadow:0 0 0 26px rgba(59,168,255,0)}100%{box-shadow:0 0 0 6px rgba(59,168,255,0)}}
+/* captions */
+.cap{position:absolute;left:0;right:0;bottom:0;padding:16px 18px calc(88px + env(safe-area-inset-bottom));background:linear-gradient(to top,rgba(11,15,25,.92) 40%,transparent);color:#fff}
+.cap b{display:block;font-size:18px;font-weight:900;line-height:1.25}
+.cap span{display:block;font-size:13.5px;font-weight:700;opacity:.82;margin-top:4px}
+/* buttons */
+.bar{position:absolute;left:0;right:0;bottom:0;padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:30}
+.btn{flex:1;height:52px;border-radius:15px;background:var(--em);color:#fff;font-weight:900;text-transform:uppercase;letter-spacing:.05em;font-size:14px;box-shadow:0 5px 0 var(--em-d)}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--em-d)}
+.btn.ghost{background:rgba(255,255,255,.14);color:#fff;box-shadow:none;border:2px solid rgba(255,255,255,.35);flex:none;padding:0 16px}
+/* 2 plane */
+.night{position:absolute;inset:0;background:linear-gradient(#17214a,#31488f 55%,#5b6fb8)}
+.stars i{position:absolute;background:#fff;border-radius:50%}
+.ground{position:absolute;left:0;right:0;bottom:0;height:38%;background:#141c3a;border-top:3px solid #2b3f86}
+.runway{position:absolute;left:0;right:0;bottom:14%;height:8px;display:flex;gap:22px;padding:0 10px}
+.runway i{flex:1;background:#f2c94c;opacity:.55;border-radius:2px}
+.plane{position:absolute;left:-40%;top:18%;width:190px;transition:all 3.2s cubic-bezier(.3,.7,.4,1)}
+.sc.on .plane{left:26%;top:52%}
+.sam{position:absolute;bottom:12%;left:50%;transform:translate(-50%,20px);opacity:0;transition:all .7s ease .9s}
+.sc.on .sam{opacity:1;transform:translate(-50%,0)}
+.bub{position:absolute;left:50%;top:-64px;transform:translateX(-50%);background:#fff;border:2px solid var(--line);border-radius:16px;padding:9px 13px;font-weight:900;font-size:14px;white-space:nowrap;box-shadow:0 5px 0 var(--line)}
+.bub:after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-8px;width:14px;height:14px;background:#fff;border-right:2px solid var(--line);border-bottom:2px solid var(--line);transform:rotate(45deg)}
+/* 3 phone teach */
+.sheet{position:absolute;inset:0;background:var(--canvas);padding:20px 16px 96px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+.h1{font-size:21px;font-weight:900;line-height:1.2}
+.h1 em{font-style:normal;color:var(--em-d)}
+.card{background:#fff;border:2px solid var(--line);border-radius:16px;box-shadow:0 4px 0 var(--line);padding:12px}
+.grow{display:flex;align-items:center;gap:10px;border:2px dashed var(--line-d);border-radius:12px;padding:9px 10px;margin-bottom:8px;transition:.25s;opacity:.35}
+.grow.in{opacity:1;border-style:solid}
+.grow.in.r{border-color:var(--sk);background:var(--sk-l)}
+.grow.in.c{border-color:var(--or);background:var(--or-l)}
+.grow.in.t{border-color:var(--em);background:var(--em-l)}
+.grow.in.f{border-color:var(--vi);background:var(--vi-l)}
+.grow .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--line);flex:none;color:#fff;font-weight:900;font-size:13px}
+.grow.in .ic{background:currentColor}
+.grow small{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.grow b{font-size:14px;font-weight:800}
+.msg{border:2px solid var(--line);border-radius:12px;padding:10px;font-size:14px;font-weight:800;line-height:1.6;background:#fff;min-height:54px}
+.msg span{border-radius:6px;padding:2px 6px;display:inline-block;margin:0 2px 3px 0}
+.msg .r{background:var(--sk-l);color:var(--sk-d)}.msg .c{background:var(--or-l);color:var(--or-d)}
+.msg .t{background:var(--em-l);color:var(--em-d)}.msg .f{background:var(--vi-l);color:var(--vi-d)}
+.res{display:flex;gap:8px;align-items:center;border:2px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:8px;opacity:0;transform:translateY(6px);transition:.3s}
+.res.on{opacity:1;transform:none}
+.res .n{flex:1;font-size:13.5px;font-weight:800}
+.res .p{font-weight:900;color:var(--or-d);font-size:13px}
+/* 4 eating */
+.shop{position:absolute;inset:0;background:linear-gradient(#1b2450,#141c3a)}
+.counter{position:absolute;left:0;right:0;bottom:0;height:34%;background:#4a3222;border-top:8px solid #2b1b10}
+.bowl{position:absolute;left:50%;bottom:36%;transform:translateX(-50%);width:86px;height:52px;background:#fff;border:3px solid #d9be8e;border-radius:0 0 44px 44px;overflow:hidden}
+.bowl i{position:absolute;left:0;right:0;top:0;height:12px;background:#e8b04b}
+.steam{position:absolute;left:50%;bottom:52%;transform:translateX(-50%);display:flex;gap:10px}
+.steam i{width:6px;height:26px;background:#fff;opacity:.45;border-radius:99px;animation:steam 2.2s infinite ease-in-out}
+.steam i:nth-child(2){animation-delay:.4s}.steam i:nth-child(3){animation-delay:.8s}
+@keyframes steam{0%{transform:translateY(6px) scaleY(.7);opacity:.15}50%{opacity:.5}100%{transform:translateY(-14px) scaleY(1.1);opacity:0}}
+/* 5 your turn */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{border:2px solid var(--line);border-radius:99px;padding:9px 14px;font-size:13.5px;font-weight:800;background:#fff}
+.chip[aria-pressed=true]{border-color:var(--em);background:var(--em-l);color:var(--em-d)}
+.hint{font-size:13px;font-weight:800;color:var(--muted);min-height:18px}
+/* 6 handoff */
+.hand{position:absolute;inset:0;background:var(--canvas);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;text-align:center}
+.hand h2{font-size:24px;font-weight:900}
+.hand p{font-size:15px;font-weight:700;color:var(--muted)}
+.load{width:54px;height:54px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--em);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+</style></head>
+<body>
+<div class="stage" id="stage">
+  <div class="rail"><i id="railFill"></i></div>
+
+  <!-- 1 MAP ZOOM -->
+  <section class="sc on" id="sc0" aria-label="Tokyo map zooming in">
+    <div class="mapwrap">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <rect width="100" height="100" fill="#e8eef5"/>
+        <g stroke="#d6e2ee" stroke-width="7"><path d="M-10 22H110"/><path d="M-10 48H110"/><path d="M-10 74H110"/><path d="M20 -10V110"/><path d="M52 -10V110"/><path d="M82 -10V110"/></g>
+        <g stroke="#fff" stroke-width="2.4"><path d="M-10 35H110"/><path d="M64 -10V110"/></g>
+        <path d="M0 84 Q22 76 40 92 L40 100 L0 100Z" fill="#c2e7d3"/>
+        <path d="M78 0 Q90 12 100 10 L100 0Z" fill="#bfe3fd"/>
+        <g fill="#c9d7e4"><rect x="24" y="24" width="10" height="7" rx="1"/><rect x="38" y="50" width="9" height="9" rx="1"/><rect x="70" y="52" width="8" height="8" rx="1"/><rect x="56" y="78" width="10" height="6" rx="1"/></g>
+        <text x="52" y="46" font-size="3.2" font-weight="700" fill="#5A5A6A" text-anchor="middle" font-family="Nunito,sans-serif">Shibuya</text>
+      </svg>
+    </div>
+    <div class="pin"><i></i></div>
+    <div class="zoomtag" id="zoomTag">1.0×</div>
+    <div class="cap"><b>Tokyo. One station.</b><span>Zooming in on Shibuya…</span></div>
+  </section>
+
+  <!-- 2 PLANE -->
+  <section class="sc" id="sc1" aria-label="The plane lands">
+    <div class="night">
+      <div class="stars" id="stars"></div>
+      <div class="ground"></div>
+      <div class="runway"><i></i><i></i><i></i><i></i><i></i></div>
+      <svg class="plane" viewBox="0 0 320 200" aria-hidden="true">
+        <path d="M40,110 C50,60 140,55 240,65 C285,70 310,95 310,115 C310,135 285,155 230,155 L70,155 C45,155 35,135 40,110 Z" fill="#fff"/>
+        <path d="M140,110 L195,190 L165,190 L115,110 Z" fill="#2DC07A"/>
+        <path d="M150,75 L200,10 L170,10 L125,75 Z" fill="#1F9A5E"/>
+        <path d="M45,110 L20,30 L60,30 L85,110 Z" fill="#2DC07A"/>
+        <circle cx="160" cy="105" r="8" fill="#3BA8FF"/><circle cx="195" cy="105" r="8" fill="#3BA8FF"/><circle cx="230" cy="105" r="8" fill="#3BA8FF"/>
+      </svg>
+      <div class="sam">
+        <div class="bub">Hungry! Let's find food.</div>
+        <svg width="86" height="120" viewBox="0 0 86 120" aria-hidden="true">
+          <ellipse cx="43" cy="112" rx="22" ry="5" fill="#0b1226" opacity=".5"/>
+          <path d="M28 108c-4-22-5-34-2-42h34c3 8 2 20-2 42z" fill="#2DC07A"/>
+          <circle cx="43" cy="48" r="17" fill="#FFE0B2"/>
+          <path d="M26 48a17 17 0 0 1 34 0z" fill="#FF9F1C"/>
+          <path d="M60 44h14a5 5 0 0 1 0 10H60z" fill="#FF9F1C"/>
+          <circle cx="37" cy="49" r="2.8" fill="#3C3C4A"/><circle cx="49" cy="49" r="2.8" fill="#3C3C4A"/>
+          <path d="M38 56q5 4 10 0" stroke="#3C3C4A" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="cap"><b>The plane lands.</b><span>Sam steps out — first time in Tokyo.</span></div>
+  </section>
+
+  <!-- 3 WHAT PROF AI IS -->
+  <section class="sc" id="sc2" aria-label="What Prof AI is and how to use it">
+    <div class="sheet">
+      <div class="h1">This is <em>Prof AI</em>.</div>
+      <p style="font-size:14.5px;font-weight:700;color:#5A5A6A">You say what you want, in plain words. It answers with a lesson you can play.</p>
+      <div class="card">
+        <div style="font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px" id="stepLbl">Tap a piece</div>
+        <div class="grow r" id="g0"><span class="ic">1</span><span><small>Role</small><b>Be my Tokyo food guide</b></span></div>
+        <div class="grow c" id="g1"><span class="ic">2</span><span><small>Context</small><b>I'm hungry in Tokyo</b></span></div>
+        <div class="grow t" id="g2"><span class="ic">3</span><span><small>Task</small><b>Find 3 nearby restaurants</b></span></div>
+        <div class="grow f" id="g3"><span class="ic">4</span><span><small>Format</small><b>Names, distances, prices</b></span></div>
+        <div class="msg" id="msg"><span style="color:#8A8A9A">Your prompt appears here…</span></div>
+      </div>
+      <div class="card" id="resCard" style="display:none">
+        <div style="font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">What came back</div>
+        <div class="res on"><span class="n">Ichiran Ramen · 350 m</span><span class="p">¥860</span></div>
+        <div class="res on"><span class="n">Sushi Zanmai · 1.2 km</span><span class="p">¥1,800</span></div>
+        <div class="res on"><span class="n">Omoide Yokocho · 600 m</span><span class="p">¥700</span></div>
+      </div>
+    </div>
+    <div class="cap"><b>Four pieces. One good prompt.</b><span>Watch Sam tap them in.</span></div>
+  </section>
+
+  <!-- 4 EATING -->
+  <section class="sc" id="sc3" aria-label="Sam eats at the restaurant">
+    <div class="shop" style="background:#141c3a">
+      <svg viewBox="0 0 390 320" style="position:absolute;inset:0;width:100%;height:100%" aria-label="Sam eating ramen at a Tokyo counter">
+        <rect width="390" height="320" fill="#141c3a"/>
+        <!-- steam above the bowl -->
+        <g stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".55">
+          <path d="M168 208c-8-12 6-18 0-30"/>
+          <path d="M195 204c-8-14 8-20 0-34"/>
+          <path d="M222 208c-8-12 6-18 0-30"/>
+        </g>
+        <!-- Sam -->
+        <g>
+          <rect x="150" y="196" width="90" height="44" rx="16" fill="#2DC07A"/>
+          <circle cx="195" cy="140" r="34" fill="#FFE0B2"/>
+          <path d="M161 140a34 34 0 0 1 68 0z" fill="#FF9F1C"/>
+          <path d="M228 134h20a7 7 0 0 1 0 14h-20z" fill="#FF9F1C"/>
+          <circle cx="183" cy="142" r="4" fill="#3C3C4A"/><circle cx="207" cy="142" r="4" fill="#3C3C4A"/>
+          <path d="M184 155q11 8 22 0" stroke="#3C3C4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+        <!-- arm + hand holding chopsticks -->
+        <path d="M232 206c14 6 24 12 30 22" stroke="#FFE0B2" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <circle cx="264" cy="230" r="9" fill="#FFE0B2" stroke="#E8C79A" stroke-width="2"/>
+        <!-- bowl -->
+        <path d="M137 236h116c0 26-20 44-58 44s-58-18-58-44z" fill="#fff" stroke="#D9BE8E" stroke-width="4"/>
+        <path d="M137 236h116" stroke="#D9BE8E" stroke-width="4"/>
+        <path d="M146 246c14 8 30 10 48 10s34-2 48-10" stroke="#E8B04B" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <!-- counter -->
+        <rect y="266" width="390" height="54" fill="#4A3222"/>
+        <rect y="266" width="390" height="5" fill="#2B1B10"/>
+        <!-- chopsticks from the hand into the bowl -->
+        <g stroke-linecap="round"><path d="M262 224L206 246" stroke="#B45309" stroke-width="5"/><path d="M258 232L202 254" stroke="#92400E" stroke-width="5"/></g>
+        <path d="M206 246c-6-10-4-16 2-18" stroke="#E8B04B" stroke-width="5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="cap"><b>It worked. Sam is eating.</b><span>"Ramen. Exactly what I wanted. Now your turn."</span></div>
+  </section>
+
+  <!-- 5 YOUR TURN -->
+  <section class="sc" id="sc4" aria-label="Your turn to build a prompt">
+    <div class="sheet">
+      <div class="h1">Your turn. <em>Build the prompt.</em></div>
+      <p style="font-size:14.5px;font-weight:700;color:#5A5A6A">Pick one from each piece. All four and it unlocks.</p>
+      <div class="card">
+        <div style="font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#3BA8FF;margin-bottom:6px">Role</div>
+        <div class="chips" id="cr"></div>
+        <div style="font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#FF9F1C;margin:12px 0 6px">Context</div>
+        <div class="chips" id="cc"></div>
+        <div style="font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#2DC07A;margin:12px 0 6px">Task</div>
+        <div class="chips" id="ct"></div>
+        <div style="font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#9B6BFF;margin:12px 0 6px">Format</div>
+        <div class="chips" id="cf"></div>
+      </div>
+      <div class="hint" id="hint">0 of 4 picked.</div>
+    </div>
+    <div class="cap"><b>Same four pieces.</b><span>Any sensible pick works — nothing here can break.</span></div>
+  </section>
+
+  <!-- 6 HANDOFF -->
+  <section class="sc" id="sc5" aria-label="Starting lesson 1">
+    <div class="hand">
+      <div class="load" id="spin" style="display:none"></div>
+      <h2 id="handT">Nice. Lesson 1 starts now.</h2>
+      <p id="handP">Same story, but this time you drive.</p>
+    </div>
+  </section>
+
+  <div class="bar">
+    <button class="btn ghost" id="skip" type="button">Skip</button>
+    <button class="btn" id="next" type="button">Next</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var sc=[$('sc0'),$('sc1'),$('sc2'),$('sc3'),$('sc4'),$('sc5')];
+var i=0,steps=0,gate=0,pick={},started=0,timers=[];
+function clearT(){timers.forEach(clearTimeout);timers=[]}
+function T(fn,ms){timers.push(setTimeout(fn,ms))}
+function rail(){ $('railFill').style.width=(i/(sc.length-1)*100)+'%' }
+
+function goto(n){
+  clearT();
+  if(n>=sc.length)return;
+  sc[i].classList.remove('on'); i=n; sc[i].classList.add('on'); rail();
+  if(n===0){ $('zoomTag').textContent='1.0×'; T(function(){$('zoomTag').textContent='1.6×'},900); T(function(){$('zoomTag').textContent='3.6×'},2000); }
+  if(n===2){ gate=0; buildMsg(); T(tapGate,900); }
+  if(n===3){ /* eating */ }
+  if(n===4){ buildChips(); }
+  if(n===5){ handoff(); }
+}
+
+/* scene 2: auto-tap the four gates */
+function tapGate(){
+  if(gate>3)return;
+  var g=$('g'+gate); if(g)g.classList.add('in');
+  gate++; buildMsg(); T(tapGate,1100);
+}
+function buildMsg(){
+  var txt=['Be my Tokyo food guide','I\'m hungry in Tokyo','Find 3 nearby restaurants','Names, distances, prices'];
+  var cls=['r','c','t','f'],h='';
+  for(var k=0;k<gate;k++)h+='<span class="'+cls[k]+'">'+txt[k]+'</span> ';
+  $('msg').innerHTML=h||'<span style="color:#8A8A9A">Your prompt appears here…</span>';
+  $('stepLbl').textContent=gate>=4?'Sent — four pieces':'Tap a piece';
+  if(gate>=4){ $('resCard').style.display='block'; $('stepLbl').textContent='What came back'; }
+}
+
+/* scene 5: your turn */
+var OPTS={r:['Food guide','Local friend','Travel planner'],c:['Hungry in Tokyo','First time here','Alone'],t:['3 restaurants','Cheap food','Open now'],f:['Name, distance, price','One sentence','Short list']};
+function buildChips(){
+  ['r','c','t','f'].forEach(function(k){
+    var box=$('c'+k); if(box.children.length)return;
+    box.innerHTML=OPTS[k].map(function(o,j){return '<button class="chip" type="button" data-g="'+k+'" data-v="'+j+'" aria-pressed="false">'+o+'</button>'}).join('');
+  });
+  hint();
+}
+function hint(){
+  var n=Object.keys(pick).length;
+  $('hint').textContent=n<4?n+' of 4 picked.':'All four. Go.';
+  $('next').textContent=n<4?'Next':'Start lesson 1';
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('#sc4 .chip'); if(!b)return;
+  var g=b.dataset.g;
+  Array.prototype.forEach.call($('c'+g).children,function(c){c.setAttribute('aria-pressed',String(c===b))});
+  pick[g]=b.dataset.v; hint();
+});
+
+/* handoff */
+function handoff(){
+  $('spin').style.display='block';
+  $('handT').textContent='Nice. Lesson 1 starts now.';
+  $('handP').textContent='Same story, but this time you drive.';
+  T(function(){
+    var target='lesson1-video.html';
+    try{ if(window.parent&&window.parent!==window){ window.parent.postMessage({profai:'start-lesson',index:0},'*'); return; } }catch(e){}
+    location.href=target;
+  },1800);
+}
+
+/* buttons */
+$('next').addEventListener('click',function(){
+  if(i===4 && Object.keys(pick).length<4){ // nudge instead of blocking
+    var miss=['r','c','t','f'].filter(function(k){return !pick[k]})[0];
+    $('hint').textContent='Pick a '+({r:'Role',c:'Context',t:'Task',f:'Format'})[miss]+' first.';
+    return;
+  }
+  goto(i+1);
+});
+$('skip').addEventListener('click',function(){ goto(5); });
+
+/* stars */
+(function(){var h='';for(var k=0;k<26;k++){h+='<i style="left:'+(k*37%100)+'%;top:'+(k*13%46)+'%;width:'+(2+k%2)+'px;height:'+(2+k%2)+'px;opacity:'+(0.3+(k%4)*0.16)+'"></i>'}document.getElementById('stars').innerHTML=h})();
+
+rail(); T(function(){ $('zoomTag').textContent='1.6×' },900); T(function(){ $('zoomTag').textContent='3.6×' },2000);
+window.__t={get:function(){return{i:i,pick:Object.keys(pick).length,gate:gate}},go:goto};
+})();
+</script>
+</body></html>
