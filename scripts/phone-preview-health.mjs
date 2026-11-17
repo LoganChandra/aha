@@ -1,5 +1,6 @@
 export function phonePreviewFailure({ status, contentType = '', html = '' }) {
   if (/ERR_NGROK_3200/i.test(html)) return 'The ngrok endpoint is offline.';
+  if (status === 503) return 'The phone preview tunnel is unavailable (HTTP 503).';
   if (status < 200 || status >= 300) return `HTTP ${status}`;
   if (!contentType.toLowerCase().includes('text/html')) return 'Response is not HTML.';
   if (!/<title>Sam builds a Tokyo food prompt<\/title>/i.test(html)) {

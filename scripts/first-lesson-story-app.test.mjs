@@ -76,7 +76,11 @@ test('first lesson story hands off to the real lesson once and supports an expli
       body: JSON.stringify({ lesson: fixture.lessons[0], sources: [] }),
     }));
 
-    await page.goto(`${origin}/?q=What%20is%20AI&story=1`, { waitUntil: 'domcontentloaded' });
+    try {
+      await page.goto(`${origin}/?q=What%20is%20AI&story=1`, { waitUntil: 'domcontentloaded' });
+    } catch (error) {
+      throw new Error(`${error}\nNext.js output:\n${output.join('')}`);
+    }
     await page.getByTestId('first-lesson-story').waitFor({ state: 'visible' });
     await page.waitForFunction(() => {
       const lesson = document.querySelector('main[aria-hidden="true"]');

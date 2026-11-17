@@ -35,6 +35,21 @@ test('rejects the ngrok offline page before sharing its URL', async () => {
   assert.equal(requests, 1);
 });
 
+test('rejects a 503 tunnel outage before sharing its URL', async () => {
+  let requests = 0;
+  const result = await checkPhonePreview(lessonUrl, async () => {
+    requests += 1;
+    return new Response('<h1>Tunnel unavailable</h1>', {
+      status: 503,
+      headers: { 'content-type': 'text/html' },
+    });
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'The phone preview tunnel is unavailable (HTTP 503).');
+  assert.equal(requests, 1);
+});
+
 test('rejects successful responses that are not the lesson page', () => {
   assert.equal(phonePreviewFailure({
     status: 200,
