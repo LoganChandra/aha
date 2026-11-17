@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -8,6 +9,10 @@ import { chromium } from 'playwright';
 const versionDir = resolve('public/previews/tokyo-food-67');
 const lessonPath = resolve(versionDir, 'lesson1-video.html');
 const lessonHtml = await readFile(lessonPath, 'utf8');
+const integratedVersionDir = resolve('public/previews/tokyo-food-68');
+const integratedLessonPath = resolve(integratedVersionDir, 'lesson1-video.html');
+const integratedHtml = await readFile(integratedLessonPath, 'utf8');
+const integratedArrival = await readFile(resolve(integratedVersionDir, '58.html'), 'utf8');
 const source61 = await readFile(resolve('public/previews/tokyo-food-61/lesson1-video.html'), 'utf8');
 const source58 = await readFile(resolve('public/previews/tokyo-food-61/58.html'), 'utf8');
 
@@ -49,6 +54,76 @@ test('story keeps 61 UI, connects the restaurant payoff, and ships only its two 
   assert.equal(lessonBase, source61, 'version 67 preserves the exact 61.html base outside the added story payoff and handoff');
 });
 
+test('version 68 preserves v67 and adds the accessible ProfAI explanation and parent handshake', async () => {
+  const v67Handoff = lessonHtml.match(/^[ \t]*\/\/ TOKYO_FOOD_67_MEAL_STORY_HANDOFF_JS_START\n[\s\S]*?^[ \t]*\/\/ TOKYO_FOOD_67_MEAL_STORY_HANDOFF_JS_END\n/m)?.[0];
+  assert.ok(v67Handoff);
+  const preservedV67 = integratedHtml
+    .replace(/\/\* TOKYO_FOOD_68_EXPLAINER_CSS_START \*\/[\s\S]*?\/\* TOKYO_FOOD_68_EXPLAINER_CSS_END \*\/\n/, '')
+    .replace(/<!-- TOKYO_FOOD_68_EXPLAINER_HTML_START -->[\s\S]*?<!-- TOKYO_FOOD_68_EXPLAINER_HTML_END -->\n/, '')
+    .replace(/\/\/ TOKYO_FOOD_68_EXPLAINER_JS_START\n[\s\S]*?\/\/ TOKYO_FOOD_68_EXPLAINER_JS_END\n/, '')
+    .replace(/^[ \t]*\/\/ TOKYO_FOOD_68_EXPLAINER_ACTION_START\n[\s\S]*?^[ \t]*\/\/ TOKYO_FOOD_68_EXPLAINER_ACTION_END\n/m, '')
+    .replace(/ guidedGateTap=true;\n try\{\n  if\(!await moveActorTo\(gate\)\)return false;\n  if\(!await tapNode\(gate\)\)return false;\n \}finally\{guidedGateTap=false;\}/, ' guidedGateTap=true;\n try{if(!await moveActorTo(gate)||!await tapNode(gate))return false;}finally{guidedGateTap=false;}')
+    .replace("if(!guide){play();notifyStoryHost('failed');return;}", 'if(!guide){play();return;}')
+    .replace(/^[ \t]*\/\/ TOKYO_FOOD_67_MEAL_STORY_HANDOFF_JS_START\n[\s\S]*?^[ \t]*\/\/ TOKYO_FOOD_67_MEAL_STORY_HANDOFF_JS_END\n/m, v67Handoff)
+    .replace(" }catch(e){demoCancelled=true;console.error('[profai:first-lesson-story] story-failed',e);}\n", ' }catch(e){demoCancelled=true;}\n')
+    .replace(" if(failed)notifyStoryHost('failed');\n", '')
+    .replace("notifyStoryHost('ready');\n", '');
+  const normalizedV68Base = preservedV67.replace(/\n{3}<\/style>/g, '\n\n</style>');
+  assert.deepEqual((await readdir(integratedVersionDir)).sort(), ['58.html', 'lesson1-video.html']);
+  assert.equal(integratedArrival, await readFile(resolve(versionDir, '58.html'), 'utf8'), 'the exact plane-landing sequence ships beside the lesson');
+  if (normalizedV68Base !== lessonHtml) {
+    let mismatch = 0;
+    while (mismatch < normalizedV68Base.length && normalizedV68Base[mismatch] === lessonHtml[mismatch]) mismatch++;
+    assert.fail(`version 68 keeps the complete v67 animation and UI as its base (first difference at ${mismatch}, lengths ${normalizedV68Base.length}/${lessonHtml.length}: ${JSON.stringify(normalizedV68Base.slice(Math.max(0, mismatch - 25), mismatch + 45))} vs ${JSON.stringify(lessonHtml.slice(Math.max(0, mismatch - 25), mismatch + 45))})`);
+  }
+  assert.match(integratedHtml, /role="status" aria-live="polite"[^>]*>ProfAI turns your question into a lesson you can explore\./);
+  assert.match(integratedHtml, /async function showProfAIExplanation\(\)[\s\S]*?await nap\(3000\)/);
+  assert.match(integratedHtml, /type:'PROFAI_LESSON_STORY',version:1,status:status/);
+  assert.match(integratedHtml, /notifyStoryHost\('complete'\)/);
+  assert.ok(integratedHtml.indexOf("notifyStoryHost('complete')") > integratedHtml.indexOf("handoff.classList.add('on')"));
+});
+
+test('embedded v68 story sends its versioned ready and completion messages to its parent', { timeout: 20_000 }, async () => {
+  const host = createServer(async (request, response) => {
+    const path = new URL(request.url || '/', 'http://127.0.0.1').pathname;
+    if (path === '/host.html') {
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      response.end(`<!doctype html><script>window.__storyMessages=[];window.addEventListener('message',function(event){var frame=document.getElementById('story');if(event.source===frame.contentWindow)window.__storyMessages.push({origin:event.origin,data:event.data});});</script><iframe id="story" src="/lesson1-video.html"></iframe>`);
+      return;
+    }
+    if (path === '/lesson1-video.html' || path === '/58.html') {
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      response.end(await readFile(resolve(integratedVersionDir, path.slice(1))));
+      return;
+    }
+    response.writeHead(404);
+    response.end();
+  });
+  await new Promise((resolveListen) => host.listen(0, '127.0.0.1', resolveListen));
+  const address = host.address();
+  assert.ok(address && typeof address === 'object');
+  const origin = `http://127.0.0.1:${address.port}`;
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto(`${origin}/host.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.__storyMessages.some((message) => message.data?.status === 'ready'), null, { timeout: 8_000 });
+    const frame = page.frames().find((candidate) => candidate.url().endsWith('/lesson1-video.html'));
+    assert.ok(frame);
+    await frame.evaluate(() => parent.postMessage({ type: 'PROFAI_LESSON_STORY', version: 1, status: 'complete' }, '*'));
+    await page.waitForFunction(() => window.__storyMessages.some((message) => message.data?.status === 'complete'), null, { timeout: 3_000 });
+    const messages = await page.evaluate(() => window.__storyMessages.map(({ origin: messageOrigin, data }) => ({ origin: messageOrigin, data })));
+    assert.deepEqual(messages.map(({ data }) => data), [
+      { type: 'PROFAI_LESSON_STORY', version: 1, status: 'ready' },
+      { type: 'PROFAI_LESSON_STORY', version: 1, status: 'complete' },
+    ]);
+    assert.deepEqual(messages.map(({ origin: messageOrigin }) => messageOrigin), [origin, origin]);
+  } finally {
+    await browser.close();
+    await new Promise((resolveClose, rejectClose) => host.close((error) => error ? rejectClose(error) : resolveClose()));
+  }
+});
+
 test('phone QA follows the character from arrival through clicks, answer and eating', { timeout: 120_000 }, async () => {
   const browser = await chromium.launch({ headless: true });
   const expected = [
@@ -61,7 +136,9 @@ test('phone QA follows the character from arrival through clicks, answer and eat
 
   const installTapRecorder = (page) => page.addInitScript(() => {
     window.__promptTaps = [];
+    window.__profaiExplanationDurations = [];
     let previous = '';
+    let explanationStarted = 0;
     window.setInterval(() => {
       const target = document.querySelector('.prompt-target.tapping');
       const gate = target?.matches('.gate') ? target.dataset.i : '';
@@ -69,6 +146,12 @@ test('phone QA follows the character from arrival through clicks, answer and eat
       const key = gate ? `gate-${gate}` : option ? `option-${option}` : '';
       if (key && key !== previous) window.__promptTaps.push(key);
       previous = key;
+      const explanationVisible = document.querySelector('#profai-explainer')?.classList.contains('on') || false;
+      if (explanationVisible && !explanationStarted) explanationStarted = performance.now();
+      if (!explanationVisible && explanationStarted) {
+        window.__profaiExplanationDurations.push(performance.now() - explanationStarted);
+        explanationStarted = 0;
+      }
     }, 16);
   });
 
@@ -95,7 +178,7 @@ test('phone QA follows the character from arrival through clicks, answer and eat
   try {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     await installTapRecorder(page);
-    await page.goto(pathToFileURL(lessonPath).href, { waitUntil: 'domcontentloaded' });
+    await page.goto(pathToFileURL(integratedLessonPath).href, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__arrivalFrameLoaded === true, null, { timeout: 15_000 });
     await page.waitForTimeout(1_800);
     const arrivalFrame = await waitForArrivalBeat(page, 'the Tokyo arrival scene stays visible through the landing beat');
@@ -111,7 +194,12 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     assert.ok(normalArrival.parkedPlane > 0.8, 'the plane has completed its landing');
     assert.ok(normalArrival.traveler > 0.8 && normalArrival.hungry, 'hungry Sam exits the landed plane');
     assert.ok(normalArrival.stomachCue > 0.2, 'the hunger cue is visible');
+    await page.waitForFunction(() => document.querySelector('#profai-explainer')?.classList.contains('on'), null, { timeout: 40_000 });
+    assert.equal(await page.locator('#profai-explainer').textContent(), 'ProfAI turns your question into a lesson you can explore.');
     for (const item of expected) await waitForGateAndOption(page, item);
+    await page.waitForFunction(() => window.__profaiExplanationDurations?.length > 0, null, { timeout: 5_000 });
+    const explanationMs = await page.evaluate(() => window.__profaiExplanationDurations[0]);
+    assert.ok(explanationMs >= 2_800 && explanationMs <= 4_500, `the explanation stays visible for 3 seconds (${Math.round(explanationMs)}ms)`);
 
     try {
       await page.waitForFunction(() => {
@@ -232,10 +320,11 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     assert.equal(normal.mealVisible, false, 'the payoff returns to the lesson UI');
     assert.equal(normal.complete, true);
     assert.equal(normal.handoff, 'Now your turn', 'the final story beat hands the lesson to the learner');
+    assert.ok(explanationMs >= 2_800 && explanationMs <= 4_500);
     const reduced = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     await reduced.emulateMedia({ reducedMotion: 'reduce' });
     await installTapRecorder(reduced);
-    await reduced.goto(pathToFileURL(lessonPath).href, { waitUntil: 'domcontentloaded' });
+    await reduced.goto(pathToFileURL(integratedLessonPath).href, { waitUntil: 'domcontentloaded' });
     await reduced.waitForFunction(() => window.__arrivalFrameLoaded === true, null, { timeout: 15_000 });
     const reducedArrivalFrame = await waitForArrivalBeat(reduced, 'reduced-motion arrival remains visible through landing');
     const reducedArrival = await reducedArrivalFrame.evaluate(() => {

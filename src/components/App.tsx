@@ -2,7 +2,7 @@
 // AHA: one prompt in, a lesson path out, each lesson taught by a visual you can play with.
 // Home -> planning -> course. In a course the prompt bar is for questions: stop anywhere and ask.
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { evaluate, type Env } from '@/lib/expr';
 import { UI, UI_LANGS, uiLangFromNavigator, uiLangOf, type UiLang } from '@/lib/i18n';
 import { LEVELS, type Lesson, type Level, type Plan, type Source } from '@/lib/recipe';
@@ -15,6 +15,44 @@ import { Icon, Knob, PromptBar } from './ui';
 type Course = { prompt: string; level: Level; planId: string; askToken: string; plan: Plan; sources: Source[]; lang: UiLang; startAt?: number };
 type Slot = { status: 'idle' | 'loading' | 'ready' | 'error'; lesson?: Lesson; error?: string; sources?: Source[] };
 type Answer = { q: string; a?: string; error?: string; pending: boolean };
+
+const FIRST_LESSON_STORY_URL = 'https://tokyo-food-67--profai-tokyo-food-63-preview.netlify.app/lesson1-video.html';
+const FIRST_LESSON_STORY_ORIGIN = 'https://tokyo-food-67--profai-tokyo-food-63-preview.netlify.app';
+const FIRST_LESSON_STORY_DONE = 'profai:first-lesson-story:v68:complete';
+const FIRST_LESSON_STORY_SESSION_DONE = 'profai:first-lesson-story:v68:complete-this-tab';
+const FIRST_LESSON_STORY_FAILED = 'profai:first-lesson-story:v68:failed-this-tab';
+const FIRST_LESSON_STORY_LOAD_TIMEOUT = 12_000;
+const FIRST_LESSON_STORY_WATCHDOG = 150_000;
+
+type FirstLessonStoryMessage = { type: 'PROFAI_LESSON_STORY'; version: 1; status: 'ready' | 'complete' | 'failed' };
+
+function isFirstLessonStoryMessage(value: unknown): value is FirstLessonStoryMessage {
+  if (!value || typeof value !== 'object') return false;
+  const message = value as Partial<FirstLessonStoryMessage>;
+  return message.type === 'PROFAI_LESSON_STORY' && message.version === 1 &&
+    (message.status === 'ready' || message.status === 'complete' || message.status === 'failed');
+}
+
+function shouldPlayFirstLessonStory(force: boolean): boolean {
+  if (force) return true;
+  try { if (localStorage.getItem(FIRST_LESSON_STORY_DONE) === '1') return false; } catch {}
+  try {
+    if (sessionStorage.getItem(FIRST_LESSON_STORY_SESSION_DONE) === '1' || sessionStorage.getItem(FIRST_LESSON_STORY_FAILED) === '1') return false;
+  } catch {}
+  return true;
+}
+
+function rememberFirstLessonStory(status: 'complete' | 'failed') {
+  if (status === 'complete') {
+    try { localStorage.setItem(FIRST_LESSON_STORY_DONE, '1'); } catch {}
+    try {
+      sessionStorage.setItem(FIRST_LESSON_STORY_SESSION_DONE, '1');
+      sessionStorage.removeItem(FIRST_LESSON_STORY_FAILED);
+    } catch {}
+  } else {
+    try { sessionStorage.setItem(FIRST_LESSON_STORY_FAILED, '1'); } catch {}
+  }
+}
 
 async function post<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -32,6 +70,8 @@ export default function App() {
   const [homeMsg, setHomeMsg] = useState<{ kind: 'clarify' | 'refuse' | 'error'; text: string; options?: string[] } | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
+  const [showFirstLessonStory, setShowFirstLessonStory] = useState(false);
+  const [forceStoryReplay, setForceStoryReplay] = useState(false);
   const slotsRef = useRef<Slot[]>([]);
   // The course a lesson response belongs to; a response for an older course is dropped.
   const coursePlanId = useRef('');
@@ -74,7 +114,7 @@ export default function App() {
     loadLesson(c, i);
   }, [loadLesson]);
 
-  async function start(text: string, lvl = level, lg: UiLang = lang, startAt = 0) {
+  async function start(text: string, lvl = level, lg: UiLang = lang, startAt = 0, forceStory = false) {
     const p = text.trim();
     if (!p) return;
     setHomeMsg(null);
@@ -101,6 +141,8 @@ export default function App() {
       slotsRef.current = empty;
       setSlots(empty);
       setCourse(c);
+      setForceStoryReplay(forceStory);
+      setShowFirstLessonStory(c.startAt === 0 && shouldPlayFirstLessonStory(forceStory));
       setPrompt('');
       setView('course');
       // The address holds the course, so a reload or a shared link reopens it (plans and lessons are cached, so it is quick and free).
@@ -121,10 +163,11 @@ export default function App() {
     if (!topic) return;
     const lv = q.get('level') as Level | null, lg = q.get('lang') as UiLang | null;
     const at = Number(q.get('l') ?? 0) || 0;
+    const forceStory = q.get('story') === '1';
     history.replaceState(null, '', location.pathname);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (lg && lg in UI) setLang(lg);
-    start(topic, lv && LEVELS.includes(lv) ? lv : level, lg && lg in UI ? lg : undefined, at);
+    start(topic, lv && LEVELS.includes(lv) ? lv : level, lg && lg in UI ? lg : undefined, at, forceStory);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -146,7 +189,7 @@ export default function App() {
   }
 
   if (view === 'course' && course) {
-    return <CourseView course={course} slots={slots} loadLesson={loadLesson} retryLesson={retryLesson} onHome={goHome} onRelevel={(l) => { pickLevel(l); start(course.prompt, l); }} />;
+    return <CourseView key={course.planId} course={course} slots={slots} loadLesson={loadLesson} retryLesson={retryLesson} onHome={goHome} onRelevel={(l) => { pickLevel(l); start(course.prompt, l); }} initialStory={showFirstLessonStory} forceStoryReplay={forceStoryReplay} />;
   }
   return (
     <Home
@@ -280,13 +323,51 @@ function Planning({ prompt, lang }: { prompt: string; lang: UiLang }) {
 
 // ---------------------------------------------------------------- course
 
-function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel }: {
+function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel, initialStory, forceStoryReplay }: {
   course: Course; slots: Slot[]; loadLesson: (c: Course, i: number) => void; retryLesson: (c: Course, i: number) => void; onHome: () => void; onRelevel: (l: Level) => void;
+  initialStory: boolean; forceStoryReplay: boolean;
 }) {
   const reduced = useReducedMotion();
   const ul = uiLangOf(course.plan.lang);
   const tx = UI[ul];
   const [li, setLi] = useState(course.startAt ?? 0);
+  const [storyActive, setStoryActive] = useState(initialStory);
+  const [storyCovered, setStoryCovered] = useState(initialStory);
+  const storyFrame = useRef<HTMLIFrameElement>(null);
+  const storyActiveRef = useRef(initialStory);
+  const storyTerminal = useRef(false);
+  const finishStory = useCallback((status: 'complete' | 'failed', reason?: string, timeoutMs?: number) => {
+    if (storyTerminal.current || !storyActiveRef.current) return;
+    storyTerminal.current = true;
+    storyActiveRef.current = false;
+    rememberFirstLessonStory(status);
+    if (status === 'failed') {
+      console.error('[profai:first-lesson-story]', { code: reason || 'story-failed', url: FIRST_LESSON_STORY_URL, version: 1, timeoutMs: timeoutMs ?? null });
+    }
+    setStoryActive(false);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!storyActive) return;
+    const startupTimer = window.setTimeout(() => finishStory('failed', 'story-start-timeout', FIRST_LESSON_STORY_LOAD_TIMEOUT), FIRST_LESSON_STORY_LOAD_TIMEOUT);
+    const handoffTimer = window.setTimeout(() => finishStory('failed', 'story-handoff-timeout', FIRST_LESSON_STORY_WATCHDOG), FIRST_LESSON_STORY_WATCHDOG);
+    const onMessage = (event: MessageEvent<unknown>) => {
+      if (event.source !== storyFrame.current?.contentWindow || event.origin !== FIRST_LESSON_STORY_ORIGIN) return;
+      if (!isFirstLessonStoryMessage(event.data) || storyTerminal.current || !storyActiveRef.current) return;
+      if (event.data.status === 'ready') {
+        window.clearTimeout(startupTimer);
+        return;
+      }
+      finishStory(event.data.status, event.data.status === 'failed' ? 'story-reported-failure' : undefined);
+    };
+    window.addEventListener('message', onMessage);
+    return () => {
+      window.clearTimeout(startupTimer);
+      window.clearTimeout(handoffTimer);
+      window.removeEventListener('message', onMessage);
+    };
+  }, [storyActive, finishStory]);
+
   // Continue pressed before the step is done: say what to do instead of a dead grey button (panel: Nurul, Kumar).
   const [nudge, setNudge] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -374,6 +455,12 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
 
   function goLesson(n: number) {
     if (n < 0 || n >= total) return;
+    if (n === 0 && shouldPlayFirstLessonStory(forceStoryReplay)) {
+      storyTerminal.current = false;
+      storyActiveRef.current = true;
+      setStoryCovered(true);
+      setStoryActive(true);
+    }
     resetAsk();
     setLi(n);
     setSi(0);
@@ -522,7 +609,8 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
   const stepsDone = lesson ? lesson.steps.filter((_, i) => i < si || (i === si && done)).length : 0;
 
   return (
-    <main className="flex h-[100dvh] flex-col overflow-hidden">
+    <>
+    <main aria-hidden={storyCovered} inert={storyCovered} className="flex h-[100dvh] flex-col overflow-hidden">
       {/* header: back, where you are, all lessons */}
       <header className="flex h-14 shrink-0 items-center gap-1 px-2 lg:px-4">
         <button onClick={onHome} aria-label={tx.newTopic} className="flex h-10 items-center gap-1 rounded-full px-2 text-[15px] font-medium text-ink-2 hover:text-ink">
@@ -767,6 +855,31 @@ function CourseView({ course, slots, loadLesson, retryLesson, onHome, onRelevel 
         )}
       </AnimatePresence>
     </main>
+    <AnimatePresence onExitComplete={() => setStoryCovered(false)}>
+      {storyActive && (
+        <motion.div
+          key="first-lesson-story"
+          data-testid="first-lesson-story"
+          role="region"
+          aria-label="First lesson story"
+          initial={false}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduced ? 0.12 : 0.4 }}
+          className="fixed inset-0 z-[80] h-[100dvh] w-full bg-[#F7F7F9]"
+        >
+          <iframe
+            ref={storyFrame}
+            title="ProfAI lesson introduction: arriving in Tokyo"
+            src={FIRST_LESSON_STORY_URL}
+            referrerPolicy="strict-origin-when-cross-origin"
+            onError={() => finishStory('failed', 'frame-error')}
+            className="block h-full w-full border-0 bg-[#F7F7F9]"
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 }
 
