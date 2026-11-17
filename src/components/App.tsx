@@ -18,10 +18,10 @@ type Answer = { q: string; a?: string; error?: string; pending: boolean };
 
 const FIRST_LESSON_STORY_URL = 'https://tokyo-food-67--profai-tokyo-food-63-preview.netlify.app/lesson1-video.html';
 const FIRST_LESSON_STORY_ORIGIN = 'https://tokyo-food-67--profai-tokyo-food-63-preview.netlify.app';
-const FIRST_LESSON_STORY_DONE = 'profai:first-lesson-story:v68:complete';
-const FIRST_LESSON_STORY_SESSION_DONE = 'profai:first-lesson-story:v68:complete-this-tab';
-const FIRST_LESSON_STORY_FAILED = 'profai:first-lesson-story:v68:failed-this-tab';
-const FIRST_LESSON_STORY_LOAD_TIMEOUT = 12_000;
+const FIRST_LESSON_STORY_DONE = 'profai:first-lesson-story:v69:complete';
+const FIRST_LESSON_STORY_SESSION_DONE = 'profai:first-lesson-story:v69:complete-this-tab';
+const FIRST_LESSON_STORY_FAILED = 'profai:first-lesson-story:v69:failed-this-tab';
+const FIRST_LESSON_STORY_LOAD_TIMEOUT = 45_000;
 const FIRST_LESSON_STORY_WATCHDOG = 150_000;
 
 type FirstLessonStoryMessage = { type: 'PROFAI_LESSON_STORY'; version: 1; status: 'ready' | 'complete' | 'failed' };

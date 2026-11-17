@@ -13,6 +13,10 @@ const integratedVersionDir = resolve('public/previews/tokyo-food-68');
 const integratedLessonPath = resolve(integratedVersionDir, 'lesson1-video.html');
 const integratedHtml = await readFile(integratedLessonPath, 'utf8');
 const integratedArrival = await readFile(resolve(integratedVersionDir, '58.html'), 'utf8');
+const pacingVersionDir = resolve('public/previews/tokyo-food-69');
+const pacingLessonPath = resolve(pacingVersionDir, 'lesson1-video.html');
+const pacingHtml = await readFile(pacingLessonPath, 'utf8');
+const pacingArrival = await readFile(resolve(pacingVersionDir, '58.html'), 'utf8');
 const source61 = await readFile(resolve('public/previews/tokyo-food-61/lesson1-video.html'), 'utf8');
 const source58 = await readFile(resolve('public/previews/tokyo-food-61/58.html'), 'utf8');
 
@@ -30,8 +34,9 @@ const lessonBase = lessonHtml
   .replace('   await playRestaurantPayoff();\n', '')
   .replace(' },8200);', ' },6900);');
 
-test('story keeps 61 UI, connects the restaurant payoff, and ships only its two HTML files', async () => {
-  assert.deepEqual((await readdir(versionDir)).sort(), ['58.html', 'lesson1-video.html']);
+test('story keeps the 61 UI and connects the restaurant payoff', async () => {
+  const sourceFiles = await readdir(versionDir);
+  assert.ok(sourceFiles.includes('58.html') && sourceFiles.includes('lesson1-video.html'), 'the source animation and its arrival frame stay together');
   assert.ok(lessonHtml.includes('<title>Sam builds a Tokyo food prompt</title>'));
   assert.ok(lessonHtml.includes("var order=[{g:1,k:'guide'},{g:2,k:'lunch'},{g:3,k:'v'},{g:4,k:'list'}]"));
   assert.match(lessonHtml, /async function moveActorTo\(node\)/);
@@ -83,6 +88,22 @@ test('version 68 preserves v67 and adds the accessible ProfAI explanation and pa
   assert.ok(integratedHtml.indexOf("notifyStoryHost('complete')") > integratedHtml.indexOf("handoff.classList.add('on')"));
 });
 
+test('version 69 reuses the exact landing frame and gives mobile prompt clicks readable spacing', async () => {
+  assert.deepEqual((await readdir(pacingVersionDir)).sort(), ['58.html', 'lesson1-video.html']);
+  assert.equal(pacingArrival, integratedArrival, 'v69 keeps the same complete plane landing animation');
+  assert.match(pacingHtml, /STORY_PACING=\{actorTravelMs:980,pressMs:320,settleMs:650,gateToChoiceMs:520\}/);
+  assert.match(pacingHtml, /await nap\(reduce\?0:STORY_PACING\.actorTravelMs\)/);
+  assert.match(pacingHtml, /await nap\(reduce\?0:STORY_PACING\.pressMs\)/);
+  assert.match(pacingHtml, /await nap\(reduce\?80:STORY_PACING\.settleMs\)/);
+  assert.match(pacingHtml, /await nap\(reduce\?0:STORY_PACING\.gateToChoiceMs\)/);
+  assert.match(pacingHtml, /arrivalFrame\.addEventListener\('load',function\(\)\{window\.clearTimeout\(arrivalTimeout\);window\.__arrivalFrameLoaded=true;revealLesson\(\);\},\{once:true\}\)/);
+  assert.match(pacingHtml, /function failArrivalFrame\(\)[\s\S]*?notifyStoryHost\('failed'\)/);
+  assert.match(pacingHtml, /arrivalFrame\.addEventListener\('error',function\(\)\{window\.clearTimeout\(arrivalTimeout\);failArrivalFrame\(\);\},\{once:true\}\)/);
+  assert.match(pacingHtml, /setTimeout\(function\(\)\{if\(!window\.__arrivalFrameLoaded\)failArrivalFrame\(\);\},45000\)/);
+  assert.doesNotMatch(pacingHtml, /\},10000\);\s*\}else setTimeout\(startStory,900\)/, 'a slow arrival frame cannot trigger the old 10-second jump');
+  assert.match(pacingHtml, /prefers-reduced-motion:reduce/);
+});
+
 test('embedded v68 story sends its versioned ready and completion messages to its parent', { timeout: 20_000 }, async () => {
   const host = createServer(async (request, response) => {
     const path = new URL(request.url || '/', 'http://127.0.0.1').pathname;
@@ -124,7 +145,52 @@ test('embedded v68 story sends its versioned ready and completion messages to it
   }
 });
 
-test('phone QA follows the character from arrival through clicks, answer and eating', { timeout: 120_000 }, async () => {
+test('slow phone load keeps the landing scene until its frame is ready', { timeout: 35_000 }, async () => {
+  const host = createServer(async (request, response) => {
+    const path = new URL(request.url || '/', 'http://127.0.0.1').pathname;
+    if (path === '/lesson1-video.html') {
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      response.end(pacingHtml);
+      return;
+    }
+    if (path === '/58.html') {
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, 14_000));
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      response.end(pacingArrival);
+      return;
+    }
+    response.writeHead(404);
+    response.end();
+  });
+  await new Promise((resolveListen) => host.listen(0, '127.0.0.1', resolveListen));
+  const address = host.address();
+  assert.ok(address && typeof address === 'object');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Network.enable');
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 450, downloadThroughput: 55 * 1024, uploadThroughput: 22 * 1024, connectionType: 'cellular3g' });
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    await page.goto(`http://127.0.0.1:${address.port}/lesson1-video.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(10_300);
+    const waiting = await page.evaluate(() => ({
+      arrivalLoaded: window.__arrivalFrameLoaded === true,
+      curtainVisible: !!document.querySelector('#arrival-curtain')?.isConnected,
+      actorVisible: !!document.querySelector('#prompt-actor'),
+    }));
+    assert.equal(waiting.arrivalLoaded, false);
+    assert.equal(waiting.curtainVisible, true, 'the landing scene stays in front while the phone connection is slow');
+    assert.equal(waiting.actorVisible, false, 'prompt clicks cannot race ahead before arrival is available');
+    await page.waitForFunction(() => window.__arrivalFrameLoaded === true, null, { timeout: 8_000 });
+    assert.equal(await page.locator('#arrival-curtain').count(), 1, 'the plane scene stays visible for its landing beat');
+  } finally {
+    await browser.close();
+    await new Promise((resolveClose, rejectClose) => host.close((error) => error ? rejectClose(error) : resolveClose()));
+  }
+});
+
+test('phone QA follows the character from arrival through clicks, answer and eating', { timeout: 130_000 }, async () => {
   const browser = await chromium.launch({ headless: true });
   const expected = [
     { gate: 1, key: 'guide', choice: 'Local Guide', prompt: 'Local Guide (Kenji)' },
@@ -136,6 +202,7 @@ test('phone QA follows the character from arrival through clicks, answer and eat
 
   const installTapRecorder = (page) => page.addInitScript(() => {
     window.__promptTaps = [];
+    window.__promptTapTimings = [];
     window.__profaiExplanationDurations = [];
     let previous = '';
     let explanationStarted = 0;
@@ -144,7 +211,10 @@ test('phone QA follows the character from arrival through clicks, answer and eat
       const gate = target?.matches('.gate') ? target.dataset.i : '';
       const option = target?.matches('.opt') ? target.querySelector('input')?.dataset.k : '';
       const key = gate ? `gate-${gate}` : option ? `option-${option}` : '';
-      if (key && key !== previous) window.__promptTaps.push(key);
+      if (key && key !== previous) {
+        window.__promptTaps.push(key);
+        window.__promptTapTimings.push({ key, ms: performance.now() });
+      }
       previous = key;
       const explanationVisible = document.querySelector('#profai-explainer')?.classList.contains('on') || false;
       if (explanationVisible && !explanationStarted) explanationStarted = performance.now();
@@ -178,7 +248,7 @@ test('phone QA follows the character from arrival through clicks, answer and eat
   try {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     await installTapRecorder(page);
-    await page.goto(pathToFileURL(integratedLessonPath).href, { waitUntil: 'domcontentloaded' });
+    await page.goto(pathToFileURL(pacingLessonPath).href, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__arrivalFrameLoaded === true, null, { timeout: 15_000 });
     await page.waitForTimeout(1_800);
     const arrivalFrame = await waitForArrivalBeat(page, 'the Tokyo arrival scene stays visible through the landing beat');
@@ -308,6 +378,7 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     await page.waitForFunction(() => !document.querySelector('#prompt-actor'), null, { timeout: 5_000 });
     const normal = await page.evaluate(() => ({
       taps: window.__promptTaps,
+      tapTimings: window.__promptTapTimings,
       finalAnswer: document.querySelector('#msgs .turn:last-child .bub.ai')?.textContent || '',
       mealVisible: document.querySelector('#meal-story')?.classList.contains('on') || false,
       complete: document.documentElement.dataset.promptStoryComplete === 'true',
@@ -316,6 +387,14 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     }));
     assert.equal(normal.viewport, '390x844');
     assert.deepEqual(normal.taps, ['gate-1', 'option-guide', 'gate-2', 'option-lunch', 'gate-3', 'option-v', 'gate-4', 'option-list']);
+    for (const gate of ['gate-1', 'gate-2', 'gate-3', 'gate-4']) {
+      const gateIndex = normal.tapTimings.findIndex((tap) => tap.key === gate);
+      const optionTap = normal.tapTimings[gateIndex + 1];
+      assert.ok(optionTap?.key.startsWith('option-'), `${gate} is followed by its option click`);
+      const gap = optionTap.ms - normal.tapTimings[gateIndex].ms;
+      assert.ok(gap >= 2_200, `${gate} and its option are visibly separated by ${Math.round(gap)}ms`);
+      assert.ok(gap <= 3_400, `${gate} to option remains responsive (${Math.round(gap)}ms)`);
+    }
     assert.match(normal.finalAnswer, /Vegan Izakaya Masaka/);
     assert.equal(normal.mealVisible, false, 'the payoff returns to the lesson UI');
     assert.equal(normal.complete, true);
@@ -324,7 +403,7 @@ test('phone QA follows the character from arrival through clicks, answer and eat
     const reduced = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     await reduced.emulateMedia({ reducedMotion: 'reduce' });
     await installTapRecorder(reduced);
-    await reduced.goto(pathToFileURL(integratedLessonPath).href, { waitUntil: 'domcontentloaded' });
+    await reduced.goto(pathToFileURL(pacingLessonPath).href, { waitUntil: 'domcontentloaded' });
     await reduced.waitForFunction(() => window.__arrivalFrameLoaded === true, null, { timeout: 15_000 });
     const reducedArrivalFrame = await waitForArrivalBeat(reduced, 'reduced-motion arrival remains visible through landing');
     const reducedArrival = await reducedArrivalFrame.evaluate(() => {

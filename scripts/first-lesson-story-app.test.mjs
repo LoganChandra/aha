@@ -7,7 +7,7 @@ import test from 'node:test';
 import { chromium } from 'playwright';
 
 const storyUrl = 'https://tokyo-food-67--profai-tokyo-food-63-preview.netlify.app/lesson1-video.html';
-const completionKey = 'profai:first-lesson-story:v68:complete';
+const completionKey = 'profai:first-lesson-story:v69:complete';
 const fixture = JSON.parse(await readFile('src/content/library/how-ai-works.json', 'utf8'));
 
 async function freePort() {
@@ -58,6 +58,7 @@ test('first lesson story hands off to the real lesson once and supports an expli
     let storyLoads = 0;
     await page.route(storyUrl, async (route) => {
       storyLoads++;
+      if (storyLoads === 1) await delay(13_000);
       await route.fulfill({
         status: 200,
         contentType: 'text/html; charset=utf-8',
@@ -81,6 +82,9 @@ test('first lesson story hands off to the real lesson once and supports an expli
       const lesson = document.querySelector('main[aria-hidden="true"]');
       return lesson?.hasAttribute('inert') && !!lesson.querySelector('.stage');
     });
+    await page.waitForTimeout(12_200);
+    assert.equal(await page.getByTestId('first-lesson-story').isVisible(), true, 'a slow first-lesson frame stays open past the old 12-second fallback');
+    assert.equal(await page.locator('main').getAttribute('aria-hidden'), 'true', 'the actual lesson stays inert until the story reports ready and complete');
     await page.waitForFunction(() => !document.querySelector('[data-testid="first-lesson-story"]'), null, { timeout: 10_000 });
     await page.locator('.stage').waitFor({ state: 'visible' });
     await page.getByText('A neuron adds up its input and decides how strongly to fire.').waitFor({ state: 'visible' });
@@ -100,8 +104,8 @@ test('first lesson story hands off to the real lesson once and supports an expli
 
     await page.evaluate(() => {
       localStorage.removeItem('profai:first-lesson-story:v68:complete');
-      sessionStorage.removeItem('profai:first-lesson-story:v68:complete-this-tab');
-      sessionStorage.removeItem('profai:first-lesson-story:v68:failed-this-tab');
+      sessionStorage.removeItem('profai:first-lesson-story:v69:complete-this-tab');
+      sessionStorage.removeItem('profai:first-lesson-story:v69:failed-this-tab');
     });
     await page.addInitScript(() => Object.defineProperty(window, 'localStorage', {
       configurable: true,
