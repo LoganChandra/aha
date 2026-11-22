@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { describeSteps } from '../src/lib/inspect';
-import { PLAYBOOK } from '../src/lib/playbook';
-import { checkLesson } from '../src/lib/validate';
+import { describeSteps } from '../src/lib/animation/inspect';
+import { PLAYBOOK } from '../src/lib/animation/playbook';
+import { checkLesson } from '../src/lib/animation/validate';
 
 describe('inspector record', () => {
   test('every playbook lesson replays into a step-by-step screen record', () => {

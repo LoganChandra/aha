@@ -1,5 +1,5 @@
 import { makePlan } from '@/lib/engine';
-import { preCheck } from '@/lib/intent';
+import { preCheck } from '@/lib/planning/intent';
 import { findCourse } from '@/lib/library';
 import { PLAN_LANG, type UiLang } from '@/lib/i18n';
 import { LEVELS, type Level, type Plan, type Source } from '@/lib/recipe';

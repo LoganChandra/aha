@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { readdirSync, readFileSync } from 'node:fs';
-import { CountryPack, NEEDS, usablePack } from '../src/lib/country-pack';
+import { CountryPack, NEEDS, usablePack } from '../src/lib/research/country-pack';
 
 // The journey map in profai-web (src/lib/towns.ts JOURNEYS), copied here so a pack cannot drift from it.
 const MAP: Record<string, string[]> = {

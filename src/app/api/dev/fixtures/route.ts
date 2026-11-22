@@ -1,7 +1,7 @@
 // Development only: serves the bake-off lessons so every renderer can be checked by eye. 404 in production.
 import { readdirSync, readFileSync } from 'node:fs';
 import { connection } from 'next/server';
-import { checkLesson } from '@/lib/validate';
+import { checkLesson } from '@/lib/animation/validate';
 
 export async function GET(req: Request) {
   await connection();

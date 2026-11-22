@@ -1,6 +1,6 @@
 // Decided in code, before any model: input that is a greeting, filler, a single character or has no letters is
 // not a topic. A model will happily teach "yo" as Spanish; the learner almost certainly just said hello.
-import type { Plan } from './recipe';
+import type { Plan } from '../recipe';
 
 const FILLER = new Set([
   'hi', 'hii', 'hiii', 'hello', 'helo', 'hey', 'heya', 'hey there', 'yo', 'yoo', 'sup', 'wassup', 'whats up', "what's up",
