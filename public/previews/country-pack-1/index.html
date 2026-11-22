@@ -1,0 +1,225 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Japan pack review</title>
+<style>
+:root{--bg:#F6F8FB;--card:#fff;--ink:#14202E;--mut:#5A6877;--line:#DCE3EC;--pink:#FF5C9A;--blue:#2F7BEA;--green:#1E9D63}
+@media(prefers-color-scheme:dark){:root{--bg:#0F151D;--card:#18212C;--ink:#EAF0F7;--mut:#9BA9B9;--line:#2A3745;--blue:#6FA6F5;--green:#4CC58A}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:24px;margin:8px 0 4px}p{margin:6px 0}.mut{color:var(--mut);font-size:14px}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;border:1px solid var(--line);background:var(--card)}
+.draft{color:#B25E00;border-color:#B25E00}
+.map{display:flex;gap:6px;overflow-x:auto;padding:12px 0;-webkit-overflow-scrolling:touch}
+.map button{flex:0 0 auto;min-height:44px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.map button[aria-pressed=true]{background:var(--pink);color:#fff;border-color:var(--pink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+h2{font-size:18px;margin:0 0 6px}h3{font-size:14px;margin:14px 0 6px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.bd{height:84px;border-radius:10px;display:flex;align-items:flex-end;padding:10px;color:#fff;font-weight:600;background:linear-gradient(135deg,var(--c1),var(--c2))}
+ul{padding-left:18px;margin:6px 0}li{margin:6px 0}a{color:var(--blue);word-break:break-all}
+.prompt{border-left:3px solid var(--green);padding:6px 10px;background:var(--bg);border-radius:6px}
+.need{font-weight:600;color:var(--green)}
+</style></head><body><main>
+<span class="badge draft" id="st"></span>
+<h1 id="t"></h1><p class="mut">Review pack. Tap a city. Each fact links to its source. Nothing here is used in a lesson until a person approves it.</p>
+<div class="map" id="map" role="group" aria-label="Cities"></div>
+<div id="out" aria-live="polite"></div></main>
+<script>
+const P={
+  "journey": "japan",
+  "country": "Japan",
+  "review": {
+    "status": "draft",
+    "by": null,
+    "on": null
+  },
+  "cities": [
+    {
+      "name": "Tokyo",
+      "backdrop": "Shibuya crossing and neon streets",
+      "facts": [
+        {
+          "id": "tsukiji-outer",
+          "text": "Tsukiji Outer Market has around 60 shops, and many serve fresh sushi for breakfast.",
+          "source": "https://www.gotokyo.org/en/destinations/central-tokyo/tsukiji/",
+          "checked": "2026-11-22"
+        },
+        {
+          "id": "toyosu-moved",
+          "text": "The wholesale fish market moved from Tsukiji to Toyosu in 2018; the outer market stayed.",
+          "source": "https://www.gotokyo.org/en/see-and-do/morning/index.html",
+          "checked": "2026-11-22"
+        },
+        {
+          "id": "sensoji-oldest",
+          "text": "Senso-ji in Asakusa is Tokyo's oldest Buddhist temple, with Nakamise Street nearby.",
+          "source": "https://www.nationalgeographic.com/travel/article/tokyo-japan",
+          "checked": "2026-11-22"
+        }
+      ],
+      "scenarios": [
+        {
+          "need": "hungry",
+          "situation": "You just landed. It is early and you are starving.",
+          "prompt": "I am hungry near Tsukiji. Suggest a sushi breakfast and tell me what to order if I cannot read the menu.",
+          "uses": [
+            "tsukiji-outer",
+            "toyosu-moved"
+          ]
+        },
+        {
+          "need": "route",
+          "situation": "You want one good photo route for Instagram.",
+          "prompt": "Plan a 3 hour walking route in Asakusa with the best photo spots and the best time of day for each.",
+          "uses": [
+            "sensoji-oldest"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kyoto",
+      "backdrop": "Fushimi Inari torii gate path",
+      "facts": [
+        {
+          "id": "inari-free",
+          "text": "Fushimi Inari shrine is free to enter and open around the clock.",
+          "source": "https://japan-guide.com/e/e3915.html",
+          "checked": "2026-11-22"
+        },
+        {
+          "id": "inari-crowds",
+          "text": "The lower torii tunnels are busiest; the upper trails are quieter, so go early or late.",
+          "source": "https://www.lonelyplanet.com/articles/guide-to-fushimi-inari",
+          "checked": "2026-11-22"
+        }
+      ],
+      "scenarios": [
+        {
+          "need": "route",
+          "situation": "Everyone says the gates are crowded. You want a clear photo.",
+          "prompt": "I want photos of the torii gates without crowds. Plan my morning, and tell me how long the hike takes.",
+          "uses": [
+            "inari-free",
+            "inari-crowds"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hiroshima",
+      "backdrop": "Okonomimura food stalls",
+      "facts": [
+        {
+          "id": "layered",
+          "text": "Hiroshima okonomiyaki is built in layers on a thin batter, not mixed together like Osaka style.",
+          "source": "https://www.mlit.go.jp/tagengo-db/en/R1-00502.html",
+          "checked": "2026-11-22"
+        },
+        {
+          "id": "noodle-choice",
+          "text": "You choose soba or udon noodles when you order, for example niku-tama-soba.",
+          "source": "https://en.japantravel.com/hiroshima/hiroshima-style-okonomiyaki/1165",
+          "checked": "2026-11-22"
+        },
+        {
+          "id": "okonomimura",
+          "text": "Okonomimura is a four-story building of okonomiyaki stalls at 5-13 Shintenchi, Naka Ward.",
+          "source": "https://www.stripes.com/living/pacific_travel/after_hours/2025-11-27/okonomiyaki-village-hiroshima-japan-19838007.html",
+          "checked": "2026-11-22"
+        }
+      ],
+      "scenarios": [
+        {
+          "need": "hungry",
+          "situation": "The menu is in Japanese and the cook is waiting.",
+          "prompt": "Explain Hiroshima okonomiyaki and how to order it, including the noodle choice, in simple words.",
+          "uses": [
+            "layered",
+            "noodle-choice",
+            "okonomimura"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fukuoka",
+      "backdrop": "Yatai food stalls along the Naka River",
+      "facts": [
+        {
+          "id": "yatai-hours",
+          "text": "The yatai stalls open from early evening until late at night.",
+          "source": "https://www.westjr.co.jp/travel-information/en/explore-west-japan/destinations-fukuoka/food-stalls-yatai/",
+          "checked": "2026-11-22"
+        },
+        {
+          "id": "hakata-ramen",
+          "text": "Hakata-style ramen is known for its tonkotsu (pork bone) broth, and is popular at Fukuoka's yatai stalls.",
+          "source": "https://www.westjr.co.jp/travel-information/en/explore-west-japan/destinations-fukuoka/food-stalls-yatai/",
+          "checked": "2026-11-22"
+        },
+        {
+          "id": "yatai-cash",
+          "text": "No reservations are needed at the yatai stalls, and payment is usually cash.",
+          "source": "https://www.westjr.co.jp/travel-information/en/explore-west-japan/destinations-fukuoka/food-stalls-yatai/",
+          "checked": "2026-11-22"
+        }
+      ],
+      "scenarios": [
+        {
+          "need": "hungry",
+          "situation": "It is 9 PM and you want a real local dinner.",
+          "prompt": "Where do I eat dinner like a local in Fukuoka tonight, and how do I order at a yatai stall?",
+          "uses": [
+            "yatai-hours",
+            "hakata-ramen",
+            "yatai-cash"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sapporo",
+      "backdrop": "Snowy city, ramen alley at night",
+      "facts": [
+        {
+          "id": "miso-ramen",
+          "text": "Miso ramen began in Sapporo after World War II; the official tourism site dates it to 1958.",
+          "source": "https://www.sapporo.travel/en/gourmet/feature/ramen/",
+          "checked": "2026-11-22"
+        },
+        {
+          "id": "miso-broth",
+          "text": "The broth is seasoned with red miso, and the wavy noodles were made to hold it.",
+          "source": "https://www.sapporo.travel/en/gourmet/feature/ramen/",
+          "checked": "2026-11-22"
+        }
+      ],
+      "scenarios": [
+        {
+          "need": "hungry",
+          "situation": "It is freezing and you want the dish this city invented.",
+          "prompt": "I just arrived in Sapporo and it is cold. What is miso ramen, and what should I order first?",
+          "uses": [
+            "miso-ramen",
+            "miso-broth"
+          ]
+        }
+      ]
+    }
+  ]
+}
+;
+const COL=[['#FF5C9A','#FF9F1C'],['#FF6B4A','#B8264F'],['#2DC07A','#1B6F7A'],['#FF9F1C','#C2410C'],['#3BA8FF','#4338CA']];
+document.getElementById('st').textContent=P.review.status==='approved'?'Approved by '+P.review.by:'Draft, not approved';
+document.getElementById('t').textContent=P.country+': '+P.cities.length+' cities';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function show(i){
+  const c=P.cities[i],f=Object.fromEntries(c.facts.map(x=>[x.id,x]));
+  document.querySelectorAll('#map button').forEach((b,k)=>b.setAttribute('aria-pressed',k===i));
+  document.getElementById('out').innerHTML='<div class="card"><div class="bd" style="--c1:'+COL[i][0]+';--c2:'+COL[i][1]+'">'+esc(c.backdrop)+'</div>'+
+  '<h2>'+(i===0?esc(c.name)+' (learn here)':'Test '+i+': visit '+esc(c.name))+'</h2>'+
+  '<h3>Facts</h3><ul>'+c.facts.map(x=>'<li>'+esc(x.text)+' <span class="mut">checked '+esc(x.checked)+'</span><br><a href="'+esc(x.source)+'" target="_blank" rel="noopener">'+esc(x.source)+'</a></li>').join('')+'</ul>'+
+  '<h3>Scenes</h3>'+c.scenarios.map(s=>'<p><span class="need">'+esc(s.need)+'</span>: '+esc(s.situation)+'</p><p class="prompt">'+esc(s.prompt)+'</p><p class="mut">Uses: '+s.uses.map(u=>esc(f[u].text)).join(' / ')+'</p>').join('')+'</div>';
+}
+const m=document.getElementById('map');
+P.cities.forEach((c,i)=>{const b=document.createElement('button');b.textContent=(i+1)+'. '+c.name;b.onclick=()=>show(i);m.appendChild(b)});
+show(0);
+</script></body></html>
