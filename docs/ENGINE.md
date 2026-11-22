@@ -19,7 +19,7 @@ AHA is a tool for building and refining lessons; ProfAI is the product. The engi
 |---|---|---|
 | Research: what is true (fact sheets, source filter, fact gate, country packs) | `src/lib/research/` | `Fact[]`, `Source[]` |
 | Lesson planning (Score): what to teach and in what order | `src/lib/planning/` | `Plan` |
-| Animation (Stage, checker, inspector, tutor): the interactive scene the player draws | `src/lib/animation/` | `Lesson` (the recipe) |
+| Animation (Stage, checker, inspector, tutor): the interactive scene the player draws. Built to the `design-animation` skill (Blimp repo, `.claude/skills/design-animation`), the one live copy, linked into this repo's `.claude/skills/` | `src/lib/animation/` | `Lesson` (the recipe) |
 
 Shared plumbing stays in `src/lib/`: `models.ts` (model chain, hedge, cost meter), `ai.ts`, `recipe.ts` (the types that cross the handoffs), `server.ts`, `lang.ts`. `src/lib/engine.ts` only re-exports the three parts, so the API routes keep one import. Planning reads two things across the line: `usefulSources` (research) and the pattern ids (animation playbook). Moving code between folders changed no behaviour: same exports, same routes, same tests.
 
