@@ -4,9 +4,10 @@
 //         latency and cost. Outputs are saved as fixtures for the renderer.
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { chatJson, type Msg, type Route } from '../src/lib/ai';
-import { LESSON_SYSTEM, PLAN_SYSTEM, lessonUser, planBrief, planUser, repairUser } from '../src/lib/prompts';
+import { LESSON_SYSTEM, lessonUser, repairUser } from '../src/lib/animation/prompts';
+import { PLAN_SYSTEM, planBrief, planUser } from '../src/lib/planning/prompts';
 import { Plan, type Level } from '../src/lib/recipe';
-import { checkLesson } from '../src/lib/validate';
+import { checkLesson } from '../src/lib/animation/validate';
 
 const MODELS = (process.env.MODELS ?? [
   'inclusionai/ling-3.0-flash',

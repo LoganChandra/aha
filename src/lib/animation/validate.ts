@@ -1,9 +1,9 @@
 // Checks a lesson recipe beyond its shape: every expression parses, uses only known names and draws something,
 // ids line up, steps point at things that exist, every task can be done. Problems come back as plain sentences the model can fix in one
 // retry; `repair` then removes anything still broken so the learner never sees a crash.
-import { compile, evaluate, type Env } from './expr';
-import { ICONS } from './icons';
-import { Lesson, SIZE_ARITY, type G2Item, type Param, type Scene } from './recipe';
+import { compile, evaluate, type Env } from '../expr';
+import { ICONS } from '../icons';
+import { Lesson, SIZE_ARITY, type G2Item, type Param, type Scene } from '../recipe';
 
 type Num = number | string;
 

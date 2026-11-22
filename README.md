@@ -19,8 +19,8 @@ prompt + level ──> curated library? ──yes──> instant, free
 - **Learn by doing.** A lesson is 4-7 steps. Each step is a short line inside the picture, labels pinned to parts, and a task done in the scene: slide to a goal, tap a part, or predict before the reveal. Feedback is instant and a quiet "Show me" skips. Draggable handles pulse, an arrow shows the way, and tap targets ring.
 - **Models write data, never code.** There are five scene types (`src/lib/recipe.ts`): `graph2d` (curves, shapes, draggable points, 130 icons), `diagram`, `model3d` (a parts library), `chart` and `timeline`. Numbers can be expressions over knobs and time (`src/lib/expr.ts`: compiled, no eval, with a work budget).
 - **Prompt engineering is the product:**
-  - `src/lib/guide.ts`: the visual teaching guide, which goes subject by subject through what to draw and what to let the learner touch.
-  - `src/lib/playbook.ts`: 17 hand-written, validated example lessons.
+  - `src/lib/animation/guide.ts`: the visual teaching guide, which goes subject by subject through what to draw and what to let the learner touch.
+  - `src/lib/animation/playbook.ts`: 17 hand-written, validated example lessons.
   - `docs/research/2026-10-28-learning-science.md`: the research behind both.
 - **Rules held in code, not left to the prompt:**
   - Greetings never become courses (`intent.ts`).

@@ -3,9 +3,9 @@
 // `describeSteps` replays the lesson the way the learner meets it and writes down what the screen holds at each
 // step: knob values, readouts, labels, positions, what is draggable and tappable. A cheap model then compares
 // every sentence with that record and lists contradictions and wrong facts, and the writer gets one repair turn.
-import { evaluate, fillTemplate, type Env } from './expr';
-import type { Lesson } from './recipe';
-import { contextView, fitData, mse, polyFit } from '../components/scene/AiTemplates';
+import { evaluate, fillTemplate, type Env } from '../expr';
+import type { Lesson } from '../recipe';
+import { contextView, fitData, mse, polyFit } from '../../components/scene/AiTemplates';
 
 type Num = number | string;
 // The POC skin's colours, so "the orange dot" can be checked (writer prompt uses the same names).

@@ -1,7 +1,7 @@
 // @ts-nocheck: a Bun-only dev script. Usage: bun scripts/try-inspect.ts <saved try-N.json> <index>
 import { chatJson } from '../src/lib/ai';
-import { describeSteps } from '../src/lib/inspect';
-import { CHECK_SYSTEM, checkUser } from '../src/lib/prompts';
+import { describeSteps } from '../src/lib/animation/inspect';
+import { CHECK_SYSTEM, checkUser } from '../src/lib/animation/prompts';
 const [file, idx = '0'] = process.argv.slice(2);
 const { plan, lesson } = JSON.parse(await Bun.file(file).text());
 const user = checkUser(plan, Number(idx), 'expert', describeSteps(lesson));

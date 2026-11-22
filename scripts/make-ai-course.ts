@@ -1,7 +1,7 @@
 // Hand-authored curated course: "How AI works", assembled from validated playbook lessons. No model cost.
 import { writeFileSync } from 'node:fs';
-import { PLAYBOOK } from '../src/lib/playbook';
-import { checkLesson } from '../src/lib/validate';
+import { PLAYBOOK } from '../src/lib/animation/playbook';
+import { checkLesson } from '../src/lib/animation/validate';
 const pick = (id: string) => PLAYBOOK.find((p) => p.id === id)!.example;
 const lessons = [pick('tipping-point'), pick('find-the-minimum'), pick('map-of-meaning'), pick('odds-and-temperature')];
 for (const l of lessons) { const c = checkLesson(JSON.parse(JSON.stringify(l))); if (c.errors.length) throw new Error(l.title + ': ' + c.errors.join('; ')); }

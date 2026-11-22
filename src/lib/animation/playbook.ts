@@ -11,7 +11,7 @@
 // - Retrieval practice: the last step makes them use the idea without help.
 // - Learning styles: matching teaching to a "style" has almost no evidence (Pashler et al. 2008); words plus pictures
 //   (dual coding) helps everyone, so every pattern pairs a picture the learner acts on with a short line of words.
-import type { Lesson } from './recipe';
+import type { Lesson } from '../recipe';
 
 export type Pattern = {
   id: string;

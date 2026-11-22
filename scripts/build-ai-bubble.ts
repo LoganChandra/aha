@@ -4,7 +4,7 @@
 // OpenRouter) researched, planned and wrote this course in the exact recipe format the cheap models must produce.
 // It is checked by the same validator and served from the curated library at zero model cost.
 // Run: bun scripts/build-ai-bubble.ts  ->  src/content/library/ai-bubble.json
-import { checkLesson } from '../src/lib/validate';
+import { checkLesson } from '../src/lib/animation/validate';
 
 const plan = {
   status: 'ok',
